@@ -32,7 +32,8 @@ class NaiveStrategy(Strategy):
     # Simple loops - readable but not optimized
     
     def can_handle(self, intent_type: str) -> bool:
-        return intent_type in ["filter", "map", "reduce", "input", "output", "constant"]
+        return intent_type in ["filter", "map", "reduce", "input", "output", "constant", 
+                               "sort", "group_by", "join", "flatten", "distinct", "assert"]
     
     def generate_code(self, node, context: ExecutionContext) -> str:
         from core.graph import IntentType
@@ -131,6 +132,16 @@ for _item in {input_id}:
         _seen.add(_item)
         {node.id}.append(_item)"""
         
+        elif node.intent_type == IntentType.ASSERT:
+            input_id = node.inputs[0]
+            pred_name = f"pred_{node.id}"
+            context.variables[pred_name] = node.params["predicate"]
+            message = node.params.get("message", "Assertion failed")
+            
+            return f"""if not {pred_name}({input_id}):
+    raise AssertionError("{message}")
+{node.id} = {input_id}"""
+        
         else:
             raise NotImplementedError(f"Naive strategy doesn't support {node.intent_type}")
     
@@ -159,7 +170,7 @@ class OptimizedStrategy(Strategy):
     
     def can_handle(self, intent_type: str) -> bool:
         return intent_type in ["filter", "map", "reduce", "input", "output", "constant",
-                               "sort", "group_by", "join", "flatten", "distinct"]
+                               "sort", "group_by", "join", "flatten", "distinct", "assert"]
     
     def generate_code(self, node, context: ExecutionContext) -> str:
         from core.graph import IntentType
@@ -241,6 +252,16 @@ class OptimizedStrategy(Strategy):
             input_id = node.inputs[0]
             # Use dict.fromkeys to preserve order (Python 3.7+)
             return f"{node.id} = list(dict.fromkeys({input_id}))"
+        
+        elif node.intent_type == IntentType.ASSERT:
+            input_id = node.inputs[0]
+            pred_name = f"pred_{node.id}"
+            context.variables[pred_name] = node.params["predicate"]
+            message = node.params.get("message", "Assertion failed")
+            
+            return f"""if not {pred_name}({input_id}):
+    raise AssertionError("{message}")
+{node.id} = {input_id}"""
         
         else:
             raise NotImplementedError(f"Optimized strategy doesn't support {node.intent_type}")

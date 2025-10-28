@@ -8,6 +8,21 @@ import uuid
 from .types import IOCType, AnyType, infer_type
 
 
+# Global provenance tracker (optional)
+_global_provenance_tracker = None
+
+def enable_provenance_tracking():
+    """Enable global provenance tracking for all graphs."""
+    global _global_provenance_tracker
+    from .provenance import ProvenanceTracker
+    _global_provenance_tracker = ProvenanceTracker()
+    return _global_provenance_tracker
+
+def get_provenance_tracker():
+    """Get the global provenance tracker if enabled."""
+    return _global_provenance_tracker
+
+
 class IntentType(Enum):
     INPUT = "input"
     OUTPUT = "output"
@@ -22,6 +37,7 @@ class IntentType(Enum):
     JOIN = "join"
     FLATTEN = "flatten"
     DISTINCT = "distinct"
+    ASSERT = "assert"  # Runtime assertion
 
 
 @dataclass
@@ -45,12 +61,20 @@ class Graph:
         self.nodes: Dict[str, IntentNode] = {}
         self.outputs: List[str] = []
         self._node_counter = 0
+        self.provenance_tracker = None  # Optional provenance tracking
+        self.debug_mode = False
     
     def _generate_id(self, prefix: str = "node") -> str:
         return f"{prefix}_{uuid.uuid4().hex[:8]}"
     
     def _add_node(self, node: IntentNode) -> str:
         self.nodes[node.id] = node
+        
+        # Track provenance if enabled
+        tracker = self.provenance_tracker or get_provenance_tracker()
+        if tracker:
+            tracker.track_node_creation(node.id, capture_stack=self.debug_mode)
+        
         return node.id
     
     def input(self, name: str, type_hint: Any = None) -> str:
@@ -204,6 +228,32 @@ class Graph:
         )
         return self._add_node(node)
     
+    def assert_invariant(self, input_node: str, predicate: Callable[[Any], bool],
+                        message: str = "Assertion failed") -> str:
+        """
+        Add a runtime assertion that validates data.
+        The predicate should return True if the data is valid.
+        
+        Args:
+            input_node: Node to validate
+            predicate: Function that checks the invariant
+            message: Error message if assertion fails
+        
+        Returns:
+            Node ID (passes through input unchanged if assertion passes)
+        """
+        input_type = self.nodes[input_node].output_type
+        
+        node = IntentNode(
+            id=self._generate_id("assert"),
+            intent_type=IntentType.ASSERT,
+            inputs=[input_node],
+            params={"predicate": predicate, "message": message},
+            output_type=input_type,  # Pass-through
+            metadata={"parallelizable": False}
+        )
+        return self._add_node(node)
+    
     def output(self, node: str) -> None:
         # Mark a node as output
         if node not in self.nodes:
@@ -290,3 +340,83 @@ class Graph:
             lines.append(f"Outputs: {[o[:8] for o in self.outputs]}")
         
         return "\n".join(lines)
+    
+    def explain(self, verbose: bool = False) -> str:
+        """
+        Generate an execution plan explanation.
+        Shows what will be executed and how.
+        
+        Args:
+            verbose: Include detailed node information
+        
+        Returns:
+            Human-readable execution plan
+        """
+        lines = ["Execution Plan:"]
+        lines.append("=" * 60)
+        
+        exec_order = self.get_execution_order()
+        
+        lines.append(f"Total nodes: {len(self.nodes)}")
+        lines.append(f"Execution order: {len(exec_order)} steps")
+        lines.append("")
+        
+        # Analyze parallelizability
+        parallel_nodes = [
+            nid for nid in exec_order
+            if self.nodes[nid].metadata.get("parallelizable", False)
+        ]
+        
+        if parallel_nodes:
+            lines.append(f"Parallelizable operations: {len(parallel_nodes)}/{len(exec_order)}")
+            lines.append("")
+        
+        # Show execution steps
+        lines.append("Execution Steps:")
+        for i, node_id in enumerate(exec_order, 1):
+            node = self.nodes[node_id]
+            
+            parallel = " [PARALLEL]" if node.metadata.get("parallelizable") else ""
+            vectorizable = " [VECTORIZABLE]" if node.metadata.get("vectorizable") else ""
+            
+            lines.append(f"{i}. {node.intent_type.value}{parallel}{vectorizable}")
+            lines.append(f"   Node: {node_id[:8]}...")
+            
+            if verbose:
+                if node.inputs:
+                    lines.append(f"   Inputs: {[i[:8] + '...' for i in node.inputs]}")
+                lines.append(f"   Output type: {node.output_type}")
+                
+                # Show provenance if available
+                tracker = self.provenance_tracker or get_provenance_tracker()
+                if tracker:
+                    prov = tracker.get_provenance(node_id)
+                    if prov and prov.is_optimized():
+                        lines.append(f"   Optimized: Yes ({len(prov.transformations)} transformations)")
+            
+            lines.append("")
+        
+        return "\n".join(lines)
+    
+    def enable_debug_mode(self, capture_provenance: bool = True):
+        """
+        Enable debug mode with enhanced error reporting.
+        
+        Args:
+            capture_provenance: Whether to capture source locations (adds overhead)
+        """
+        self.debug_mode = True
+        
+        if capture_provenance:
+            from .provenance import ProvenanceTracker
+            self.provenance_tracker = ProvenanceTracker()
+    
+    def get_debugger(self):
+        """
+        Get a debugger instance for this graph.
+        
+        Returns:
+            IOCDebugger instance
+        """
+        from .debugger import IOCDebugger
+        return IOCDebugger(self, self.provenance_tracker)
