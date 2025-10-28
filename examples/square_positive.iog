@@ -1,0 +1,47 @@
+{
+  "version": "0.1.0",
+  "nodes": {
+    "input_c30266d6": {
+      "id": "input_c30266d6",
+      "intent_type": "input",
+      "inputs": [],
+      "output_type": "List[Any]",
+      "metadata": {},
+      "params": {
+        "name": "numbers"
+      }
+    },
+    "filter_a3e9f581": {
+      "id": "filter_a3e9f581",
+      "intent_type": "filter",
+      "inputs": [
+        "input_c30266d6"
+      ],
+      "output_type": "List[Any]",
+      "metadata": {
+        "parallelizable": true
+      },
+      "params": {
+        "predicate": "<function>"
+      }
+    },
+    "map_b6da87fe": {
+      "id": "map_b6da87fe",
+      "intent_type": "map",
+      "inputs": [
+        "filter_a3e9f581"
+      ],
+      "output_type": "List[Any]",
+      "metadata": {
+        "parallelizable": true,
+        "vectorizable": true
+      },
+      "params": {
+        "transform": "<function>"
+      }
+    }
+  },
+  "outputs": [
+    "map_b6da87fe"
+  ]
+}
