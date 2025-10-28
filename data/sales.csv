@@ -1,0 +1,21 @@
+id,product,category,price,quantity,date,customer_age,region
+1,Laptop,Electronics,999.99,2,2024-01-15,25,North
+2,Mouse,Electronics,29.99,5,2024-01-16,32,South
+3,Desk,Furniture,299.99,1,2024-01-17,45,East
+4,Chair,Furniture,199.99,3,2024-01-18,28,West
+5,Monitor,Electronics,349.99,2,2024-01-19,31,North
+6,Keyboard,Electronics,79.99,4,2024-01-20,22,South
+7,Bookshelf,Furniture,149.99,2,2024-01-21,38,East
+8,Tablet,Electronics,599.99,1,2024-01-22,27,West
+9,Lamp,Furniture,49.99,6,2024-01-23,41,North
+10,Phone,Electronics,899.99,1,2024-01-24,29,South
+11,Sofa,Furniture,799.99,1,2024-01-25,34,East
+12,Headphones,Electronics,149.99,3,2024-01-26,26,West
+13,Desk Lamp,Furniture,39.99,8,2024-01-27,33,North
+14,Webcam,Electronics,89.99,2,2024-01-28,24,South
+15,Office Chair,Furniture,299.99,2,2024-01-29,37,East
+16,Router,Electronics,129.99,3,2024-01-30,30,West
+17,Standing Desk,Furniture,499.99,1,2024-01-31,40,North
+18,Microphone,Electronics,199.99,2,2024-02-01,28,South
+19,Cabinet,Furniture,349.99,1,2024-02-02,42,East
+20,SSD Drive,Electronics,149.99,4,2024-02-03,31,West
