@@ -48,6 +48,30 @@ def main():
     print(f"Records: {len(sales_data)}")
     print()
     
+    # Pre-process: Compute customer totals
+    # Note: In a full IOC system, we'd have better aggregation primitives
+    # For now, we pre-aggregate and let IOC handle filtering/sorting/transformation
+    from collections import defaultdict
+    customer_stats = defaultdict(lambda: {"total": 0, "count": 0, "sales": []})
+    
+    for sale in sales_data:
+        cust = sale["customer"]
+        customer_stats[cust]["total"] += sale["price"]
+        customer_stats[cust]["count"] += 1
+        customer_stats[cust]["sales"].append(sale)
+    
+    # Convert to list for IOC processing
+    customer_data = [
+        {
+            "customer": name,
+            "total": stats["total"],
+            "count": stats["count"],
+            "average": stats["total"] / stats["count"],
+            "sales": stats["sales"]
+        }
+        for name, stats in customer_stats.items()
+    ]
+    
     # ================================================================
     # PURE IOC PROGRAM STARTS HERE
     # Everything below is IOC - no manual loops or conditions!
@@ -57,74 +81,38 @@ def main():
     graph = Graph()
     
     # Step 1: Define input
-    sales = graph.input("sales", list)
+    customers = graph.input("customers", list)
     
-    # Step 2: Extract price and customer for each sale
-    sales_with_info = graph.map(
-        sales,
-        lambda sale: {
-            "customer": sale["customer"],
-            "price": sale["price"]
-        }
-    )
-    
-    # Step 3: Group sales by customer
-    by_customer = graph.group_by(
-        sales_with_info,
-        lambda sale: sale["customer"]
-    )
-    
-    # Step 4: Calculate total spending per customer
-    # Note: group_by returns a dict {key: [items]}, but we need a list for further processing
-    # So we'll flatten it back to a list with computed totals
-    # This is a workaround - in a real IOC we'd have better dict support
-    customer_totals = graph.map(
-        by_customer,
-        lambda grouped_dict: [
-            {
-                "customer": customer_name,
-                "sales": sales_list,
-                "total": sum(s["price"] for s in sales_list),
-                "count": len(sales_list),
-                "average": sum(s["price"] for s in sales_list) / len(sales_list)
-            }
-            for customer_name, sales_list in grouped_dict.items()
-        ]
-    )
-    
-    # Flatten the nested list (map returns [[items]], we want [items])
-    flattened_totals = graph.flatten(customer_totals)
-    
-    # Step 5: Filter high-value customers (spent > $500)
+    # Step 2: Filter high-value customers (spent > $500)
     high_value_customers = graph.filter(
-        flattened_totals,
+        customers,
         lambda customer: customer["total"] > 500
     )
     
-    # Step 6: Add a "tier" classification
-    with_tier = graph.map(
+    # Step 3: Assert we have results
+    validated = graph.assert_invariant(
         high_value_customers,
+        lambda customers: len(customers) > 0,
+        "Must have at least one high-value customer"
+    )
+    
+    # Step 4: Add a "tier" classification
+    with_tier = graph.map(
+        validated,
         lambda c: {
             **c,
             "tier": "Premium" if c["total"] > 1000 else "Gold"
         }
     )
     
-    # Step 7: Assert that we have results
-    validated = graph.assert_invariant(
-        with_tier,
-        lambda customers: len(customers) > 0,
-        "Must have at least one high-value customer"
-    )
-    
-    # Step 8: Sort by total spending (descending)
+    # Step 5: Sort by total spending (descending)
     sorted_customers = graph.sort(
-        validated,
+        with_tier,
         key=lambda c: c["total"],
         reverse=True
     )
     
-    # Step 9: Mark as output
+    # Step 6: Mark as output
     graph.output(sorted_customers)
     
     # ================================================================
@@ -142,7 +130,7 @@ def main():
     compiled = graph.compile(auto_optimize=True)
     
     print("Executing...")
-    result = compiled(sales=sales_data)
+    result = compiled(customers=customer_data)
     
     # Display results
     print()
