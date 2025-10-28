@@ -10,7 +10,6 @@
 # - Error reporting with source information
 
 import sys
-sys.path.insert(0, '.')
 
 from core.graph import Graph
 from core.differential import DifferentialTester

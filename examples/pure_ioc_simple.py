@@ -6,7 +6,6 @@
 # Demonstrates what a program looks like when written in pure IOC.
 
 import sys
-sys.path.insert(0, '.')
 
 from core.graph import Graph
 
@@ -122,7 +121,7 @@ def main():
     print(f"Total Savings: ${total_saved:.2f}")
     print("=" * 70)
     print()
-    print("✓ Program completed - 100% IOC, 0% manual loops!")
+    print("[x] Program completed - 100% IOC, 0% manual loops!")
 
 
 if __name__ == "__main__":

@@ -75,14 +75,14 @@ RESULTS: High-Value Completed Orders (>$100 with 10% discount)
 ...
 Total Savings: $99.00
 
-✓ Program completed - 100% IOC, 0% manual loops!
+[x] Program completed - 100% IOC, 0% manual loops!
 ```
 
 ## The IOC Programming Model
 
 When you write a program IN IOC:
 
-### ❌ You DON'T write:
+### TODO: You DON'T write:
 ```python
 # Manual loops
 for order in orders:
@@ -95,7 +95,7 @@ if customer == 'Alice':
     total += amount
 ```
 
-### ✅ You DO write:
+### DONE: You DO write:
 ```python
 # Declare intentions
 completed = graph.filter(orders, lambda o: o['status'] == 'completed')

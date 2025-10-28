@@ -21,44 +21,44 @@ A framework that separates WHAT you want (intent) from HOW it's done (execution)
 ## What Was Built
 
 ### Phase 1: Core Concept (Commits 1-2)
-✅ Intent graph data structure  
-✅ Basic execution strategies (Naive, Vectorized)  
-✅ Kernel compiler  
-✅ Type system  
-✅ 17 passing tests  
+DONE: Intent graph data structure  
+DONE: Basic execution strategies (Naive, Vectorized)  
+DONE: Kernel compiler  
+DONE: Type system  
+DONE: 17 passing tests  
 
 **Files:** 15 Python files, ~2000 lines  
 **Result:** Proved IOC concept works
 
 ### Phase 2: Enhanced Optimization (Commits 3-5)
-✅ 5 new intent types (sort, group_by, join, flatten, distinct)  
-✅ Graph optimizer with 4 passes  
-✅ Profiler infrastructure  
-✅ 14 additional tests (31 total)  
+DONE: 5 new intent types (sort, group_by, join, flatten, distinct)  
+DONE: Graph optimizer with 4 passes  
+DONE: Profiler infrastructure  
+DONE: 14 additional tests (31 total)  
 
 **Files Added:** 3 modules, 600+ lines  
 **Result:** Production-ready optimization
 
 ### Phase 3: Debugging Infrastructure (Commits 6-7)
-✅ Provenance tracking (source location capture)  
-✅ Execution plan explanation  
-✅ Differential testing framework  
-✅ Runtime assertions  
-✅ Comprehensive debugger  
-✅ 15 debugging tests  
+DONE: Provenance tracking (source location capture)  
+DONE: Execution plan explanation  
+DONE: Differential testing framework  
+DONE: Runtime assertions  
+DONE: Comprehensive debugger  
+DONE: 15 debugging tests  
 
 **Files Added:** 4 modules, ~1500 lines  
 **Documentation:** DEBUG_INFRASTRUCTURE.md, IOC_USE_CASES.md  
 **Result:** Solved the "debugging nightmare"
 
 ### Phase 4: Working Application (Commit 8)
-✅ Full-featured CLI tool  
-✅ CSV analysis with filters/maps/sorts  
-✅ Performance benchmarking  
-✅ Interactive REPL mode  
-✅ Installation package (setup.py)  
-✅ Comprehensive user guide  
-✅ Sample datasets  
+DONE: Full-featured CLI tool  
+DONE: CSV analysis with filters/maps/sorts  
+DONE: Performance benchmarking  
+DONE: Interactive REPL mode  
+DONE: Installation package (setup.py)  
+DONE: Comprehensive user guide  
+DONE: Sample datasets  
 
 **Files Added:** 4 files, ~1100 lines  
 **Result:** IOC is now a practical tool
@@ -213,11 +213,11 @@ IOC operates **one layer above** traditional compilers. The combination is power
 
 **Not anymore!** The debugging infrastructure provides:
 
-✅ **Provenance tracking** - Know where every node came from  
-✅ **Execution plans** - See what will run before running it  
-✅ **Differential testing** - Auto-verify optimizations are correct  
-✅ **Runtime assertions** - Catch bugs early  
-✅ **Debugger tools** - Investigate issues systematically  
+DONE: **Provenance tracking** - Know where every node came from  
+DONE: **Execution plans** - See what will run before running it  
+DONE: **Differential testing** - Auto-verify optimizations are correct  
+DONE: **Runtime assertions** - Catch bugs early  
+DONE: **Debugger tools** - Investigate issues systematically  
 
 Example:
 ```python
@@ -306,13 +306,13 @@ See `IOC_USE_CASES.md` for details on all 15 ideas.
 
 | Feature | IOC | Pandas | Spark | LINQ |
 |---------|-----|--------|-------|------|
-| Pure Python | ✅ | ❌ | ❌ | ❌ |
-| Zero Dependencies | ✅ | ❌ | ❌ | ❌ |
-| Automatic Optimization | ✅ | ⚠️ | ✅ | ⚠️ |
-| Debugging Tools | ✅ | ⚠️ | ⚠️ | ⚠️ |
-| Differential Testing | ✅ | ❌ | ❌ | ❌ |
-| Provenance Tracking | ✅ | ❌ | ⚠️ | ❌ |
-| Execution Plans | ✅ | ❌ | ✅ | ⚠️ |
+| Pure Python | DONE: | TODO: | TODO: | TODO: |
+| Zero Dependencies | DONE: | TODO: | TODO: | TODO: |
+| Automatic Optimization | DONE: | NOTE: | DONE: | NOTE: |
+| Debugging Tools | DONE: | NOTE: | NOTE: | NOTE: |
+| Differential Testing | DONE: | TODO: | TODO: | TODO: |
+| Provenance Tracking | DONE: | TODO: | NOTE: | TODO: |
+| Execution Plans | DONE: | TODO: | DONE: | NOTE: |
 
 IOC is **lower-level** than Pandas/Spark - it's a framework for building such systems.
 
@@ -388,13 +388,13 @@ python3 ioc_cli.py analyze data/sales.csv
 
 ## Key Achievements
 
-✅ **Proved the concept** - IOC works and provides real value  
-✅ **Built practical tool** - Working CLI with real use cases  
-✅ **Solved debugging** - Comprehensive debugging infrastructure  
-✅ **Zero dependencies** - Pure Python, easy to use  
-✅ **Well documented** - 10 markdown files, ~5000 lines  
-✅ **Fully tested** - 46 tests, 100% passing  
-✅ **Production ready** - Graph optimization, strategy selection  
+DONE: **Proved the concept** - IOC works and provides real value  
+DONE: **Built practical tool** - Working CLI with real use cases  
+DONE: **Solved debugging** - Comprehensive debugging infrastructure  
+DONE: **Zero dependencies** - Pure Python, easy to use  
+DONE: **Well documented** - 10 markdown files, ~5000 lines  
+DONE: **Fully tested** - 46 tests, 100% passing  
+DONE: **Production ready** - Graph optimization, strategy selection  
 
 ---
 
@@ -403,12 +403,12 @@ python3 ioc_cli.py analyze data/sales.csv
 **IOC is now a complete, working system.**
 
 From theoretical concept to practical tool:
-- ✅ Core language implemented
-- ✅ Automatic optimization working
-- ✅ Debugging infrastructure complete
-- ✅ CLI tool functional
-- ✅ Comprehensive documentation
-- ✅ Ready for use and extension
+- DONE: Core language implemented
+- DONE: Automatic optimization working
+- DONE: Debugging infrastructure complete
+- DONE: CLI tool functional
+- DONE: Comprehensive documentation
+- DONE: Ready for use and extension
 
 **What started as an idea is now a usable programming language.**
 

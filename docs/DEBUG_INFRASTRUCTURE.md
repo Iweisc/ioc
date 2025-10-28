@@ -357,10 +357,10 @@ The debugging infrastructure follows these principles:
 
 The debugging infrastructure addresses the "debugging nightmare" concern by providing:
 
-✅ **Provenance tracking** - Know where every node came from
-✅ **Execution plans** - Understand what will run before running it
-✅ **Differential testing** - Verify optimizations are correct
-✅ **Runtime assertions** - Catch bugs early
-✅ **Debugging utilities** - Tools to investigate issues
+DONE: **Provenance tracking** - Know where every node came from
+DONE: **Execution plans** - Understand what will run before running it
+DONE: **Differential testing** - Verify optimizations are correct
+DONE: **Runtime assertions** - Catch bugs early
+DONE: **Debugging utilities** - Tools to investigate issues
 
 This makes IOC's automatic optimization **safe and debuggable** in production.

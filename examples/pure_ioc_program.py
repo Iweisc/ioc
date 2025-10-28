@@ -7,7 +7,6 @@
 # IOC handles all the execution and optimization automatically.
 
 import sys
-sys.path.insert(0, '.')
 
 from core.graph import Graph
 

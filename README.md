@@ -62,72 +62,60 @@ Each intent can be implemented multiple ways:
 
 ```
 ioc/
-├── core/
-│   ├── graph.py        # Intent Graph implementation
-│   └── types.py        # Type system with constraints
-├── solvers/
-│   ├── kernel.py       # Solver Kernel (compiler)
-│   └── strategies.py   # Execution strategies
-├── examples/
-│   ├── example1_basic.py          # Filter & map basics
-│   ├── example2_complex.py        # Data pipeline
-│   └── example3_serialization.py  # Graph persistence
-├── demo.py            # Interactive demonstration
-└── ARCHITECTURE.md    # Detailed design docs
+├── core/               # Core language implementation
+│   ├── graph.py           # Intent graph & operations
+│   ├── optimizer.py       # Graph optimization passes
+│   ├── debugger.py        # Debugging utilities
+│   ├── differential.py    # Correctness testing
+│   └── provenance.py      # Source tracking
+├── solvers/            # Compiler & code generation
+│   ├── kernel.py          # Solver kernel (compiler)
+│   └── strategies.py      # Execution strategies
+├── examples/           # Example programs
+│   ├── pure_ioc_*.py      # Programs written IN IOC
+│   └── example*.py        # Feature demonstrations
+├── ioc_cli.py          # Command-line tool
+└── docs/               # Extended documentation
 ```
 
 ## Quick Start
 
 ### Installation
 ```bash
-# Clone or download the project
+git clone <your-repo-url>
 cd ioc
 
-# No dependencies needed - pure Python!
+# No dependencies - pure Python!
 ```
+
+### Hello World
+
+```python
+from core.graph import Graph
+
+g = Graph()
+numbers = g.input("numbers", list)
+doubled = g.map(numbers, lambda x: x * 2)
+g.output(doubled)
+
+fn = g.compile()
+print(fn(numbers=[1, 2, 3]))  # [2, 4, 6]
+```
+
+See [QUICKSTART.md](QUICKSTART.md) for more examples.
 
 ### Run Examples
 
 ```bash
-# Basic example - filter and map
-python3 examples/example1_basic.py
+# Pure IOC programs (100% declarative)
+python3 examples/pure_ioc_simple.py
+python3 examples/pure_ioc_program.py
 
-# Complex pipeline - multi-step data processing
-python3 examples/example2_complex.py
+# Advanced features
+python3 examples/example5_debugging.py
 
-# Serialization - save/load graphs
-python3 examples/example3_serialization.py
-
-# Interactive demo - see it all in action
-python3 demo.py
-```
-
-### Your First IOC Program
-
-```python
-import sys
-sys.path.insert(0, '.')  # If running from project root
-
-from core.graph import Graph
-
-# Create graph
-g = Graph()
-
-# Define computation
-numbers = g.input("numbers", list)
-evens = g.filter(numbers, lambda x: x % 2 == 0)
-squared = g.map(evens, lambda x: x ** 2)
-g.output(squared)
-
-# Compile
-fn = g.compile(optimize_for="speed")
-
-# Execute
-result = fn(numbers=[1, 2, 3, 4, 5, 6])
-print(result)  # [4, 16, 36]
-
-# Inspect generated code
-print(fn._ioc_code)
+# CLI tool
+python3 ioc_cli.py analyze data/sales.csv --filter "price > 100"
 ```
 
 ## Key Features
@@ -189,26 +177,22 @@ print(f"Revenue: ${revenue:.2f}")
 
 ## Implementation Status
 
-### Completed (v0.2.0 - Phase 2)
-- ✓ Intent Graph data structure
-- ✓ 10 intent types (filter, map, reduce, sort, group_by, join, flatten, distinct, etc.)
-- ✓ Solver Kernel with strategy selection
-- ✓ Two execution strategies (naive, optimized)
-- ✓ Graph optimization passes (dead code elimination, fusion)
-- ✓ Automatic graph optimization during compilation
-- ✓ Performance profiler (foundation)
-- ✓ Type system with constraints
-- ✓ Graph serialization (.iog format)
-- ✓ Comprehensive test suite (31 tests, 100% pass)
-- ✓ Example programs and documentation
+### DONE: Completed (v0.3.0-alpha)
+- **Core Language**: Intent graph with 10 operation types
+- **Compiler**: Multi-strategy solver kernel
+- **Optimization**: Dead code elimination, operation fusion
+- **Debugging**: Provenance tracking, differential testing, execution tracing
+- **Tools**: CLI for data analysis, benchmarking, visualization
+- **Testing**: 41 tests, 100% passing
+- **Documentation**: User guide, API reference, examples
 
-### Next Steps (Phase 3)
-- [ ] LLVM/MLIR backend for native code
-- [ ] Integrate profiler with strategy selection
-- [ ] Multi-language views (Python ↔ C++ ↔ Rust)
-- [ ] GPU strategy for parallel workloads
-- [ ] Visual graph editor
-- [ ] Legacy code "lifting" (imperative → intent)
+### FUTURE: Next Steps
+- **Phase 3**: LLVM/MLIR backend for native compilation
+- **Advanced**: GPU strategies, distributed execution
+- **Tooling**: Visual graph editor, profiler integration
+- **Research**: Program synthesis, automatic parallelization
+
+See [docs/ROADMAP.md](docs/ROADMAP.md) for details.
 
 ## Why IOC Matters
 
@@ -231,9 +215,10 @@ print(f"Revenue: ${revenue:.2f}")
 
 ## Learn More
 
-- **ARCHITECTURE.md**: Deep dive into design and implementation
-- **examples/**: Working code demonstrating all features
-- **demo.py**: Interactive walkthrough of IOC capabilities
+- **[QUICKSTART.md](QUICKSTART.md)**: Get started in 5 minutes
+- **[USER_GUIDE.md](USER_GUIDE.md)**: Complete feature documentation
+- **[docs/](docs/)**: Architecture, design, and extended docs
+- **[examples/](examples/)**: Working programs and demonstrations
 
 ## Philosophy
 
@@ -243,10 +228,10 @@ This is not just a new framework—it's a new way of thinking about computation.
 
 ## License
 
-MIT License - feel free to experiment and build upon this prototype!
+Proprietary - All rights reserved. See LICENSE file for details.
 
 ---
 
-**Status**: Prototype v0.1.0 - Proof of concept demonstrating core ideas
-
-**Next**: Extend with more intents, better optimization, native compilation
+**Version**: v0.3.0-alpha  
+**Status**: Working prototype with debugging infrastructure  
+**License**: Proprietary
