@@ -17,6 +17,11 @@ class IntentType(Enum):
     COMPOSE = "compose"
     PARALLEL = "parallel"
     CONSTANT = "constant"
+    SORT = "sort"
+    GROUP_BY = "group_by"
+    JOIN = "join"
+    FLATTEN = "flatten"
+    DISTINCT = "distinct"
 
 
 @dataclass
@@ -127,6 +132,78 @@ class Graph:
         )
         return self._add_node(node)
     
+    def sort(self, input_node: str, key: Optional[Callable[[Any], Any]] = None, 
+             reverse: bool = False) -> str:
+        # Sort elements in ascending or descending order
+        input_type = self.nodes[input_node].output_type
+        
+        node = IntentNode(
+            id=self._generate_id("sort"),
+            intent_type=IntentType.SORT,
+            inputs=[input_node],
+            params={"key": key, "reverse": reverse},
+            output_type=input_type,  # Sort preserves type
+            metadata={"parallelizable": False}  # Sorting is inherently sequential
+        )
+        return self._add_node(node)
+    
+    def group_by(self, input_node: str, key: Callable[[Any], Any]) -> str:
+        # Group elements by a key function, returns dict of groups
+        from .types import ListType
+        
+        node = IntentNode(
+            id=self._generate_id("group"),
+            intent_type=IntentType.GROUP_BY,
+            inputs=[input_node],
+            params={"key": key},
+            output_type=AnyType(),  # Returns dict[key, list]
+            metadata={"parallelizable": True}
+        )
+        return self._add_node(node)
+    
+    def join(self, left_node: str, right_node: str, 
+             on: Callable[[Any, Any], bool]) -> str:
+        # Join two sequences based on a condition
+        from .types import ListType
+        
+        node = IntentNode(
+            id=self._generate_id("join"),
+            intent_type=IntentType.JOIN,
+            inputs=[left_node, right_node],
+            params={"on": on},
+            output_type=ListType(AnyType()),  # Returns list of tuples
+            metadata={"parallelizable": True}
+        )
+        return self._add_node(node)
+    
+    def flatten(self, input_node: str) -> str:
+        # Flatten nested lists into a single list
+        from .types import ListType
+        
+        node = IntentNode(
+            id=self._generate_id("flatten"),
+            intent_type=IntentType.FLATTEN,
+            inputs=[input_node],
+            params={},
+            output_type=ListType(AnyType()),
+            metadata={"parallelizable": True}
+        )
+        return self._add_node(node)
+    
+    def distinct(self, input_node: str) -> str:
+        # Remove duplicate elements
+        input_type = self.nodes[input_node].output_type
+        
+        node = IntentNode(
+            id=self._generate_id("distinct"),
+            intent_type=IntentType.DISTINCT,
+            inputs=[input_node],
+            params={},
+            output_type=input_type,
+            metadata={"parallelizable": False}  # Need to track seen elements
+        )
+        return self._add_node(node)
+    
     def output(self, node: str) -> None:
         # Mark a node as output
         if node not in self.nodes:
@@ -155,9 +232,30 @@ class Graph:
         
         return order
     
-    def compile(self, optimize_for: str = "speed"):
-        # Compile graph into executable code
+    def optimize(self, passes: List[str] = None):
+        """
+        Apply optimization passes to the graph.
+        Returns self for method chaining.
+        """
+        from .optimizer import GraphOptimizer
+        
+        optimizer = GraphOptimizer(self)
+        optimizer.optimize(passes)
+        return self
+    
+    def compile(self, optimize_for: str = "speed", auto_optimize: bool = True):
+        """
+        Compile graph into executable code.
+        
+        Args:
+            optimize_for: Optimization target ("speed", "memory", "balanced")
+            auto_optimize: Automatically apply graph optimizations before compilation
+        """
         from solvers.kernel import SolverKernel
+        
+        # Apply graph optimizations if requested
+        if auto_optimize:
+            self.optimize()
         
         kernel = SolverKernel(self)
         return kernel.compile(optimize_for=optimize_for)

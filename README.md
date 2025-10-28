@@ -39,6 +39,11 @@ Programs are **directed acyclic graphs (DAGs)** where each node represents a sem
 - `filter`: Keep elements matching a condition
 - `map`: Transform each element
 - `reduce`: Combine elements into a single value
+- `sort`: Order elements
+- `group_by`: Group elements by key
+- `join`: Combine two sequences
+- `flatten`: Flatten nested lists
+- `distinct`: Remove duplicates
 
 ### Solver Kernel
 An intelligent compiler that:
@@ -184,22 +189,26 @@ print(f"Revenue: ${revenue:.2f}")
 
 ## Implementation Status
 
-### Completed (v0.1.0)
-- Intent Graph data structure
-- Core intent types (filter, map, reduce)
-- Solver Kernel with strategy selection
-- Two execution strategies (naive, optimized)
-- Type system with constraints
-- Graph serialization (.iog format)
-- Example programs and documentation
+### Completed (v0.2.0 - Phase 2)
+- ✓ Intent Graph data structure
+- ✓ 10 intent types (filter, map, reduce, sort, group_by, join, flatten, distinct, etc.)
+- ✓ Solver Kernel with strategy selection
+- ✓ Two execution strategies (naive, optimized)
+- ✓ Graph optimization passes (dead code elimination, fusion)
+- ✓ Automatic graph optimization during compilation
+- ✓ Performance profiler (foundation)
+- ✓ Type system with constraints
+- ✓ Graph serialization (.iog format)
+- ✓ Comprehensive test suite (31 tests, 100% pass)
+- ✓ Example programs and documentation
 
-### Next Steps
-- [ ] Reinforcement learning for strategy selection
+### Next Steps (Phase 3)
 - [ ] LLVM/MLIR backend for native code
+- [ ] Integrate profiler with strategy selection
+- [ ] Multi-language views (Python ↔ C++ ↔ Rust)
 - [ ] GPU strategy for parallel workloads
 - [ ] Visual graph editor
 - [ ] Legacy code "lifting" (imperative → intent)
-- [ ] Multi-language views (Python ↔ C++ ↔ Rust)
 
 ## Why IOC Matters
 

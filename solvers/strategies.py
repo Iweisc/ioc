@@ -80,6 +80,57 @@ for _item in {input_id}:
 for _item in _items:
     {node.id} = {op_name}({node.id}, _item)"""
         
+        elif node.intent_type == IntentType.SORT:
+            input_id = node.inputs[0]
+            key_func = node.params.get("key")
+            reverse = node.params.get("reverse", False)
+            
+            if key_func:
+                key_name = f"key_{node.id}"
+                context.variables[key_name] = key_func
+                return f"{node.id} = sorted({input_id}, key={key_name}, reverse={reverse})"
+            else:
+                return f"{node.id} = sorted({input_id}, reverse={reverse})"
+        
+        elif node.intent_type == IntentType.GROUP_BY:
+            input_id = node.inputs[0]
+            key_name = f"key_{node.id}"
+            context.variables[key_name] = node.params["key"]
+            
+            return f"""{node.id} = {{}}
+for _item in {input_id}:
+    _key = {key_name}(_item)
+    if _key not in {node.id}:
+        {node.id}[_key] = []
+    {node.id}[_key].append(_item)"""
+        
+        elif node.intent_type == IntentType.JOIN:
+            left_id, right_id = node.inputs
+            on_name = f"on_{node.id}"
+            context.variables[on_name] = node.params["on"]
+            
+            return f"""{node.id} = []
+for _left in {left_id}:
+    for _right in {right_id}:
+        if {on_name}(_left, _right):
+            {node.id}.append((_left, _right))"""
+        
+        elif node.intent_type == IntentType.FLATTEN:
+            input_id = node.inputs[0]
+            return f"""{node.id} = []
+for _sublist in {input_id}:
+    for _item in _sublist:
+        {node.id}.append(_item)"""
+        
+        elif node.intent_type == IntentType.DISTINCT:
+            input_id = node.inputs[0]
+            return f"""{node.id} = []
+_seen = set()
+for _item in {input_id}:
+    if _item not in _seen:
+        _seen.add(_item)
+        {node.id}.append(_item)"""
+        
         else:
             raise NotImplementedError(f"Naive strategy doesn't support {node.intent_type}")
     
@@ -107,7 +158,8 @@ class OptimizedStrategy(Strategy):
     # Uses built-ins and comprehensions for better performance
     
     def can_handle(self, intent_type: str) -> bool:
-        return intent_type in ["filter", "map", "reduce", "input", "output", "constant"]
+        return intent_type in ["filter", "map", "reduce", "input", "output", "constant",
+                               "sort", "group_by", "join", "flatten", "distinct"]
     
     def generate_code(self, node, context: ExecutionContext) -> str:
         from core.graph import IntentType
@@ -149,6 +201,46 @@ class OptimizedStrategy(Strategy):
                 return f"{node.id} = _functools_reduce({op_name}, {input_id}, {repr(initial)})"
             else:
                 return f"{node.id} = _functools_reduce({op_name}, {input_id})"
+        
+        elif node.intent_type == IntentType.SORT:
+            input_id = node.inputs[0]
+            key_func = node.params.get("key")
+            reverse = node.params.get("reverse", False)
+            
+            if key_func:
+                key_name = f"key_{node.id}"
+                context.variables[key_name] = key_func
+                return f"{node.id} = sorted({input_id}, key={key_name}, reverse={reverse})"
+            else:
+                return f"{node.id} = sorted({input_id}, reverse={reverse})"
+        
+        elif node.intent_type == IntentType.GROUP_BY:
+            input_id = node.inputs[0]
+            key_name = f"key_{node.id}"
+            context.variables[key_name] = node.params["key"]
+            
+            # Use itertools.groupby (more efficient)
+            context.variables["_itertools_groupby"] = __import__("itertools").groupby
+            return f"{node.id} = {{k: list(g) for k, g in _itertools_groupby(sorted({input_id}, key={key_name}), key={key_name})}}"
+        
+        elif node.intent_type == IntentType.JOIN:
+            left_id, right_id = node.inputs
+            on_name = f"on_{node.id}"
+            context.variables[on_name] = node.params["on"]
+            
+            # List comprehension for better performance
+            return f"{node.id} = [(_l, _r) for _l in {left_id} for _r in {right_id} if {on_name}(_l, _r)]"
+        
+        elif node.intent_type == IntentType.FLATTEN:
+            input_id = node.inputs[0]
+            # Use itertools.chain.from_iterable (fastest way)
+            context.variables["_itertools_chain"] = __import__("itertools").chain
+            return f"{node.id} = list(_itertools_chain.from_iterable({input_id}))"
+        
+        elif node.intent_type == IntentType.DISTINCT:
+            input_id = node.inputs[0]
+            # Use dict.fromkeys to preserve order (Python 3.7+)
+            return f"{node.id} = list(dict.fromkeys({input_id}))"
         
         else:
             raise NotImplementedError(f"Optimized strategy doesn't support {node.intent_type}")
