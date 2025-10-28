@@ -9,7 +9,7 @@ from core.graph import Graph
 
 
 def test_sort_basic():
-    """Test basic sorting"""
+    # Test basic sorting
     print("Test: Sort (basic)")
     
     g = Graph()
@@ -26,7 +26,7 @@ def test_sort_basic():
 
 
 def test_sort_reverse():
-    """Test reverse sorting"""
+    # Test reverse sorting
     print("Test: Sort (reverse)")
     
     g = Graph()
@@ -43,7 +43,7 @@ def test_sort_reverse():
 
 
 def test_sort_with_key():
-    """Test sorting with key function"""
+    # Test sorting with key function
     print("Test: Sort (with key)")
     
     g = Graph()
@@ -60,7 +60,7 @@ def test_sort_with_key():
 
 
 def test_group_by():
-    """Test group_by operation"""
+    # Test group_by operation
     print("Test: Group by")
     
     g = Graph()
@@ -79,7 +79,7 @@ def test_group_by():
 
 
 def test_join():
-    """Test join operation"""
+    # Test join operation
     print("Test: Join")
     
     g = Graph()
@@ -97,7 +97,7 @@ def test_join():
 
 
 def test_flatten():
-    """Test flatten operation"""
+    # Test flatten operation
     print("Test: Flatten")
     
     g = Graph()
@@ -114,7 +114,7 @@ def test_flatten():
 
 
 def test_distinct():
-    """Test distinct operation"""
+    # Test distinct operation
     print("Test: Distinct")
     
     g = Graph()
@@ -131,7 +131,7 @@ def test_distinct():
 
 
 def test_complex_pipeline():
-    """Test complex pipeline with new intents"""
+    # Test complex pipeline with new intents
     print("Test: Complex pipeline")
     
     # Filter -> Sort -> Distinct
@@ -151,7 +151,7 @@ def test_complex_pipeline():
 
 
 def test_map_flatten_chain():
-    """Test map + flatten chain"""
+    # Test map + flatten chain
     print("Test: Map + Flatten")
     
     g = Graph()

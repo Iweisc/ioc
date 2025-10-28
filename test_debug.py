@@ -8,10 +8,10 @@ from core.differential import DifferentialTester
 
 
 class TestProvenance(unittest.TestCase):
-    """Test provenance tracking system."""
+    # Test provenance tracking system.
     
     def test_basic_provenance(self):
-        """Test that provenance is captured for nodes."""
+        # Test that provenance is captured for nodes.
         tracker = ProvenanceTracker()
         graph = Graph()
         graph.provenance_tracker = tracker
@@ -32,7 +32,7 @@ class TestProvenance(unittest.TestCase):
             self.assertFalse(prov.is_optimized())
     
     def test_optimization_tracking(self):
-        """Test that optimizations are tracked in provenance."""
+        # Test that optimizations are tracked in provenance.
         tracker = ProvenanceTracker()
         
         tracker.track_optimization(
@@ -50,7 +50,7 @@ class TestProvenance(unittest.TestCase):
         self.assertEqual(prov.transformations[0].transformation, "filter_fusion")
     
     def test_error_report_generation(self):
-        """Test generating error reports with provenance."""
+        # Test generating error reports with provenance.
         tracker = ProvenanceTracker()
         tracker.track_node_creation("node1")
         
@@ -62,7 +62,7 @@ class TestProvenance(unittest.TestCase):
         self.assertIn("Test error", report)
     
     def test_statistics(self):
-        """Test provenance statistics."""
+        # Test provenance statistics.
         tracker = ProvenanceTracker()
         
         # Create some nodes
@@ -80,10 +80,10 @@ class TestProvenance(unittest.TestCase):
 
 
 class TestAssertions(unittest.TestCase):
-    """Test assertion/invariant support."""
+    # Test assertion/invariant support.
     
     def test_assertion_passes(self):
-        """Test that valid assertions pass through data."""
+        # Test that valid assertions pass through data.
         graph = Graph()
         
         data = graph.input("data", list)
@@ -102,7 +102,7 @@ class TestAssertions(unittest.TestCase):
         self.assertEqual(result, [1, 2, 3, 4, 5])
     
     def test_assertion_fails(self):
-        """Test that invalid assertions raise errors."""
+        # Test that invalid assertions raise errors.
         graph = Graph()
         
         data = graph.input("data", list)
@@ -124,10 +124,10 @@ class TestAssertions(unittest.TestCase):
 
 
 class TestDebugger(unittest.TestCase):
-    """Test IOCDebugger functionality."""
+    # Test IOCDebugger functionality.
     
     def test_compare_optimizations(self):
-        """Test comparing optimized vs unoptimized execution."""
+        # Test comparing optimized vs unoptimized execution.
         graph = Graph()
         
         data = graph.input("data", list)
@@ -153,7 +153,7 @@ class TestDebugger(unittest.TestCase):
         )
     
     def test_explain(self):
-        """Test execution plan explanation."""
+        # Test execution plan explanation.
         graph = Graph()
         
         data = graph.input("data", list)
@@ -172,10 +172,10 @@ class TestDebugger(unittest.TestCase):
 
 
 class TestDifferentialTesting(unittest.TestCase):
-    """Test differential testing functionality."""
+    # Test differential testing functionality.
     
     def test_compare_strategies(self):
-        """Test comparing different execution strategies."""
+        # Test comparing different execution strategies.
         graph = Graph()
         
         data = graph.input("data", list)
@@ -197,7 +197,7 @@ class TestDifferentialTesting(unittest.TestCase):
         self.assertIn("vectorized", result.performance_comparison)
     
     def test_optimization_differential(self):
-        """Test that optimizations preserve semantics."""
+        # Test that optimizations preserve semantics.
         graph = Graph()
         
         data = graph.input("data", list)
@@ -218,7 +218,7 @@ class TestDifferentialTesting(unittest.TestCase):
         self.assertIn("optimized", result.performance_comparison)
     
     def test_format_report(self):
-        """Test formatting of differential test report."""
+        # Test formatting of differential test report.
         graph = Graph()
         
         data = graph.input("data", list)
@@ -238,10 +238,10 @@ class TestDifferentialTesting(unittest.TestCase):
 
 
 class TestDebugMode(unittest.TestCase):
-    """Test debug mode functionality."""
+    # Test debug mode functionality.
     
     def test_enable_debug_mode(self):
-        """Test enabling debug mode on a graph."""
+        # Test enabling debug mode on a graph.
         graph = Graph()
         graph.enable_debug_mode(capture_provenance=True)
         
@@ -257,7 +257,7 @@ class TestDebugMode(unittest.TestCase):
         self.assertIsNotNone(prov)
     
     def test_explain_with_provenance(self):
-        """Test that explain() shows provenance information."""
+        # Test that explain() shows provenance information.
         graph = Graph()
         graph.enable_debug_mode(capture_provenance=True)
         
@@ -278,10 +278,10 @@ class TestDebugMode(unittest.TestCase):
 
 
 class TestIntegration(unittest.TestCase):
-    """Integration tests for debugging infrastructure."""
+    # Integration tests for debugging infrastructure.
     
     def test_full_debugging_workflow(self):
-        """Test a complete debugging workflow."""
+        # Test a complete debugging workflow.
         # 1. Create a graph with debug mode
         graph = Graph()
         graph.enable_debug_mode(capture_provenance=True)
@@ -319,7 +319,7 @@ class TestIntegration(unittest.TestCase):
         self.assertEqual(result, expected)
     
     def test_debugging_with_error(self):
-        """Test debugging when an error occurs."""
+        # Test debugging when an error occurs.
         graph = Graph()
         graph.enable_debug_mode(capture_provenance=True)
         

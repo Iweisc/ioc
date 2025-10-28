@@ -5,25 +5,21 @@ from .graph import Graph, IntentNode, IntentType
 
 
 class GraphOptimizer:
-    """
-    Performs various optimization passes on intent graphs.
-    Transformations preserve semantics while improving performance.
-    """
+    # Performs various optimization passes on intent graphs.
+    # Transformations preserve semantics while improving performance.
     
     def __init__(self, graph: Graph):
         self.graph = graph
         self.optimizations_applied: List[str] = []
     
     def optimize(self, passes: List[str] = None) -> Graph:
-        """
-        Apply optimization passes to the graph.
-        
-        Available passes:
-        - dead_code_elimination: Remove unused nodes
-        - filter_fusion: Combine adjacent filters
-        - map_fusion: Combine adjacent maps
-        - filter_before_map: Reorder filter before map when beneficial
-        """
+        # Apply optimization passes to the graph.
+        #
+        # Available passes:
+        # - dead_code_elimination: Remove unused nodes
+        # - filter_fusion: Combine adjacent filters
+        # - map_fusion: Combine adjacent maps
+        # - filter_before_map: Reorder filter before map when beneficial
         if passes is None:
             passes = [
                 "dead_code_elimination",
@@ -47,7 +43,7 @@ class GraphOptimizer:
         return self.graph
     
     def _dead_code_elimination(self):
-        """Remove nodes that don't contribute to outputs."""
+        # Remove nodes that don't contribute to outputs.
         # Find all nodes reachable from outputs
         reachable: Set[str] = set()
         
@@ -73,7 +69,7 @@ class GraphOptimizer:
             self.optimizations_applied.append(f"dead_code_elimination: removed {len(dead_nodes)} nodes")
     
     def _filter_fusion(self):
-        """Combine adjacent filter operations into a single filter."""
+        # Combine adjacent filter operations into a single filter.
         changes_made = 0
         fused_nodes: Set[str] = set()
         
@@ -118,7 +114,7 @@ class GraphOptimizer:
             self._dead_code_elimination()
     
     def _map_fusion(self):
-        """Combine adjacent map operations into a single map."""
+        # Combine adjacent map operations into a single map.
         changes_made = 0
         fused_nodes: Set[str] = set()
         
@@ -163,10 +159,8 @@ class GraphOptimizer:
             self._dead_code_elimination()
     
     def _filter_before_map(self):
-        """
-        Reorder operations to do filter before map when beneficial.
-        This reduces the number of elements that need transformation.
-        """
+        # Reorder operations to do filter before map when beneficial.
+        # This reduces the number of elements that need transformation.
         changes_made = 0
         
         # Find map -> filter chains where filter could go first
@@ -197,7 +191,7 @@ class GraphOptimizer:
             self.optimizations_applied.append(f"filter_before_map: reordered {changes_made} operations")
     
     def get_optimization_report(self) -> str:
-        """Get a report of optimizations applied."""
+        # Get a report of optimizations applied.
         if not self.optimizations_applied:
             return "No optimizations applied"
         

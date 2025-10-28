@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
 
-"""
-Example 5: Debugging Infrastructure
-
-This example demonstrates the debugging features added in Phase 3:
-- Provenance tracking (where did nodes come from?)
-- Execution plan explanation
-- Differential testing (compare optimized vs unoptimized)
-- Runtime assertions
-- Error reporting with source information
-"""
+# Example 5: Debugging Infrastructure
+#
+# This example demonstrates the debugging features added in Phase 3:
+# - Provenance tracking (where did nodes come from?)
+# - Execution plan explanation
+# - Differential testing (compare optimized vs unoptimized)
+# - Runtime assertions
+# - Error reporting with source information
 
 import sys
 sys.path.insert(0, '.')
@@ -19,10 +17,8 @@ from core.differential import DifferentialTester
 
 
 def example1_explain():
-    """
-    Example 1: Understanding Execution Plans
-    Use explain() to see what will be executed.
-    """
+    # Example 1: Understanding Execution Plans
+    # Use explain() to see what will be executed.
     print("Example 1: Execution Plan Explanation")
     print("=" * 60)
     
@@ -42,10 +38,8 @@ def example1_explain():
 
 
 def example2_provenance_tracking():
-    """
-    Example 2: Provenance Tracking
-    Track where nodes came from and what transformations were applied.
-    """
+    # Example 2: Provenance Tracking
+    # Track where nodes came from and what transformations were applied.
     print("Example 2: Provenance Tracking")
     print("=" * 60)
     
@@ -80,10 +74,8 @@ def example2_provenance_tracking():
 
 
 def example3_differential_testing():
-    """
-    Example 3: Differential Testing
-    Verify that optimizations preserve correctness.
-    """
+    # Example 3: Differential Testing
+    # Verify that optimizations preserve correctness.
     print("Example 3: Differential Testing")
     print("=" * 60)
     
@@ -108,10 +100,8 @@ def example3_differential_testing():
 
 
 def example4_assertions():
-    """
-    Example 4: Runtime Assertions
-    Add invariant checks to catch bugs early.
-    """
+    # Example 4: Runtime Assertions
+    # Add invariant checks to catch bugs early.
     print("Example 4: Runtime Assertions")
     print("=" * 60)
     
@@ -160,10 +150,8 @@ def example4_assertions():
 
 
 def example5_debugging_workflow():
-    """
-    Example 5: Complete Debugging Workflow
-    Combining all debugging features.
-    """
+    # Example 5: Complete Debugging Workflow
+    # Combining all debugging features.
     print("Example 5: Complete Debugging Workflow")
     print("=" * 60)
     
@@ -210,10 +198,8 @@ def example5_debugging_workflow():
 
 
 def example6_compare_strategies():
-    """
-    Example 6: Comparing Execution Strategies
-    (Note: Currently strategies are auto-selected, but this shows the framework)
-    """
+    # Example 6: Comparing Execution Strategies
+    # (Note: Currently strategies are auto-selected, but this shows the framework)
     print("Example 6: Strategy Comparison")
     print("=" * 60)
     
@@ -236,7 +222,7 @@ def example6_compare_strategies():
 
 
 def main():
-    """Run all debugging examples."""
+    # Run all debugging examples.
     examples = [
         example1_explain,
         example2_provenance_tracking,

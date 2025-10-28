@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 
-"""
-Setup script for IOC - Intent-Oriented Computing
-"""
+# Setup script for IOC - Intent-Oriented Computing
 
 from setuptools import setup, find_packages
 from pathlib import Path

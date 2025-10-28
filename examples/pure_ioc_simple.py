@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 
-"""
-Pure IOC Program - Simple Data Processing
-
-This program is written ENTIRELY using IOC - no manual loops or conditions!
-Demonstrates what a program looks like when written in pure IOC.
-"""
+# Pure IOC Program - Simple Data Processing
+#
+# This program is written ENTIRELY using IOC - no manual loops or conditions!
+# Demonstrates what a program looks like when written in pure IOC.
 
 import sys
 sys.path.insert(0, '.')

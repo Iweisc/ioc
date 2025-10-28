@@ -10,7 +10,7 @@ from core.optimizer import GraphOptimizer
 
 
 def test_dead_code_elimination():
-    """Test removal of unused nodes"""
+    # Test removal of unused nodes
     print("Test: Dead code elimination")
     
     g = Graph()
@@ -41,7 +41,7 @@ def test_dead_code_elimination():
 
 
 def test_filter_fusion():
-    """Test combining adjacent filters"""
+    # Test combining adjacent filters
     print("Test: Filter fusion")
     
     g = Graph()
@@ -74,7 +74,7 @@ def test_filter_fusion():
 
 
 def test_map_fusion():
-    """Test combining adjacent maps"""
+    # Test combining adjacent maps
     print("Test: Map fusion")
     
     g = Graph()
@@ -107,7 +107,7 @@ def test_map_fusion():
 
 
 def test_complex_optimization():
-    """Test multiple optimizations together"""
+    # Test multiple optimizations together
     print("Test: Complex optimization")
     
     g = Graph()
@@ -148,7 +148,7 @@ def test_complex_optimization():
 
 
 def test_auto_optimize_in_compile():
-    """Test that compile() auto-optimizes by default"""
+    # Test that compile() auto-optimizes by default
     print("Test: Auto-optimize in compile")
     
     g = Graph()

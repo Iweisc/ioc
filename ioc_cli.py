@@ -1,11 +1,5 @@
 #!/usr/bin/env python3
 
-"""
-IOC - Intent-Oriented Computing CLI
-
-A practical command-line tool demonstrating IOC's capabilities for real-world data processing.
-"""
-
 import sys
 import argparse
 import json
@@ -16,7 +10,7 @@ from core.differential import DifferentialTester
 
 
 def cmd_analyze(args):
-    """Analyze a CSV file with automatic optimization."""
+    # Analyze a CSV file with automatic optimization.
     print(f"Analyzing: {args.file}")
     print("=" * 60)
     
@@ -134,7 +128,7 @@ def cmd_analyze(args):
 
 
 def cmd_benchmark(args):
-    """Benchmark different execution strategies."""
+    # Benchmark different execution strategies.
     print("Benchmark Mode")
     print("=" * 60)
     
@@ -169,7 +163,7 @@ def cmd_benchmark(args):
 
 
 def cmd_explain(args):
-    """Show execution plan for a saved pipeline."""
+    # Show execution plan for a saved pipeline.
     print("Explain Mode")
     print("=" * 60)
     
@@ -196,7 +190,7 @@ def cmd_explain(args):
 
 
 def cmd_interactive(args):
-    """Interactive mode for building pipelines."""
+    # Interactive mode for building pipelines.
     print("IOC Interactive Mode")
     print("=" * 60)
     print("Type 'help' for commands, 'exit' to quit")
@@ -318,7 +312,7 @@ Available commands:
 
 
 def main():
-    """Main CLI entry point."""
+    # Main CLI entry point.
     parser = argparse.ArgumentParser(
         description="IOC - Intent-Oriented Computing CLI",
         formatter_class=argparse.RawDescriptionHelpFormatter,

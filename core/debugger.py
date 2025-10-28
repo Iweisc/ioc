@@ -11,7 +11,7 @@ from .provenance import ProvenanceTracker
 
 @dataclass
 class ExecutionTrace:
-    """Record of a single node's execution."""
+    # Record of a single node's execution.
     node_id: str
     intent_type: IntentType
     inputs: List[Any]
@@ -25,10 +25,8 @@ class ExecutionTrace:
 
 
 class DebugMode:
-    """
-    Debug mode configuration and runtime checks.
-    When enabled, adds extensive validation and logging.
-    """
+    # Debug mode configuration and runtime checks.
+    # When enabled, adds extensive validation and logging.
     
     def __init__(self, enabled: bool = True):
         self.enabled = enabled
@@ -40,22 +38,20 @@ class DebugMode:
         self.execution_traces: List[ExecutionTrace] = []
     
     def log(self, message: str):
-        """Log a debug message if verbose mode is on."""
+        # Log a debug message if verbose mode is on.
         if self.verbose:
             print(f"[DEBUG] {message}", file=sys.stderr)
     
     def record_execution(self, trace: ExecutionTrace):
-        """Record an execution trace."""
+        # Record an execution trace.
         if self.trace_execution:
             self.execution_traces.append(trace)
             if self.verbose:
                 print(f"[TRACE] {trace}", file=sys.stderr)
     
     def validate_output(self, node: IntentNode, output: Any) -> Optional[str]:
-        """
-        Validate node output for common issues.
-        Returns error message if validation fails, None if OK.
-        """
+        # Validate node output for common issues.
+        # Returns error message if validation fails, None if OK.
         if not self.enabled:
             return None
         
@@ -82,11 +78,11 @@ class DebugMode:
         return "; ".join(errors) if errors else None
     
     def clear_traces(self):
-        """Clear execution traces."""
+        # Clear execution traces.
         self.execution_traces.clear()
     
     def get_trace_summary(self) -> str:
-        """Get summary of execution traces."""
+        # Get summary of execution traces.
         if not self.execution_traces:
             return "No execution traces recorded"
         
@@ -111,10 +107,8 @@ class DebugMode:
 
 
 class IOCDebugger:
-    """
-    Debugging utilities for IOC graphs.
-    Provides trace, bisect, and compare operations.
-    """
+    # Debugging utilities for IOC graphs.
+    # Provides trace, bisect, and compare operations.
     
     def __init__(self, graph: Graph, provenance: Optional[ProvenanceTracker] = None):
         self.graph = graph
@@ -122,16 +116,14 @@ class IOCDebugger:
         self.debug_mode = DebugMode(enabled=True)
     
     def trace(self, data: Dict[str, Any], verbose: bool = False) -> List[ExecutionTrace]:
-        """
-        Execute the graph step-by-step and record each operation.
-        
-        Args:
-            data: Input data for the graph
-            verbose: Print trace information in real-time
-        
-        Returns:
-            List of execution traces for each node
-        """
+        # Execute the graph step-by-step and record each operation.
+        #
+        # Args:
+        # data: Input data for the graph
+        # verbose: Print trace information in real-time
+        #
+        # Returns:
+        # List of execution traces for each node
         self.debug_mode.trace_execution = True
         self.debug_mode.verbose = verbose
         self.debug_mode.clear_traces()
@@ -147,16 +139,14 @@ class IOCDebugger:
     
     def bisect(self, data: Dict[str, Any], 
                expected_output: Any = None) -> Optional[str]:
-        """
-        Binary search for the node that causes incorrect output or error.
-        
-        Args:
-            data: Input data for the graph
-            expected_output: Expected final output (if known)
-        
-        Returns:
-            Node ID of the problematic node, or None if all OK
-        """
+        # Binary search for the node that causes incorrect output or error.
+        #
+        # Args:
+        # data: Input data for the graph
+        # expected_output: Expected final output (if known)
+        #
+        # Returns:
+        # Node ID of the problematic node, or None if all OK
         execution_order = self.graph.get_execution_order()
         
         print(f"Bisecting {len(execution_order)} nodes...")
@@ -203,16 +193,14 @@ class IOCDebugger:
     
     def compare(self, data: Dict[str, Any], 
                 optimized: bool = True) -> Dict[str, Any]:
-        """
-        Compare execution with and without optimizations.
-        
-        Args:
-            data: Input data for the graph
-            optimized: Whether to test with optimizations enabled
-        
-        Returns:
-            Comparison report with results, timing, and any differences
-        """
+        # Compare execution with and without optimizations.
+        #
+        # Args:
+        # data: Input data for the graph
+        # optimized: Whether to test with optimizations enabled
+        #
+        # Returns:
+        # Comparison report with results, timing, and any differences
         import copy
         
         # Create two copies of the graph
@@ -278,7 +266,7 @@ class IOCDebugger:
         return report
     
     def format_comparison(self, comparison: Dict[str, Any]) -> str:
-        """Format comparison report as human-readable string."""
+        # Format comparison report as human-readable string.
         lines = ["Comparison Report:"]
         lines.append("=" * 60)
         
@@ -320,15 +308,13 @@ class IOCDebugger:
         return "\n".join(lines)
     
     def explain_node(self, node_id: str) -> str:
-        """
-        Generate detailed explanation of a node including provenance.
-        
-        Args:
-            node_id: ID of the node to explain
-        
-        Returns:
-            Human-readable explanation
-        """
+        # Generate detailed explanation of a node including provenance.
+        #
+        # Args:
+        # node_id: ID of the node to explain
+        #
+        # Returns:
+        # Human-readable explanation
         if node_id not in self.graph.nodes:
             return f"Node {node_id} not found in graph"
         

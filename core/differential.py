@@ -10,7 +10,7 @@ from .graph import Graph
 
 @dataclass
 class ExecutionResult:
-    """Result of executing a graph with a specific configuration."""
+    # Result of executing a graph with a specific configuration.
     strategy_name: str
     result: Any
     execution_time: float
@@ -24,7 +24,7 @@ class ExecutionResult:
 
 @dataclass
 class DifferentialTestResult:
-    """Result of comparing multiple executions."""
+    # Result of comparing multiple executions.
     executions: List[ExecutionResult]
     baseline_name: str
     all_match: bool
@@ -32,14 +32,14 @@ class DifferentialTestResult:
     performance_comparison: Dict[str, float] = field(default_factory=dict)
     
     def get_fastest(self) -> Optional[ExecutionResult]:
-        """Get the fastest successful execution."""
+        # Get the fastest successful execution.
         successful = [e for e in self.executions if e.succeeded()]
         if not successful:
             return None
         return min(successful, key=lambda e: e.execution_time)
     
     def get_baseline(self) -> Optional[ExecutionResult]:
-        """Get the baseline execution result."""
+        # Get the baseline execution result.
         for exec_result in self.executions:
             if exec_result.strategy_name == self.baseline_name:
                 return exec_result
@@ -47,25 +47,21 @@ class DifferentialTestResult:
 
 
 class DifferentialTester:
-    """
-    Performs differential testing to ensure optimizations preserve semantics.
-    """
+    # Performs differential testing to ensure optimizations preserve semantics.
     
     def __init__(self, graph: Graph):
         self.graph = graph
     
     def test_all_strategies(self, data: Dict[str, Any], 
                            strategies: Optional[List[str]] = None) -> DifferentialTestResult:
-        """
-        Test the graph with multiple execution strategies.
-        
-        Args:
-            data: Input data for the graph
-            strategies: List of strategy names to test (defaults to all available)
-        
-        Returns:
-            DifferentialTestResult with comparison data
-        """
+        # Test the graph with multiple execution strategies.
+        #
+        # Args:
+        # data: Input data for the graph
+        # strategies: List of strategy names to test (defaults to all available)
+        #
+        # Returns:
+        # DifferentialTestResult with comparison data
         if strategies is None:
             strategies = ["naive", "vectorized"]
         
@@ -116,16 +112,14 @@ class DifferentialTester:
     
     def test_with_optimizations(self, data: Dict[str, Any],
                                optimization_passes: Optional[List[str]] = None) -> DifferentialTestResult:
-        """
-        Compare execution with and without optimizations.
-        
-        Args:
-            data: Input data for the graph
-            optimization_passes: Specific optimization passes to test
-        
-        Returns:
-            DifferentialTestResult comparing optimized vs unoptimized
-        """
+        # Compare execution with and without optimizations.
+        #
+        # Args:
+        # data: Input data for the graph
+        # optimization_passes: Specific optimization passes to test
+        #
+        # Returns:
+        # DifferentialTestResult comparing optimized vs unoptimized
         executions = []
         
         # Execute without optimization
@@ -175,7 +169,7 @@ class DifferentialTester:
     
     def _execute_with_strategy(self, strategy_name: str, 
                               data: Dict[str, Any]) -> ExecutionResult:
-        """Execute graph with a specific strategy."""
+        # Execute graph with a specific strategy.
         # Note: For now, strategies are selected automatically by the kernel
         # This method compiles and executes normally
         # In the future, we could add strategy hints to kernel.compile()
@@ -203,7 +197,7 @@ class DifferentialTester:
     
     def _execute_graph(self, graph: Graph, data: Dict[str, Any],
                       label: str) -> ExecutionResult:
-        """Execute a graph and return result."""
+        # Execute a graph and return result.
         start = time.time()
         try:
             compiled = graph.compile(auto_optimize=False)
@@ -225,7 +219,7 @@ class DifferentialTester:
         )
     
     def _results_equal(self, result1: Any, result2: Any) -> bool:
-        """Compare two results for equality."""
+        # Compare two results for equality.
         try:
             return result1 == result2
         except Exception:
@@ -233,7 +227,7 @@ class DifferentialTester:
             return str(result1) == str(result2)
     
     def format_report(self, test_result: DifferentialTestResult) -> str:
-        """Format test result as human-readable report."""
+        # Format test result as human-readable report.
         lines = ["Differential Testing Report:"]
         lines.append("=" * 60)
         
@@ -282,16 +276,14 @@ class DifferentialTester:
 
 
 def create_test_suite(graph: Graph, test_cases: List[Dict[str, Any]]) -> List[DifferentialTestResult]:
-    """
-    Run differential tests on multiple test cases.
-    
-    Args:
-        graph: The graph to test
-        test_cases: List of input data dictionaries
-    
-    Returns:
-        List of test results, one per test case
-    """
+    # Run differential tests on multiple test cases.
+    #
+    # Args:
+    # graph: The graph to test
+    # test_cases: List of input data dictionaries
+    #
+    # Returns:
+    # List of test results, one per test case
     tester = DifferentialTester(graph)
     results = []
     

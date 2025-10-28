@@ -11,7 +11,7 @@ from core.optimizer import GraphOptimizer
 
 
 def demo_sort_and_distinct():
-    """Demonstrate sort and distinct operations"""
+    # Demonstrate sort and distinct operations
     print("\nDemo 1: Sort and Distinct")
     
     data = [42, 17, 23, 42, 8, 17, 99, 8, 23]
@@ -32,7 +32,7 @@ def demo_sort_and_distinct():
 
 
 def demo_group_by():
-    """Demonstrate grouping data"""
+    # Demonstrate grouping data
     print("\nDemo 2: Group By")
     
     students = [
@@ -60,7 +60,7 @@ def demo_group_by():
 
 
 def demo_join():
-    """Demonstrate joining two datasets"""
+    # Demonstrate joining two datasets
     print("\nDemo 3: Join")
     
     users = [("user1", "Alice"), ("user2", "Bob"), ("user3", "Charlie")]
@@ -85,7 +85,7 @@ def demo_join():
 
 
 def demo_flatten():
-    """Demonstrate flattening nested lists"""
+    # Demonstrate flattening nested lists
     print("\nDemo 4: Flatten")
     
     nested = [[1, 2], [3, 4, 5], [6]]
@@ -103,7 +103,7 @@ def demo_flatten():
 
 
 def demo_complex_pipeline():
-    """Demonstrate a complex pipeline with new intents"""
+    # Demonstrate a complex pipeline with new intents
     print("\nDemo 5: Complex Data Pipeline")
     
     # Process e-commerce data
@@ -142,7 +142,7 @@ def demo_complex_pipeline():
 
 
 def demo_optimization():
-    """Demonstrate graph optimizations"""
+    # Demonstrate graph optimizations
     print("\nDemo 6: Graph Optimization")
     
     g = Graph()

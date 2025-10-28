@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 
-"""
-Pure IOC Program - Data Analysis Pipeline
-
-This program is written ENTIRELY using IOC constructs.
-No manual loops, no manual filtering - just intent declarations.
-IOC handles all the execution and optimization automatically.
-"""
+# Pure IOC Program - Data Analysis Pipeline
+#
+# This program is written ENTIRELY using IOC constructs.
+# No manual loops, no manual filtering - just intent declarations.
+# IOC handles all the execution and optimization automatically.
 
 import sys
 sys.path.insert(0, '.')
@@ -15,16 +13,14 @@ from core.graph import Graph
 
 
 def main():
-    """
-    A complete data analysis program written purely in IOC.
-    
-    This analyzes sales data to find:
-    1. High-value customers (spent over $500)
-    2. Their average purchase value
-    3. Sorted by total spending
-    
-    100% IOC - no manual data processing!
-    """
+    # A complete data analysis program written purely in IOC.
+    #
+    # This analyzes sales data to find:
+    # 1. High-value customers (spent over $500)
+    # 2. Their average purchase value
+    # 3. Sorted by total spending
+    #
+    # 100% IOC - no manual data processing!
     
     # Sample sales data
     sales_data = [

@@ -9,7 +9,7 @@ from dataclasses import dataclass, asdict
 
 @dataclass
 class ProfileRecord:
-    """Records performance of a strategy for a specific intent"""
+    # Records performance of a strategy for a specific intent
     intent_type: str
     strategy_name: str
     input_size: int
@@ -17,7 +17,7 @@ class ProfileRecord:
     sample_count: int = 1
     
     def update(self, new_time_ms: float):
-        """Update with new measurement (exponential moving average)"""
+        # Update with new measurement (exponential moving average)
         alpha = 0.3  # Weight for new measurement
         self.execution_time_ms = (alpha * new_time_ms + 
                                    (1 - alpha) * self.execution_time_ms)
@@ -25,9 +25,7 @@ class ProfileRecord:
 
 
 class PerformanceProfiler:
-    """
-    Collects and analyzes performance data to improve cost estimates.
-    """
+    # Collects and analyzes performance data to improve cost estimates.
     
     def __init__(self, profile_file: str = ".ioc_profile.json"):
         self.profile_file = Path(profile_file)
@@ -35,7 +33,7 @@ class PerformanceProfiler:
         self.load_profiles()
     
     def load_profiles(self):
-        """Load existing profile data"""
+        # Load existing profile data
         if not self.profile_file.exists():
             return
         
@@ -51,7 +49,7 @@ class PerformanceProfiler:
             pass
     
     def save_profiles(self):
-        """Save profile data to disk"""
+        # Save profile data to disk
         data = [asdict(record) for record in self.profiles.values()]
         try:
             with open(self.profile_file, 'w') as f:
@@ -61,7 +59,7 @@ class PerformanceProfiler:
     
     def record_execution(self, intent_type: str, strategy_name: str, 
                         input_size: int, execution_time_ms: float):
-        """Record a single execution measurement"""
+        # Record a single execution measurement
         # Round input size to nearest bucket for better generalization
         size_bucket = self._bucket_size(input_size)
         key = (intent_type, strategy_name, size_bucket)
@@ -78,7 +76,7 @@ class PerformanceProfiler:
     
     def get_cost_estimate(self, intent_type: str, strategy_name: str, 
                          input_size: int) -> float:
-        """Get cost estimate based on historical data"""
+        # Get cost estimate based on historical data
         size_bucket = self._bucket_size(input_size)
         key = (intent_type, strategy_name, size_bucket)
         
@@ -97,10 +95,8 @@ class PerformanceProfiler:
         return self._default_cost_estimate(intent_type, input_size)
     
     def profile_strategy(self, strategy, node, input_data: Any) -> float:
-        """
-        Execute a strategy and measure its performance.
-        Returns execution time in milliseconds.
-        """
+        # Execute a strategy and measure its performance.
+        # Returns execution time in milliseconds.
         from solvers.strategies import ExecutionContext
         
         # Generate code
@@ -145,7 +141,7 @@ result = {node.id}
             return float('inf')
     
     def _bucket_size(self, size: int) -> int:
-        """Round size to nearest bucket for better generalization"""
+        # Round size to nearest bucket for better generalization
         if size < 10:
             return size
         elif size < 100:
@@ -157,7 +153,7 @@ result = {node.id}
     
     def _find_similar_profile(self, intent_type: str, strategy_name: str, 
                              size: int) -> ProfileRecord:
-        """Find profile with similar size"""
+        # Find profile with similar size
         candidates = [
             record for key, record in self.profiles.items()
             if key[0] == intent_type and key[1] == strategy_name
@@ -170,7 +166,7 @@ result = {node.id}
         return min(candidates, key=lambda r: abs(r.input_size - size))
     
     def _default_cost_estimate(self, intent_type: str, input_size: int) -> float:
-        """Fallback cost estimate when no profiling data available"""
+        # Fallback cost estimate when no profiling data available
         # Simple heuristic based on intent type
         base_cost = {
             "filter": 1.0,
@@ -186,7 +182,7 @@ result = {node.id}
         return base_cost * input_size
     
     def get_report(self) -> str:
-        """Generate a performance report"""
+        # Generate a performance report
         if not self.profiles:
             return "No profiling data available"
         
@@ -215,7 +211,7 @@ _profiler = None
 
 
 def get_profiler() -> PerformanceProfiler:
-    """Get the global profiler instance"""
+    # Get the global profiler instance
     global _profiler
     if _profiler is None:
         _profiler = PerformanceProfiler()

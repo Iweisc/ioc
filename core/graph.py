@@ -12,14 +12,14 @@ from .types import IOCType, AnyType, infer_type
 _global_provenance_tracker = None
 
 def enable_provenance_tracking():
-    """Enable global provenance tracking for all graphs."""
+    # Enable global provenance tracking for all graphs.
     global _global_provenance_tracker
     from .provenance import ProvenanceTracker
     _global_provenance_tracker = ProvenanceTracker()
     return _global_provenance_tracker
 
 def get_provenance_tracker():
-    """Get the global provenance tracker if enabled."""
+    # Get the global provenance tracker if enabled.
     return _global_provenance_tracker
 
 
@@ -230,18 +230,16 @@ class Graph:
     
     def assert_invariant(self, input_node: str, predicate: Callable[[Any], bool],
                         message: str = "Assertion failed") -> str:
-        """
-        Add a runtime assertion that validates data.
-        The predicate should return True if the data is valid.
-        
-        Args:
-            input_node: Node to validate
-            predicate: Function that checks the invariant
-            message: Error message if assertion fails
-        
-        Returns:
-            Node ID (passes through input unchanged if assertion passes)
-        """
+        # Add a runtime assertion that validates data.
+        # The predicate should return True if the data is valid.
+        #
+        # Args:
+        # input_node: Node to validate
+        # predicate: Function that checks the invariant
+        # message: Error message if assertion fails
+        #
+        # Returns:
+        # Node ID (passes through input unchanged if assertion passes)
         input_type = self.nodes[input_node].output_type
         
         node = IntentNode(
@@ -283,10 +281,8 @@ class Graph:
         return order
     
     def optimize(self, passes: List[str] = None):
-        """
-        Apply optimization passes to the graph.
-        Returns self for method chaining.
-        """
+        # Apply optimization passes to the graph.
+        # Returns self for method chaining.
         from .optimizer import GraphOptimizer
         
         optimizer = GraphOptimizer(self)
@@ -294,13 +290,11 @@ class Graph:
         return self
     
     def compile(self, optimize_for: str = "speed", auto_optimize: bool = True):
-        """
-        Compile graph into executable code.
-        
-        Args:
-            optimize_for: Optimization target ("speed", "memory", "balanced")
-            auto_optimize: Automatically apply graph optimizations before compilation
-        """
+        # Compile graph into executable code.
+        #
+        # Args:
+        # optimize_for: Optimization target ("speed", "memory", "balanced")
+        # auto_optimize: Automatically apply graph optimizations before compilation
         from solvers.kernel import SolverKernel
         
         # Apply graph optimizations if requested
@@ -342,16 +336,14 @@ class Graph:
         return "\n".join(lines)
     
     def explain(self, verbose: bool = False) -> str:
-        """
-        Generate an execution plan explanation.
-        Shows what will be executed and how.
-        
-        Args:
-            verbose: Include detailed node information
-        
-        Returns:
-            Human-readable execution plan
-        """
+        # Generate an execution plan explanation.
+        # Shows what will be executed and how.
+        #
+        # Args:
+        # verbose: Include detailed node information
+        #
+        # Returns:
+        # Human-readable execution plan
         lines = ["Execution Plan:"]
         lines.append("=" * 60)
         
@@ -399,12 +391,10 @@ class Graph:
         return "\n".join(lines)
     
     def enable_debug_mode(self, capture_provenance: bool = True):
-        """
-        Enable debug mode with enhanced error reporting.
-        
-        Args:
-            capture_provenance: Whether to capture source locations (adds overhead)
-        """
+        # Enable debug mode with enhanced error reporting.
+        #
+        # Args:
+        # capture_provenance: Whether to capture source locations (adds overhead)
         self.debug_mode = True
         
         if capture_provenance:
@@ -412,11 +402,9 @@ class Graph:
             self.provenance_tracker = ProvenanceTracker()
     
     def get_debugger(self):
-        """
-        Get a debugger instance for this graph.
-        
-        Returns:
-            IOCDebugger instance
-        """
+        # Get a debugger instance for this graph.
+        #
+        # Returns:
+        # IOCDebugger instance
         from .debugger import IOCDebugger
         return IOCDebugger(self, self.provenance_tracker)
