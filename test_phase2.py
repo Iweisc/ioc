@@ -171,7 +171,6 @@ def test_map_flatten_chain():
 
 def main():
     print("Phase 2 Test Suite - New Intent Types")
-    print("=" * 60)
     
     tests = [
         test_sort_basic,
@@ -196,9 +195,7 @@ def main():
             print(f"  FAIL: {e}")
             failed += 1
     
-    print("=" * 60)
-    print(f"Results: {passed} passed, {failed} failed")
-    print("=" * 60)
+    print(f"\nResults: {passed} passed, {failed} failed")
 
 
 if __name__ == "__main__":

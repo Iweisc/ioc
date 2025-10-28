@@ -182,7 +182,6 @@ def test_auto_optimize_in_compile():
 
 def main():
     print("Optimizer Test Suite")
-    print("=" * 60)
     
     tests = [
         test_dead_code_elimination,
@@ -205,9 +204,7 @@ def main():
             traceback.print_exc()
             failed += 1
     
-    print("=" * 60)
-    print(f"Results: {passed} passed, {failed} failed")
-    print("=" * 60)
+    print(f"\nResults: {passed} passed, {failed} failed")
 
 
 if __name__ == "__main__":

@@ -260,7 +260,6 @@ def test_code_generation():
 
 def run_all_tests():
     print("IOC Test Suite")
-    print("=" * 60)
     
     tests = [
         test_basic_filter_map,
@@ -293,9 +292,7 @@ def run_all_tests():
             print(f"  FAIL: {e}")
             failed += 1
     
-    print("=" * 60)
-    print(f"Results: {passed} passed, {failed} failed")
-    print("=" * 60)
+    print(f"\nResults: {passed} passed, {failed} failed")
     
     return failed == 0
 

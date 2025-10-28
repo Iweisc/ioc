@@ -12,9 +12,7 @@ from core.optimizer import GraphOptimizer
 
 def demo_sort_and_distinct():
     """Demonstrate sort and distinct operations"""
-    print("\n" + "="*60)
-    print("Demo 1: Sort and Distinct")
-    print("="*60)
+    print("\nDemo 1: Sort and Distinct")
     
     data = [42, 17, 23, 42, 8, 17, 99, 8, 23]
     print(f"Input: {data}")
@@ -35,9 +33,7 @@ def demo_sort_and_distinct():
 
 def demo_group_by():
     """Demonstrate grouping data"""
-    print("\n" + "="*60)
-    print("Demo 2: Group By")
-    print("="*60)
+    print("\nDemo 2: Group By")
     
     students = [
         ("Alice", 90),
@@ -65,9 +61,7 @@ def demo_group_by():
 
 def demo_join():
     """Demonstrate joining two datasets"""
-    print("\n" + "="*60)
-    print("Demo 3: Join")
-    print("="*60)
+    print("\nDemo 3: Join")
     
     users = [("user1", "Alice"), ("user2", "Bob"), ("user3", "Charlie")]
     orders = [("user1", "Book"), ("user2", "Pen"), ("user1", "Notebook")]
@@ -92,9 +86,7 @@ def demo_join():
 
 def demo_flatten():
     """Demonstrate flattening nested lists"""
-    print("\n" + "="*60)
-    print("Demo 4: Flatten")
-    print("="*60)
+    print("\nDemo 4: Flatten")
     
     nested = [[1, 2], [3, 4, 5], [6]]
     print(f"Nested: {nested}")
@@ -112,9 +104,7 @@ def demo_flatten():
 
 def demo_complex_pipeline():
     """Demonstrate a complex pipeline with new intents"""
-    print("\n" + "="*60)
-    print("Demo 5: Complex Data Pipeline")
-    print("="*60)
+    print("\nDemo 5: Complex Data Pipeline")
     
     # Process e-commerce data
     transactions = [
@@ -153,9 +143,7 @@ def demo_complex_pipeline():
 
 def demo_optimization():
     """Demonstrate graph optimizations"""
-    print("\n" + "="*60)
-    print("Demo 6: Graph Optimization")
-    print("="*60)
+    print("\nDemo 6: Graph Optimization")
     
     g = Graph()
     data = g.input("data", list)
@@ -189,12 +177,11 @@ def demo_optimization():
     print(f"\nResult: {result}")
     print(f"Expected: {expected}")
     assert result == expected, "Optimization changed behavior!"
-    print("✓ Optimization preserved correctness")
+    print("Optimization preserved correctness")
 
 
 def main():
     print("\nIOC Phase 2 Features Demo")
-    print("Demonstrating new intent types and graph optimizations")
     
     try:
         demo_sort_and_distinct()
@@ -214,9 +201,7 @@ def main():
         
         demo_optimization()
         
-        print("\n" + "="*60)
-        print("Demo complete! Phase 2 features are working.")
-        print("="*60)
+        print("\nDemo complete")
     except KeyboardInterrupt:
         print("\nDemo interrupted")
 

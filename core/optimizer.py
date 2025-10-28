@@ -201,7 +201,7 @@ class GraphOptimizer:
         if not self.optimizations_applied:
             return "No optimizations applied"
         
-        report = ["Optimization Report:", "=" * 50]
+        report = ["Optimization Report:"]
         for opt in self.optimizations_applied:
-            report.append(f"  • {opt}")
+            report.append(f"  - {opt}")
         return "\n".join(report)
