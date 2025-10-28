@@ -228,7 +228,9 @@ This is not just a new framework—it's a new way of thinking about computation.
 
 ## License
 
-Proprietary - All rights reserved. See LICENSE file for details.
+This project is currently under a proprietary license. All rights reserved.
+
+For viewing and evaluation purposes only. No copying, modification, or commercial use permitted without explicit written permission. See LICENSE file for full terms.
 
 ---
 
