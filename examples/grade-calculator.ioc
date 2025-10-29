@@ -1,0 +1,15 @@
+# Student Grade Calculator
+# Filters passing grades and calculates class average
+
+input grades: object[]
+
+# Filter only passing grades (>= 60)
+passing = filter grades where x.score >= 60
+
+# Extract just the scores
+scores = map passing with x.score
+
+# Calculate average of passing grades
+average = reduce scores by average
+
+output average

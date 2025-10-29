@@ -1,0 +1,9 @@
+[
+  {"student": "Alice", "score": 95, "subject": "Math"},
+  {"student": "Bob", "score": 45, "subject": "Math"},
+  {"student": "Charlie", "score": 78, "subject": "Math"},
+  {"student": "Diana", "score": 88, "subject": "Math"},
+  {"student": "Eve", "score": 52, "subject": "Math"},
+  {"student": "Frank", "score": 91, "subject": "Math"},
+  {"student": "Grace", "score": 67, "subject": "Math"}
+]

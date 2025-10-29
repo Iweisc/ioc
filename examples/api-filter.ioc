@@ -1,0 +1,18 @@
+# API Response Filter
+# Processes API responses and extracts active, high-priority items
+
+input items: object[]
+
+# Filter only active items
+active = filter items where x.active == true
+
+# Filter high priority (priority < 3, where 1 is highest)
+high_priority = filter active where x.priority < 3
+
+# Extract just the IDs
+ids = map high_priority with x.id
+
+# Count results
+count = reduce ids by count
+
+output count

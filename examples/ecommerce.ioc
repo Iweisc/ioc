@@ -1,0 +1,15 @@
+# E-commerce Order Processing
+# Filters valid orders, calculates total revenue
+
+input orders: object[]
+
+# Filter only completed orders
+completed = filter orders where x.status == "completed"
+
+# Extract order amounts
+amounts = map completed with x.amount
+
+# Calculate total revenue
+revenue = reduce amounts by sum
+
+output revenue

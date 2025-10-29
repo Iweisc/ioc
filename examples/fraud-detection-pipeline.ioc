@@ -1,0 +1,37 @@
+# Advanced Fraud Detection Pipeline
+# Multi-stage risk analysis for financial transactions
+#
+# This showcases IOC's strength in:
+# - Complex business rule composition
+# - Safe execution without arbitrary code
+# - Guaranteed termination even with complex logic
+# - Serializable fraud detection rules (can be stored in DB!)
+# - Auditable and verifiable logic
+
+input transactions: object[]
+
+# Stage 1: Filter only successful transactions
+successful = filter transactions where x.status == "success"
+
+# Stage 2: Filter unusual amounts (over $10,000)
+high_amount = filter successful where x.amount > 10000
+
+# Stage 3: Filter rapid transactions (within 5 minutes of another)
+rapid = filter high_amount where x.time_since_last < 300
+
+# Stage 4: Filter suspicious velocity (more than 3 transactions)
+high_velocity = filter rapid where x.transaction_count > 3
+
+# Stage 5: Filter unusual locations (location_risk > 7)
+suspicious_location = filter high_velocity where x.location_risk > 7
+
+# Stage 6: Filter new accounts (less than 30 days old)
+new_accounts = filter suspicious_location where x.account_age < 30
+
+# Stage 7: Calculate risk scores
+risk_scores = map new_accounts with x.risk_score
+
+# Stage 8: Find maximum risk score
+max_risk = reduce risk_scores by max
+
+output max_risk

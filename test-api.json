@@ -1,0 +1,9 @@
+[
+  {"id": "task-1", "active": true, "priority": 1, "title": "Fix critical bug"},
+  {"id": "task-2", "active": true, "priority": 2, "title": "Update documentation"},
+  {"id": "task-3", "active": false, "priority": 1, "title": "Archived task"},
+  {"id": "task-4", "active": true, "priority": 3, "title": "Nice to have feature"},
+  {"id": "task-5", "active": true, "priority": 1, "title": "Security patch"},
+  {"id": "task-6", "active": true, "priority": 4, "title": "Code cleanup"},
+  {"id": "task-7", "active": false, "priority": 2, "title": "Completed task"}
+]

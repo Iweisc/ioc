@@ -1,0 +1,8 @@
+# String processing
+# Convert strings to uppercase
+
+input words: string[]
+
+uppercased = map words with uppercase(x)
+
+output uppercased

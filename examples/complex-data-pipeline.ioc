@@ -1,0 +1,30 @@
+# Complex Multi-Stage Data Processing Pipeline
+# Real-world scenario: E-commerce order fulfillment analytics
+# 
+# This demonstrates IOC's strength in:
+# 1. Complex multi-stage filtering
+# 2. Chained transformations
+# 3. Safe data processing with guaranteed termination
+# 4. Serializable business logic
+
+input orders: object[]
+
+# Stage 1: Filter valid orders (not cancelled or refunded)
+valid_orders = filter orders where x.status == "confirmed"
+
+# Stage 2: Filter high-value orders (over $500)
+high_value = filter valid_orders where x.total > 500
+
+# Stage 3: Filter recent orders (within last 30 days)
+recent_high_value = filter high_value where x.days_old < 30
+
+# Stage 4: Filter orders needing express shipping
+express_needed = filter recent_high_value where x.priority > 7
+
+# Stage 5: Extract order totals
+order_amounts = map express_needed with x.total
+
+# Stage 6: Calculate total revenue from express orders
+express_revenue = reduce order_amounts by sum
+
+output express_revenue

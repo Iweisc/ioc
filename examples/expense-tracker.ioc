@@ -1,0 +1,15 @@
+# Personal Expense Tracker
+# Analyzes expenses and calculates total spending by category
+
+input expenses: object[]
+
+# Filter only completed transactions (not pending/cancelled)
+completed = filter expenses where x.status == "completed"
+
+# Get all amounts
+amounts = map completed with x.amount
+
+# Calculate total spending
+total = reduce amounts by sum
+
+output total

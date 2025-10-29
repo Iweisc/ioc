@@ -1,0 +1,15 @@
+# User Analytics Pipeline
+# Processes user events and counts active users
+
+input events: object[]
+
+# Filter events from last 30 days
+recent = filter events where x.days_ago < 30
+
+# Get unique user IDs
+user_ids = map recent with x.user_id
+
+# Count unique users (simplified - just count all for now)
+count = reduce user_ids by count
+
+output count

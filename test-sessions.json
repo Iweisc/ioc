@@ -1,0 +1,10 @@
+[
+  {"user_id": "u001", "duration": 450, "status": "completed", "pages": 5},
+  {"user_id": "u002", "duration": 120, "status": "completed", "pages": 2},
+  {"user_id": "u003", "duration": 720, "status": "completed", "pages": 12},
+  {"user_id": "u004", "duration": 540, "status": "abandoned", "pages": 3},
+  {"user_id": "u005", "duration": 890, "status": "completed", "pages": 15},
+  {"user_id": "u006", "duration": 210, "status": "completed", "pages": 4},
+  {"user_id": "u007", "duration": 650, "status": "completed", "pages": 9},
+  {"user_id": "u008", "duration": 95, "status": "completed", "pages": 1}
+]

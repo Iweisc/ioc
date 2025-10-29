@@ -1,0 +1,27 @@
+input products: object[]
+
+# Stage 1: Filter in-stock products only
+in_stock = filter products where x.stock > 0
+
+# Stage 2: Filter products in user's price range
+affordable = filter in_stock where x.price < 500
+
+# Stage 3: Filter highly rated products (4+ stars)
+quality = filter affordable where x.rating >= 4
+
+# Stage 4: Filter products matching user interests (relevance > 6)
+relevant = filter quality where x.relevance_score > 6
+
+# Stage 5: Filter trending products (views this week > 1000)
+trending = filter relevant where x.weekly_views > 1000
+
+# Stage 6: Filter recently updated (updated within 30 days)
+fresh = filter trending where x.days_since_update < 30
+
+# Stage 7: Extract relevance scores for ranking
+scores = map fresh with x.relevance_score
+
+# Stage 8: Calculate average relevance of recommendations
+avg_relevance = reduce scores by average
+
+output avg_relevance

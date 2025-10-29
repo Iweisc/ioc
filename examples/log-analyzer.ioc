@@ -1,0 +1,18 @@
+# Server Log Analyzer
+# Counts critical errors in recent logs
+
+input logs: object[]
+
+# Filter only error level logs
+errors = filter logs where x.level == "ERROR"
+
+# Filter critical severity (severity > 7)
+critical = filter errors where x.severity > 7
+
+# Extract just the timestamps to count
+timestamps = map critical with x.timestamp
+
+# Count critical errors
+error_count = reduce timestamps by count
+
+output error_count

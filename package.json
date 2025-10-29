@@ -5,6 +5,9 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "type": "module",
+  "bin": {
+    "ioc": "./dist/cli/ioc.js"
+  },
   "scripts": {
     "build": "tsup",
     "dev": "tsx watch src/index.ts",

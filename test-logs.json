@@ -1,0 +1,10 @@
+[
+  {"timestamp": 1705420800, "level": "INFO", "severity": 3, "message": "Server started"},
+  {"timestamp": 1705420860, "level": "ERROR", "severity": 8, "message": "Database connection failed"},
+  {"timestamp": 1705420920, "level": "WARN", "severity": 5, "message": "High memory usage"},
+  {"timestamp": 1705420980, "level": "ERROR", "severity": 9, "message": "Authentication service down"},
+  {"timestamp": 1705421040, "level": "ERROR", "severity": 6, "message": "Rate limit exceeded"},
+  {"timestamp": 1705421100, "level": "ERROR", "severity": 10, "message": "Critical: Payment gateway offline"},
+  {"timestamp": 1705421160, "level": "INFO", "severity": 2, "message": "Cache cleared"},
+  {"timestamp": 1705421220, "level": "ERROR", "severity": 8, "message": "Disk space critical"}
+]
