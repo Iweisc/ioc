@@ -43,3 +43,6 @@ htmlcov/
 
 # IOC specific
 *.iog.backup
+
+# Planning documents
+NEXT_STEPS.md

@@ -1,6 +1,8 @@
 # Intent-Oriented Computing (IOC)
 
-A revolutionary programming paradigm where programs are defined by **intent graphs** rather than imperative code. IOC eliminates syntax and manual optimization, replacing them with semantically constrained computation graphs interpreted by an adaptive solver kernel.
+> **⚠️ ALPHA SOFTWARE**: Experimental research project. For viewing and evaluation only.
+
+An experimental programming framework where programs are defined by **intent graphs** rather than imperative code. IOC separates what you want (intent) from how it's computed (execution strategy), enabling automatic optimization and hardware-agnostic code.
 
 ## The Big Idea
 
@@ -82,7 +84,7 @@ ioc/
 
 ### Installation
 ```bash
-git clone <your-repo-url>
+# This is proprietary software - viewing only
 cd ioc
 
 # No dependencies - pure Python!
@@ -228,12 +230,12 @@ This is not just a new framework—it's a new way of thinking about computation.
 
 ## License
 
-This project is currently under a proprietary license. All rights reserved.
+Proprietary - All rights reserved. See LICENSE file for details.
 
-For viewing and evaluation purposes only. No copying, modification, or commercial use permitted without explicit written permission. See LICENSE file for full terms.
+For viewing and evaluation purposes only. No copying, modification, or commercial use permitted without explicit written permission.
 
 ---
 
 **Version**: v0.3.0-alpha  
-**Status**: Working prototype with debugging infrastructure  
+**Status**: Experimental research prototype  
 **License**: Proprietary

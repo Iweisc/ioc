@@ -17,12 +17,14 @@ class GraphOptimizer:
         #
         # Available passes:
         # - dead_code_elimination: Remove unused nodes
+        # - common_subexpression_elimination: Deduplicate identical computations
         # - filter_fusion: Combine adjacent filters
         # - map_fusion: Combine adjacent maps
         # - filter_before_map: Reorder filter before map when beneficial
         if passes is None:
             passes = [
                 "dead_code_elimination",
+                "common_subexpression_elimination",
                 "filter_fusion",
                 "map_fusion",
                 "filter_before_map"
@@ -31,6 +33,8 @@ class GraphOptimizer:
         for pass_name in passes:
             if pass_name == "dead_code_elimination":
                 self._dead_code_elimination()
+            elif pass_name == "common_subexpression_elimination":
+                self._common_subexpression_elimination()
             elif pass_name == "filter_fusion":
                 self._filter_fusion()
             elif pass_name == "map_fusion":
@@ -67,6 +71,127 @@ class GraphOptimizer:
             for node_id in dead_nodes:
                 del self.graph.nodes[node_id]
             self.optimizations_applied.append(f"dead_code_elimination: removed {len(dead_nodes)} nodes")
+    
+    def _common_subexpression_elimination(self):
+        # Eliminate duplicate computations by reusing identical nodes.
+        # Two nodes are considered identical if they have:
+        # - Same intent type
+        # - Same parameters (type_hint for constants, equal inputs, etc.)
+        # - Same inputs
+        changes_made = 0
+        node_to_canonical: Dict[str, str] = {}  # Maps duplicate node IDs to canonical node ID
+        
+        # Group nodes by their "signature" to find duplicates
+        def get_node_signature(node: IntentNode) -> tuple:
+            # Create a hashable signature for a node
+            # Note: We can't hash functions, so we use id() for params with functions
+            sig_parts = [node.intent_type]
+            
+            # Add inputs to signature
+            sig_parts.append(tuple(node.inputs))
+            
+            # Add params (but we can't compare functions reliably, so use their id)
+            param_sig = []
+            for key in sorted(node.params.keys()):
+                value = node.params[key]
+                if callable(value):
+                    # For functions, we can't reliably compare, skip CSE for nodes with different functions
+                    param_sig.append((key, id(value)))
+                else:
+                    param_sig.append((key, value))
+            sig_parts.append(tuple(param_sig))
+            
+            return tuple(sig_parts)
+        
+        # Build signature map
+        signature_to_nodes: Dict[tuple, List[str]] = {}
+        for node_id, node in self.graph.nodes.items():
+            sig = get_node_signature(node)
+            if sig not in signature_to_nodes:
+                signature_to_nodes[sig] = []
+            signature_to_nodes[sig].append(node_id)
+        
+        # For each group of nodes with identical signatures, keep one and redirect others
+        for sig, node_ids in signature_to_nodes.items():
+            if len(node_ids) > 1:
+                # Keep the first node as canonical
+                canonical_id = node_ids[0]
+                
+                # For constant nodes, we can safely deduplicate even with different function objects
+                # if their values are the same
+                canonical_node = self.graph.nodes[canonical_id]
+                if canonical_node.intent_type == IntentType.CONSTANT:
+                    # Compare actual values
+                    canonical_value = canonical_node.params.get("value")
+                    for dup_id in node_ids[1:]:
+                        dup_node = self.graph.nodes[dup_id]
+                        dup_value = dup_node.params.get("value")
+                        if canonical_value == dup_value:
+                            node_to_canonical[dup_id] = canonical_id
+                            changes_made += 1
+                else:
+                    # For other nodes, only deduplicate if they have the exact same function objects
+                    # This is conservative but safe
+                    canonical_params = canonical_node.params
+                    duplicates = []
+                    
+                    for dup_id in node_ids[1:]:
+                        dup_node = self.graph.nodes[dup_id]
+                        # Check if all params are identical (including function identity)
+                        if self._params_identical(canonical_params, dup_node.params):
+                            duplicates.append(dup_id)
+                    
+                    for dup_id in duplicates:
+                        node_to_canonical[dup_id] = canonical_id
+                        changes_made += 1
+        
+        if changes_made > 0:
+            # Redirect all references from duplicate nodes to canonical nodes
+            for node_id, node in self.graph.nodes.items():
+                # Update inputs to point to canonical nodes
+                new_inputs = []
+                for input_id in node.inputs:
+                    if input_id in node_to_canonical:
+                        new_inputs.append(node_to_canonical[input_id])
+                    else:
+                        new_inputs.append(input_id)
+                node.inputs = new_inputs
+            
+            # Update outputs
+            new_outputs = []
+            for output_id in self.graph.outputs:
+                if output_id in node_to_canonical:
+                    canonical = node_to_canonical[output_id]
+                    if canonical not in new_outputs:
+                        new_outputs.append(canonical)
+                else:
+                    new_outputs.append(output_id)
+            self.graph.outputs = new_outputs
+            
+            self.optimizations_applied.append(f"common_subexpression_elimination: deduplicated {changes_made} nodes")
+            
+            # Run dead code elimination to remove the now-unused duplicate nodes
+            self._dead_code_elimination()
+    
+    def _params_identical(self, params1: dict, params2: dict) -> bool:
+        # Check if two parameter dicts are identical (including function object identity)
+        if set(params1.keys()) != set(params2.keys()):
+            return False
+        
+        for key in params1:
+            val1 = params1[key]
+            val2 = params2[key]
+            
+            if callable(val1) and callable(val2):
+                # For callables, check identity (same object)
+                if val1 is not val2:
+                    return False
+            else:
+                # For other values, check equality
+                if val1 != val2:
+                    return False
+        
+        return True
     
     def _filter_fusion(self):
         # Combine adjacent filter operations into a single filter.
@@ -159,36 +284,51 @@ class GraphOptimizer:
             self._dead_code_elimination()
     
     def _filter_before_map(self):
-        # Reorder operations to do filter before map when beneficial.
-        # This reduces the number of elements that need transformation.
+        # Reorder operations to push expensive maps after cheap filters.
+        # 
+        # This optimization is DISABLED by default because it requires
+        # sophisticated program analysis to be safe:
+        #
+        # Challenge: Given map(f) -> filter(p), we want filter(p') -> map(f)
+        # where p'(x) evaluates to p(f(x)).
+        #
+        # This requires either:
+        # 1. Inverting the transformation: p'(x) = p(f(x)) becomes p'(x) checks f⁻¹
+        # 2. Rewriting the predicate to work on pre-transformed data
+        # 3. Static analysis to detect when predicate is independent of transform
+        #
+        # All of these are complex and error-prone without proper tooling.
+        #
+        # Future enhancements could include:
+        # - User annotations like @independent_of_transform
+        # - Static analysis of AST to detect dependencies
+        # - Profile-guided optimization with runtime validation
+        # - Integration with symbolic execution
+        #
+        # For now, this pass is a no-op placeholder for future work.
+        
         changes_made = 0
         
-        # Find map -> filter chains where filter could go first
-        for node_id, node in list(self.graph.nodes.items()):
-            if node.intent_type != IntentType.FILTER:
-                continue
-            
-            if not node.inputs:
-                continue
-            
-            input_node = self.graph.nodes[node.inputs[0]]
-            if input_node.intent_type != IntentType.MAP:
-                continue
-            
-            # Check if filter predicate only depends on original data
-            # (This is a simplified check - full implementation would need
-            # dependency analysis)
-            
-            # For now, we can't automatically do this transformation safely
-            # because the predicate might depend on the transformed values.
-            # This would require analyzing the predicate to see if it only
-            # uses properties preserved by the map.
-            
-            # This is left as a future enhancement with proper analysis
-            pass
+        # Placeholder for future implementation
+        # When implemented, should:
+        # 1. Find map -> filter patterns
+        # 2. Analyze semantic dependencies
+        # 3. Safely reorder when beneficial
+        # 4. Validate correctness with differential testing
         
         if changes_made > 0:
             self.optimizations_applied.append(f"filter_before_map: reordered {changes_made} operations")
+    
+    def _count_consumers(self, node_id: str) -> int:
+        # Count how many nodes use this node as input
+        count = 0
+        for other_node in self.graph.nodes.values():
+            if node_id in other_node.inputs:
+                count += 1
+        # Also check if it's an output
+        if node_id in self.graph.outputs:
+            count += 1
+        return count
     
     def get_optimization_report(self) -> str:
         # Get a report of optimizations applied.

@@ -17,8 +17,8 @@ setup(
     long_description_content_type="text/markdown",
     author="IOC Contributors",
     author_email="",
-    url="https://github.com/yourusername/ioc",
-    license="MIT",
+    url="",
+    license="Proprietary",
     
     packages=find_packages(exclude=["tests", "examples"]),
     
@@ -60,7 +60,7 @@ setup(
         "Intended Audience :: Developers",
         "Topic :: Software Development :: Compilers",
         "Topic :: Software Development :: Libraries :: Python Modules",
-        "License :: OSI Approved :: MIT License",
+        "License :: Other/Proprietary License",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
@@ -71,9 +71,5 @@ setup(
     
     keywords="compiler optimization intent graph data-processing",
     
-    project_urls={
-        "Documentation": "https://github.com/yourusername/ioc/blob/main/README.md",
-        "Source": "https://github.com/yourusername/ioc",
-        "Tracker": "https://github.com/yourusername/ioc/issues",
-    },
+    project_urls={},
 )

@@ -3,8 +3,7 @@
 ## Installation
 
 ```bash
-# Clone the repository
-git clone <your-repo-url>
+# Navigate to the IOC directory
 cd ioc
 
 # No dependencies needed - pure Python!

@@ -458,10 +458,8 @@ Programming should be about expressing intent, not micromanaging execution. IOC 
 
 ---
 
-**Status**: v0.2.0 (Phase 2 Complete) - Enhanced optimization with new intents and graph passes
+**Status**: v0.3.0-alpha (Phase 3 Complete) - Debugging infrastructure added
 
-**Test Coverage**: 31 tests, 100% pass rate
+**Test Coverage**: 46 tests, 100% pass rate
 
-**Contact**: See README.md for contribution guidelines
-
-**License**: MIT - Build on this freely!
+**License**: Proprietary - All rights reserved
