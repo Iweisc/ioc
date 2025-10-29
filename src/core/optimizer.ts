@@ -137,16 +137,19 @@ export class GraphOptimizer {
         if (!canonicalId) continue;
         const canonicalNode = this.graph.nodes.get(canonicalId)!;
 
-        // For constant nodes, we can safely deduplicate
+        // For constant nodes, we can safely deduplicate only if values are serializable
+        // (no functions, which can't be reliably compared)
         if (canonicalNode.intentType === IntentType.CONSTANT) {
           const canonicalValue = canonicalNode.params['value'];
-          for (const dupId of nodeIds.slice(1)) {
-            if (!dupId) continue;
-            const dupNode = this.graph.nodes.get(dupId)!;
-            const dupValue = dupNode.params['value'];
-            if (this.deepEqual(canonicalValue, dupValue)) {
-              nodeToCanonical.set(dupId, canonicalId);
-              changesMade++;
+          if (this.isSerializable(canonicalValue)) {
+            for (const dupId of nodeIds.slice(1)) {
+              if (!dupId) continue;
+              const dupNode = this.graph.nodes.get(dupId)!;
+              const dupValue = dupNode.params['value'];
+              if (this.isSerializable(dupValue) && this.deepEqual(canonicalValue, dupValue)) {
+                nodeToCanonical.set(dupId, canonicalId);
+                changesMade++;
+              }
             }
           }
         } else {
@@ -392,6 +395,26 @@ export class GraphOptimizer {
   }
 
   /**
+   * Check if a value is serializable (doesn't contain functions)
+   * Functions cannot be reliably compared for equality, so we exclude them
+   * from deduplication
+   */
+  private isSerializable(value: any): boolean {
+    if (typeof value === 'function') return false;
+    if (value && typeof value === 'object') {
+      if (Array.isArray(value)) {
+        return value.every(item => this.isSerializable(item));
+      }
+      for (const key in value) {
+        if (Object.prototype.hasOwnProperty.call(value, key)) {
+          if (!this.isSerializable(value[key])) return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  /**
    * Deep equality check
    */
   private deepEqual(a: any, b: any): boolean {
@@ -429,11 +452,10 @@ export class GraphOptimizer {
       const val2 = params2[key];
 
       if (typeof val1 === 'function' && typeof val2 === 'function') {
-        // For functions, check if they're the same reference
-        if (val1 !== val2) return false;
-      } else {
-        if (!this.deepEqual(val1, val2)) return false;
-      }
+        // For functions, compare both reference and string representation
+        // This catches both identical references and separately-defined identical functions
+        if (val1 !== val2 && val1.toString() !== val2.toString()) return false;
+      } else if (!this.deepEqual(val1, val2)) return false;
     }
 
     return true;

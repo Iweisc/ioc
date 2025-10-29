@@ -7,7 +7,98 @@ export interface ExecutionContext {
   nodeResults: Record<string, any>;
 }
 
-export abstract class Strategy {
+/**
+ * Safely get a parameter from a node, ensuring we only access own properties
+ * and not prototype chain. This prevents potential prototype pollution attacks.
+ */
+function getParam(node: IntentNode, key: string): any {
+  if (!Object.prototype.hasOwnProperty.call(node.params, key)) {
+    return undefined;
+  }
+  return node.params[key];
+}
+
+/**
+ * Common code generation helpers shared across strategies
+ */
+abstract class BaseStrategy {
+  /**
+   * Generate code for INPUT intent
+   */
+  protected generateInputCode(node: IntentNode): string {
+    const name = getParam(node, 'name');
+    return `${node.id} = ${name}`;
+  }
+
+  /**
+   * Generate code for CONSTANT intent
+   */
+  protected generateConstantCode(node: IntentNode): string {
+    const value = getParam(node, 'value');
+    return `${node.id} = ${JSON.stringify(value)}`;
+  }
+
+  /**
+   * Generate code for FLATTEN intent (same for all strategies)
+   */
+  protected generateFlattenCodeNaive(node: IntentNode): string {
+    const inputId = node.inputs[0];
+    return `${node.id} = []
+for (_sublist of ${inputId}) {
+  for (_item of _sublist) {
+    ${node.id}.push(_item)
+  }
+}`;
+  }
+
+  /**
+   * Generate code for FLATTEN intent using built-in (optimized)
+   */
+  protected generateFlattenCodeOptimized(node: IntentNode): string {
+    const inputId = node.inputs[0];
+    return `${node.id} = ${inputId}.flat()`;
+  }
+
+  /**
+   * Generate code for DISTINCT intent (naive)
+   */
+  protected generateDistinctCodeNaive(node: IntentNode): string {
+    const inputId = node.inputs[0];
+    return `${node.id} = []
+const _seen = new Set()
+for (_item of ${inputId}) {
+  if (!_seen.has(_item)) {
+    _seen.add(_item)
+    ${node.id}.push(_item)
+  }
+}`;
+  }
+
+  /**
+   * Generate code for DISTINCT intent (optimized)
+   */
+  protected generateDistinctCodeOptimized(node: IntentNode): string {
+    const inputId = node.inputs[0];
+    return `${node.id} = [...new Set(${inputId})]`;
+  }
+
+  /**
+   * Generate code for ASSERT intent
+   */
+  protected generateAssertCode(node: IntentNode, context: ExecutionContext): string {
+    const inputId = node.inputs[0];
+    const predName = `pred_${node.id}`;
+    context.variables[predName] = getParam(node, 'predicate');
+    const message = getParam(node, 'message') || 'Assertion failed';
+
+    return `if (!${predName}(${inputId})) {
+  throw new Error(${JSON.stringify(message)})
+}
+${node.id} = ${inputId}`;
+  }
+}
+
+export abstract class Strategy extends BaseStrategy {
   /**
    * Check if this strategy can handle the given intent type
    */
@@ -48,19 +139,19 @@ export class NaiveStrategy extends Strategy {
   generateCode(node: IntentNode, context: ExecutionContext): string {
     switch (node.intentType) {
       case IntentType.INPUT: {
-        const name = node.params['name'];
+        const name = getParam(node, 'name');
         return `${node.id} = ${name}`;
       }
 
       case IntentType.CONSTANT: {
-        const value = node.params['value'];
+        const value = getParam(node, 'value');
         return `${node.id} = ${JSON.stringify(value)}`;
       }
 
       case IntentType.FILTER: {
         const inputId = node.inputs[0];
         const predName = `pred_${node.id}`;
-        context.variables[predName] = node.params['predicate'];
+        context.variables[predName] = getParam(node, 'predicate');
 
         return `${node.id} = []
 for (_item of ${inputId}) {
@@ -73,7 +164,7 @@ for (_item of ${inputId}) {
       case IntentType.MAP: {
         const inputId = node.inputs[0];
         const transformName = `transform_${node.id}`;
-        context.variables[transformName] = node.params['transform'];
+        context.variables[transformName] = getParam(node, 'transform');
 
         return `${node.id} = []
 for (_item of ${inputId}) {
@@ -84,8 +175,8 @@ for (_item of ${inputId}) {
       case IntentType.REDUCE: {
         const inputId = node.inputs[0];
         const opName = `op_${node.id}`;
-        context.variables[opName] = node.params['operation'];
-        const initial = node.params['initial'];
+        context.variables[opName] = getParam(node, 'operation');
+        const initial = getParam(node, 'initial');
 
         if (initial !== undefined) {
           return `${node.id} = ${JSON.stringify(initial)}
@@ -103,8 +194,8 @@ for (_item of _items) {
 
       case IntentType.SORT: {
         const inputId = node.inputs[0];
-        const keyFunc = node.params['key'];
-        const reverse = node.params['reverse'] || false;
+        const keyFunc = getParam(node, 'key');
+        const reverse = getParam(node, 'reverse') || false;
 
         if (keyFunc) {
           const keyName = `key_${node.id}`;
@@ -122,7 +213,7 @@ for (_item of _items) {
       case IntentType.GROUP_BY: {
         const inputId = node.inputs[0];
         const keyName = `key_${node.id}`;
-        context.variables[keyName] = node.params['key'];
+        context.variables[keyName] = getParam(node, 'key');
 
         return `${node.id} = {}
 for (_item of ${inputId}) {
@@ -136,52 +227,29 @@ for (_item of ${inputId}) {
 
       case IntentType.JOIN: {
         const [leftId, rightId] = node.inputs;
-        const onName = `on_${node.id}`;
-        context.variables[onName] = node.params['on'];
+        const leftKeyName = `leftKey_${node.id}`;
+        const rightKeyName = `rightKey_${node.id}`;
+        context.variables[leftKeyName] = getParam(node, 'leftKey');
+        context.variables[rightKeyName] = getParam(node, 'rightKey');
 
         return `${node.id} = []
 for (_left of ${leftId}) {
   for (_right of ${rightId}) {
-    if (${onName}(_left, _right)) {
+    if (${leftKeyName}(_left) === ${rightKeyName}(_right)) {
       ${node.id}.push([_left, _right])
     }
   }
 }`;
       }
 
-      case IntentType.FLATTEN: {
-        const inputId = node.inputs[0];
-        return `${node.id} = []
-for (_sublist of ${inputId}) {
-  for (_item of _sublist) {
-    ${node.id}.push(_item)
-  }
-}`;
-      }
+      case IntentType.FLATTEN:
+        return this.generateFlattenCodeNaive(node);
 
-      case IntentType.DISTINCT: {
-        const inputId = node.inputs[0];
-        return `${node.id} = []
-const _seen = new Set()
-for (_item of ${inputId}) {
-  if (!_seen.has(_item)) {
-    _seen.add(_item)
-    ${node.id}.push(_item)
-  }
-}`;
-      }
+      case IntentType.DISTINCT:
+        return this.generateDistinctCodeNaive(node);
 
-      case IntentType.ASSERT: {
-        const inputId = node.inputs[0];
-        const predName = `pred_${node.id}`;
-        context.variables[predName] = node.params['predicate'];
-        const message = node.params['message'] || 'Assertion failed';
-
-        return `if (!${predName}(${inputId})) {
-  throw new Error(${JSON.stringify(message)})
-}
-${node.id} = ${inputId}`;
-      }
+      case IntentType.ASSERT:
+        return this.generateAssertCode(node, context);
 
       default:
         throw new Error(
@@ -232,20 +300,16 @@ export class OptimizedStrategy extends Strategy {
 
   generateCode(node: IntentNode, context: ExecutionContext): string {
     switch (node.intentType) {
-      case IntentType.INPUT: {
-        const name = node.params['name'];
-        return `${node.id} = ${name}`;
-      }
+      case IntentType.INPUT:
+        return this.generateInputCode(node);
 
-      case IntentType.CONSTANT: {
-        const value = node.params['value'];
-        return `${node.id} = ${JSON.stringify(value)}`;
-      }
+      case IntentType.CONSTANT:
+        return this.generateConstantCode(node);
 
       case IntentType.FILTER: {
         const inputId = node.inputs[0];
         const predName = `pred_${node.id}`;
-        context.variables[predName] = node.params['predicate'];
+        context.variables[predName] = getParam(node, 'predicate');
 
         return `${node.id} = ${inputId}.filter(${predName})`;
       }
@@ -253,7 +317,7 @@ export class OptimizedStrategy extends Strategy {
       case IntentType.MAP: {
         const inputId = node.inputs[0];
         const transformName = `transform_${node.id}`;
-        context.variables[transformName] = node.params['transform'];
+        context.variables[transformName] = getParam(node, 'transform');
 
         return `${node.id} = ${inputId}.map(${transformName})`;
       }
@@ -261,8 +325,8 @@ export class OptimizedStrategy extends Strategy {
       case IntentType.REDUCE: {
         const inputId = node.inputs[0];
         const opName = `op_${node.id}`;
-        context.variables[opName] = node.params['operation'];
-        const initial = node.params['initial'];
+        context.variables[opName] = getParam(node, 'operation');
+        const initial = getParam(node, 'initial');
 
         if (initial !== undefined) {
           return `${node.id} = ${inputId}.reduce(${opName}, ${JSON.stringify(initial)})`;
@@ -273,8 +337,8 @@ export class OptimizedStrategy extends Strategy {
 
       case IntentType.SORT: {
         const inputId = node.inputs[0];
-        const keyFunc = node.params['key'];
-        const reverse = node.params['reverse'] || false;
+        const keyFunc = getParam(node, 'key');
+        const reverse = getParam(node, 'reverse') || false;
 
         if (keyFunc) {
           const keyName = `key_${node.id}`;
@@ -292,7 +356,7 @@ export class OptimizedStrategy extends Strategy {
       case IntentType.GROUP_BY: {
         const inputId = node.inputs[0];
         const keyName = `key_${node.id}`;
-        context.variables[keyName] = node.params['key'];
+        context.variables[keyName] = getParam(node, 'key');
 
         // Use reduce for a more functional approach
         return `${node.id} = ${inputId}.reduce((acc, _item) => {
@@ -305,33 +369,22 @@ export class OptimizedStrategy extends Strategy {
 
       case IntentType.JOIN: {
         const [leftId, rightId] = node.inputs;
-        const onName = `on_${node.id}`;
-        context.variables[onName] = node.params['on'];
+        const leftKeyName = `leftKey_${node.id}`;
+        const rightKeyName = `rightKey_${node.id}`;
+        context.variables[leftKeyName] = getParam(node, 'leftKey');
+        context.variables[rightKeyName] = getParam(node, 'rightKey');
 
-        return `${node.id} = ${leftId}.flatMap(_left => ${rightId}.filter(_right => ${onName}(_left, _right)).map(_right => [_left, _right]))`;
+        return `${node.id} = ${leftId}.flatMap(_left => ${rightId}.filter(_right => ${leftKeyName}(_left) === ${rightKeyName}(_right)).map(_right => [_left, _right]))`;
       }
 
-      case IntentType.FLATTEN: {
-        const inputId = node.inputs[0];
-        return `${node.id} = ${inputId}.flat()`;
-      }
+      case IntentType.FLATTEN:
+        return this.generateFlattenCodeOptimized(node);
 
-      case IntentType.DISTINCT: {
-        const inputId = node.inputs[0];
-        return `${node.id} = [...new Set(${inputId})]`;
-      }
+      case IntentType.DISTINCT:
+        return this.generateDistinctCodeOptimized(node);
 
-      case IntentType.ASSERT: {
-        const inputId = node.inputs[0];
-        const predName = `pred_${node.id}`;
-        context.variables[predName] = node.params['predicate'];
-        const message = node.params['message'] || 'Assertion failed';
-
-        return `if (!${predName}(${inputId})) {
-  throw new Error(${JSON.stringify(message)})
-}
-${node.id} = ${inputId}`;
-      }
+      case IntentType.ASSERT:
+        return this.generateAssertCode(node, context);
 
       default:
         throw new Error(

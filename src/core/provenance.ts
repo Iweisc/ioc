@@ -71,7 +71,7 @@ export class ProvenanceTracker {
 
     if (captureStack) {
       // Capture call stack
-      const stack = new Error().stack;
+      const { stack } = new Error();
       if (stack) {
         const lines = stack.split('\n');
         // Skip first 3 lines (Error, trackNodeCreation, caller)

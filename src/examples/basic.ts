@@ -32,11 +32,20 @@ function main() {
   console.log('Execution order:', order);
   console.log();
 
-  // Compile (stub implementation for now)
-  const kernel = new SolverKernel();
-  const compiled = kernel.compile(graph, 'speed');
+  // Compile and execute
+  const kernel = new SolverKernel(graph);
+  const compiled = kernel.compile('speed');
 
-  console.log('Compilation metadata:', compiled.metadata);
+  // Test execution
+  const testData = [5, 12, 8, 20, 3, 15];
+  const result = compiled(testData);
+  console.log('Input:', testData);
+  console.log('Output (filtered >10, then *2):', result);
+  console.log();
+
+  // Show generated code
+  console.log('Generated code:');
+  console.log(kernel.getGeneratedCode());
 }
 
 main();

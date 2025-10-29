@@ -83,7 +83,7 @@ export class SolverKernel {
     optimizeFor: 'speed' | 'memory' | 'balanced' = 'speed',
     inputSize?: number
   ): Strategy {
-    const intentType = node.intentType;
+    const { intentType } = node;
 
     // Filter strategies that can handle this intent type
     const capableStrategies = this.strategies.filter(s =>

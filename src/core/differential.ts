@@ -140,11 +140,9 @@ export class DifferentialTester {
 
     // Performance comparison
     const performanceComparison: Record<string, number> = {};
-    if (baseline && opt && baseline.error === undefined && baseline.executionTime > 0) {
-      if (opt.error === undefined) {
-        const speedup = baseline.executionTime / opt.executionTime;
-        performanceComparison['optimized'] = speedup;
-      }
+    if (baseline && opt && baseline.error === undefined && baseline.executionTime > 0 && opt.error === undefined) {
+      const speedup = baseline.executionTime / opt.executionTime;
+      performanceComparison['optimized'] = speedup;
     }
 
     return {

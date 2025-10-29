@@ -65,7 +65,7 @@ This document tracks the migration of IOC from Python to TypeScript with native 
 
 4. **Compiler Stub** (`src/solvers/kernel.ts`)
    - `SolverKernel` class
-   - `CompliledFunction` interface
+   - `CompiledFunction` interface
    - Stub `compile()` method (ready for LLVM)
 
 5. **Tests** (`src/tests/types.test.ts`)

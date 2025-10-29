@@ -371,10 +371,19 @@ export class Graph {
 
   /**
    * Apply optimization passes to the graph
+   * 
+   * Note: Uses require() for lazy loading to break circular dependency between
+   * Graph and GraphOptimizer. The optimizer imports Graph for type definitions,
+   * and Graph needs to instantiate GraphOptimizer. By using require() here instead
+   * of a top-level import, we ensure both modules are fully loaded before the
+   * optimizer is instantiated.
+   * 
+   * Alternative: Accept optimizer as a parameter or use dependency injection,
+   * but that would complicate the API for this common operation.
    */
   optimize(passes?: string[]): void {
-    // Lazy import to avoid circular dependency
-    const { GraphOptimizer } = require('./optimizer');
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { GraphOptimizer } = require('./optimizer.js');
     const optimizer = new GraphOptimizer(this);
     optimizer.optimize(passes);
   }

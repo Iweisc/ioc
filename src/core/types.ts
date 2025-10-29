@@ -166,8 +166,22 @@ export function inferType(value: unknown): IOCType {
     if (value.length === 0) {
       return new ListType(new AnyType());
     }
-    // Infer element type from first element
-    const elemType = inferType(value[0]);
+    // Infer element type from all elements to handle mixed types
+    let elemType = inferType(value[0]);
+    for (let i = 1; i < value.length; i++) {
+      const currentType = inferType(value[i]);
+      // If types differ, fall back to AnyType
+      if (elemType.constructor !== currentType.constructor) {
+        elemType = new AnyType();
+        break;
+      }
+      // For numeric types, check if we need to upgrade Int to Float
+      if (elemType instanceof IntType && currentType instanceof FloatType) {
+        elemType = currentType;
+      } else if (elemType instanceof FloatType && currentType instanceof IntType) {
+        // Keep Float, no change needed
+      }
+    }
     return new ListType(elemType);
   }
   return new AnyType();
