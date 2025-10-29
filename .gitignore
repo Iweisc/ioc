@@ -57,3 +57,7 @@ htmlcov/
 
 # Planning documents
 NEXT_STEPS.md
+
+# TypeScript port documentation (archived)
+TYPESCRIPT_PORT.md
+TYPESCRIPT_PORT_SUMMARY.md
