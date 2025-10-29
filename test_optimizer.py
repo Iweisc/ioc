@@ -223,7 +223,7 @@ def test_common_subexpression_elimination():
     assert result[0] == result[1], f"Expected identical outputs, got {result}"
     assert result[0] == [14, 20], f"Expected [14, 20], got {result[0]}"
     
-    print(f"  Pass (CSE deduplicated nodes correctly)")
+    print("  Pass (CSE deduplicated nodes correctly)")
 
 
 def test_cse_with_constants():
@@ -256,7 +256,7 @@ def test_cse_with_constants():
     # Note: This test verifies CSE works, but map nodes with lambda may not be deduplicated
     # since lambda creates new function objects each time
     
-    print(f"  Pass (CSE handled constants)")
+    print("  Pass (CSE handled constants)")
 
 
 def test_cse_preserves_different_operations():
@@ -283,11 +283,11 @@ def test_cse_preserves_different_operations():
     fn = g.compile(auto_optimize=False)
     result = fn(data=[3, 7, 12, 2])
     
-    assert len(result) == 2, f"Expected 2 outputs"
+    assert len(result) == 2, "Expected 2 outputs"
     assert result[0] == [14, 24], f"Expected [14, 24], got {result[0]}"
     assert result[1] == [24], f"Expected [24], got {result[1]}"
     
-    print(f"  Pass (CSE preserved different operations)")
+    print("  Pass (CSE preserved different operations)")
 
 
 def test_filter_before_map_independent():
@@ -328,7 +328,7 @@ def test_filter_before_map_independent():
     
     assert result == expected, f"Expected {expected}, got {result}"
     
-    print(f"  Pass (filter_before_map reordered independent operations)")
+    print("  Pass (filter_before_map reordered independent operations)")
 
 
 def test_filter_before_map_dependent():
@@ -367,7 +367,7 @@ def test_filter_before_map_dependent():
     
     assert result == expected, f"Expected {expected}, got {result}"
     
-    print(f"  Pass (filter_before_map correctly preserved dependent operations)")
+    print("  Pass (filter_before_map correctly preserved dependent operations)")
 
 
 def test_filter_before_map_with_multiple_consumers():
@@ -395,7 +395,14 @@ def test_filter_before_map_with_multiple_consumers():
     # Should NOT reorder (map has multiple consumers)
     assert g.nodes[filtered].inputs == original_filter_inputs, "Should not reorder with multiple consumers"
     
-    print(f"  Pass (filter_before_map correctly skipped multiple consumer case)")
+    # Verify output correctness
+    fn = g.compile(auto_optimize=False)
+    result = fn(data=["hi", "test", "hello", "x"])
+    expected = ["TEST", "HELLO"]  # Only strings with len > 3, uppercased
+    
+    assert result == expected, f"Expected {expected}, got {result}"
+    
+    print("  Pass (filter_before_map correctly skipped multiple consumer case)")
 
 
 def test_filter_before_map_end_to_end():
@@ -422,7 +429,7 @@ def test_filter_before_map_end_to_end():
     
     assert result == expected, f"Expected {expected}, got {result}"
     
-    print(f"  Pass (filter_before_map end-to-end optimization works correctly)")
+    print("  Pass (filter_before_map end-to-end optimization works correctly)")
 
 
 def main():

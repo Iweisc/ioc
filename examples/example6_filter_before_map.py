@@ -28,21 +28,21 @@ def example_independent_operations():
     
     print("Before optimization:")
     print(f"  Nodes: {len(g.nodes)}")
-    print(f"  Pattern: input -> map(upper) -> filter(len>3)")
+    print("  Pattern: input -> map(upper) -> filter(len>3)")
     
     # Compile with optimization
     fn = g.compile(auto_optimize=True)
     
     print("\nAfter optimization:")
     print(f"  Nodes: {len(g.nodes)}")
-    print(f"  Pattern: input -> filter(len>3) -> map(upper)")
-    print(f"  Benefit: Only apply upper() to filtered elements!")
+    print("  Pattern: input -> filter(len>3) -> map(upper)")
+    print("  Benefit: Only apply upper() to filtered elements!")
     
     # Test
     result = fn(data=["hi", "test", "hello", "x", "world"])
     print(f"\nInput:  ['hi', 'test', 'hello', 'x', 'world']")
     print(f"Output: {result}")
-    print(f"  -> Only strings with len>3 are uppercased\n")
+    print("  -> Only strings with len>3 are uppercased\n")
 
 
 def example_dependent_operations():
@@ -62,20 +62,20 @@ def example_dependent_operations():
     g.output(filtered)
     
     print("Before optimization:")
-    print(f"  Pattern: input -> map(*2) -> filter(>10)")
+    print("  Pattern: input -> map(*2) -> filter(>10)")
     
     # Compile with optimization
     fn = g.compile(auto_optimize=True)
     
     print("\nAfter optimization:")
-    print(f"  Pattern: input -> map(*2) -> filter(>10)")
-    print(f"  Note: NOT reordered (predicate depends on map)")
+    print("  Pattern: input -> map(*2) -> filter(>10)")
+    print("  Note: NOT reordered (predicate depends on map)")
     
     # Test
     result = fn(data=[3, 7, 10, 15])
     print(f"\nInput:  [3, 7, 10, 15]")
     print(f"Output: {result}")
-    print(f"  -> [14, 20, 30] (doubled values > 10)\n")
+    print("  -> [14, 20, 30] (doubled values > 10)\n")
 
 
 def example_performance_benefit():
@@ -106,10 +106,10 @@ def example_performance_benefit():
     print(f"Input size: {len(test_data)} elements")
     print(f"Output size: {len(result)} elements")
     print(f"Filter selectivity: {len(result)/len(test_data)*100:.1f}%")
-    print(f"\nBenefit: Expensive transformation applied to:")
+    print("\nBenefit: Expensive transformation applied to:")
     print(f"  - Without optimization: {len(test_data)} elements")
     print(f"  - With optimization: ~{len(test_data)} during filter, then {len(result)} after")
-    print(f"  - BUT: Filter reduces downstream work significantly!")
+    print("  - BUT: Filter reduces downstream work significantly!")
     print(f"\nOutput sample: {result[:2]}\n")
 
 

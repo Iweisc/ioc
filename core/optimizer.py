@@ -78,6 +78,12 @@ class GraphOptimizer:
         # - Same intent type
         # - Same parameters (type_hint for constants, equal inputs, etc.)
         # - Same inputs
+        #
+        # Safety: This optimization only deduplicates pure operations.
+        # Nodes with side effects or non-deterministic behavior are skipped.
+        # For now, we conservatively only deduplicate:
+        # - Constants (always pure)
+        # - Operations with identical function objects (same reference = same behavior)
         changes_made = 0
         node_to_canonical: Dict[str, str] = {}  # Maps duplicate node IDs to canonical node ID
         
@@ -171,13 +177,35 @@ class GraphOptimizer:
             # Run dead code elimination to remove the now-unused duplicate nodes
             self._dead_code_elimination()
     
+    def _deep_equal(self, a, b):
+        # Recursively check deep equality for dicts, lists, tuples, and sets
+        if type(a) != type(b):
+            return False
+        if isinstance(a, dict):
+            if set(a.keys()) != set(b.keys()):
+                return False
+            for k in a:
+                if not self._deep_equal(a[k], b[k]):
+                    return False
+            return True
+        elif isinstance(a, (list, tuple)):
+            if len(a) != len(b):
+                return False
+            for x, y in zip(a, b):
+                if not self._deep_equal(x, y):
+                    return False
+            return True
+        elif isinstance(a, set):
+            return a == b
+        else:
+            return a == b
+    
     def _params_identical(self, params1: dict, params2: dict) -> bool:
         # Check if two parameter dicts are identical (including function object identity)
         if set(params1.keys()) != set(params2.keys()):
             return False
         
-        for key in params1:
-            val1 = params1[key]
+        for key, val1 in params1.items():
             val2 = params2[key]
             
             if callable(val1) and callable(val2):
@@ -185,8 +213,8 @@ class GraphOptimizer:
                 if val1 is not val2:
                     return False
             else:
-                # For other values, check equality
-                if val1 != val2:
+                # For other values, check deep equality
+                if not self._deep_equal(val1, val2):
                     return False
         
         return True
@@ -402,11 +430,14 @@ class GraphOptimizer:
     
     def _count_consumers(self, node_id: str) -> int:
         # Count how many nodes use this node as input
-        count = 0
-        for other_node in self.graph.nodes.values():
-            if node_id in other_node.inputs:
-                count += 1
-        # Also check if it's an output
+        # Note: Outputs are counted as consumers because nodes that are outputs
+        # should not be eliminated or reordered in ways that change semantics
+        count = sum(
+            1
+            for other_node in self.graph.nodes.values()
+            if node_id in other_node.inputs
+        )
+        # Also count if it's an output (external consumer)
         if node_id in self.graph.outputs:
             count += 1
         return count
