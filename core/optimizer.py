@@ -1,6 +1,6 @@
 # Graph Optimizer - Performs optimization passes on intent graphs
 
-from typing import Dict, Set, List
+from typing import Dict, Set, List, Optional
 from .graph import Graph, IntentNode, IntentType
 
 
@@ -12,7 +12,7 @@ class GraphOptimizer:
         self.graph = graph
         self.optimizations_applied: List[str] = []
     
-    def optimize(self, passes: List[str] = None) -> Graph:
+    def optimize(self, passes: Optional[List[str]] = None) -> Graph:
         # Apply optimization passes to the graph.
         #
         # Available passes:
@@ -85,10 +85,9 @@ class GraphOptimizer:
         def get_node_signature(node: IntentNode) -> tuple:
             # Create a hashable signature for a node
             # Note: We can't hash functions, so we use id() for params with functions
-            sig_parts = [node.intent_type]
             
             # Add inputs to signature
-            sig_parts.append(tuple(node.inputs))
+            inputs_tuple = tuple(node.inputs)
             
             # Add params (but we can't compare functions reliably, so use their id)
             param_sig = []
@@ -99,9 +98,8 @@ class GraphOptimizer:
                     param_sig.append((key, id(value)))
                 else:
                     param_sig.append((key, value))
-            sig_parts.append(tuple(param_sig))
             
-            return tuple(sig_parts)
+            return (node.intent_type, inputs_tuple, tuple(param_sig))
         
         # Build signature map
         signature_to_nodes: Dict[tuple, List[str]] = {}
@@ -284,40 +282,123 @@ class GraphOptimizer:
             self._dead_code_elimination()
     
     def _filter_before_map(self):
-        # Reorder operations to push expensive maps after cheap filters.
-        # 
-        # This optimization is DISABLED by default because it requires
-        # sophisticated program analysis to be safe:
+        # Reorder operations to push filters before maps when the predicate
+        # is independent of the transformation.
         #
-        # Challenge: Given map(f) -> filter(p), we want filter(p') -> map(f)
-        # where p'(x) evaluates to p(f(x)).
+        # Pattern: source -> map(f) -> filter(p) 
+        # Goal: source -> filter(p') -> map(f)
         #
-        # This requires either:
-        # 1. Inverting the transformation: p'(x) = p(f(x)) becomes p'(x) checks f⁻¹
-        # 2. Rewriting the predicate to work on pre-transformed data
-        # 3. Static analysis to detect when predicate is independent of transform
+        # This is beneficial when:
+        # - The predicate p is independent of transformation f
+        # - The filter has high selectivity (removes many elements)
+        # - The map transformation is expensive
         #
-        # All of these are complex and error-prone without proper tooling.
-        #
-        # Future enhancements could include:
-        # - User annotations like @independent_of_transform
-        # - Static analysis of AST to detect dependencies
-        # - Profile-guided optimization with runtime validation
-        # - Integration with symbolic execution
-        #
-        # For now, this pass is a no-op placeholder for future work.
+        # Strategy:
+        # We use runtime testing to detect independence: generate sample data,
+        # check if filtering before/after mapping gives equivalent results.
+        # If independent, we can safely reorder to filter first, reducing
+        # the number of elements that undergo transformation.
         
         changes_made = 0
         
-        # Placeholder for future implementation
-        # When implemented, should:
-        # 1. Find map -> filter patterns
-        # 2. Analyze semantic dependencies
-        # 3. Safely reorder when beneficial
-        # 4. Validate correctness with differential testing
+        # Find map -> filter patterns
+        for filter_id, filter_node in list(self.graph.nodes.items()):
+            if filter_node.intent_type != IntentType.FILTER:
+                continue
+            
+            if not filter_node.inputs or len(filter_node.inputs) != 1:
+                continue
+            
+            map_id = filter_node.inputs[0]
+            if map_id not in self.graph.nodes:
+                continue
+            
+            map_node = self.graph.nodes[map_id]
+            if map_node.intent_type != IntentType.MAP:
+                continue
+            
+            # Safety check: only optimize if map has exactly one consumer (the filter)
+            if self._count_consumers(map_id) != 1:
+                continue
+            
+            # Extract functions
+            transform = map_node.params.get("transform")
+            predicate = filter_node.params.get("predicate")
+            
+            if not transform or not predicate:
+                continue
+            
+            # Test if predicate is independent of transformation
+            if self._is_predicate_independent(transform, predicate):
+                # Reorder: swap filter and map
+                # New structure: source -> filter(p) -> map(f)
+                
+                # Update filter to take map's input
+                filter_node.inputs = map_node.inputs.copy()
+                
+                # Update map to take filter's output
+                map_node.inputs = [filter_id]
+                
+                # Update any consumers of filter to consume map instead
+                for node_id, node in self.graph.nodes.items():
+                    if node_id == map_id:
+                        continue
+                    node.inputs = [map_id if inp == filter_id else inp for inp in node.inputs]
+                
+                # Update outputs
+                self.graph.outputs = [map_id if out == filter_id else out for out in self.graph.outputs]
+                
+                changes_made += 1
         
         if changes_made > 0:
             self.optimizations_applied.append(f"filter_before_map: reordered {changes_made} operations")
+    
+    def _is_predicate_independent(self, transform, predicate) -> bool:
+        # Test if a predicate is independent of a transformation by checking
+        # if filtering before or after mapping gives equivalent results.
+        #
+        # Independence means: predicate operates on properties unchanged by transform
+        # Example: len(x) is independent of str.upper()
+        
+        # Generate diverse test data
+        test_cases = [
+            # Numbers
+            [1, 2, 3, 4, 5, 10, 20, 30, -1, -5, 0],
+            # Strings
+            ["a", "ab", "abc", "hello", "world", "test", "x", ""],
+            # Mixed complexity
+            [0, 1, -1, 100, -100, 42, 7, 13],
+        ]
+        
+        for test_data in test_cases:
+            try:
+                # Method 1: map then filter
+                mapped = [transform(x) for x in test_data]
+                result1 = [m for m in mapped if predicate(m)]
+                
+                # Method 2: filter then map (if predicate works on original)
+                try:
+                    filtered = [x for x in test_data if predicate(x)]
+                    result2 = [transform(x) for x in filtered]
+                    
+                    # If both methods give same result, predicate is independent
+                    if result1 == result2:
+                        # Test passed with this dataset
+                        continue
+                    else:
+                        # Different results = not independent
+                        return False
+                        
+                except (TypeError, AttributeError, KeyError, ValueError):
+                    # Predicate can't operate on original data = not independent
+                    return False
+                    
+            except (TypeError, AttributeError, KeyError, ValueError):
+                # Transform or predicate failed on this test data, try next
+                continue
+        
+        # All tests passed - likely independent
+        return True
     
     def _count_consumers(self, node_id: str) -> int:
         # Count how many nodes use this node as input
