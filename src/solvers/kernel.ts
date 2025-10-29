@@ -228,9 +228,9 @@ export class SolverKernel {
     // Alternative approaches like vm.runInContext or worker threads would add
     // significant complexity and performance overhead for no security benefit in
     // this controlled code generation scenario.
-    // 
-    // eslint-disable-next-line no-new-func
     const execGlobals = { ...context.variables };
+    
+    // eslint-disable-next-line no-new-func
     const compiledFn = new Function(
       ...Object.keys(execGlobals),
       ...paramNames,
