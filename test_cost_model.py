@@ -1,6 +1,7 @@
 # Cost Model Test Suite
 
 import sys
+import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
@@ -83,7 +84,7 @@ def test_kernel_uses_profiler():
     
     # Check that NaiveStrategy was chosen (has lower cost in our fake data)
     report = kernel.get_strategy_report()
-    assert "NaiveStrategy" in report, f"Expected NaiveStrategy to be chosen based on profiler data"
+    assert "NaiveStrategy" in report, "Expected NaiveStrategy to be chosen based on profiler data"
     
     print("  Strategy selection based on profiler data: ✓")
     print("  Pass")
@@ -193,6 +194,17 @@ def test_profiler_persistence():
     Path(test_file).unlink(missing_ok=True)
 
 
+def _measure_execution_time(fn, data, iterations=10):
+    """Helper to measure average execution time over multiple iterations."""
+    times = []
+    for _ in range(iterations):
+        start = time.perf_counter()
+        result = fn(data=data)
+        end = time.perf_counter()
+        times.append((end - start) * 1000)
+    return sum(times) / len(times)
+
+
 def test_cost_model_improves_performance():
     # Test that cost model actually improves performance
     print("\nTest: Cost model improves performance")
@@ -215,15 +227,8 @@ def test_cost_model_improves_performance():
     # Warm up
     fn(data=large_data)
     
-    # Measure
-    times = []
-    for _ in range(10):
-        start = time.perf_counter()
-        result = fn(data=large_data)
-        end = time.perf_counter()
-        times.append((end - start) * 1000)
-    
-    avg_time = sum(times) / len(times)
+    # Measure using helper function
+    avg_time = _measure_execution_time(fn, large_data, iterations=10)
     
     # Should be reasonably fast
     assert avg_time < 10.0, f"Expected < 10ms, got {avg_time:.3f}ms"

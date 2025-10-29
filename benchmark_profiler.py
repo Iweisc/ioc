@@ -10,8 +10,11 @@ from core.graph import Graph
 from solvers.profiler import get_profiler
 
 
-def benchmark_filter(sizes=[10, 100, 1000, 10000]):
+def benchmark_filter(sizes=None):
     # Benchmark filter operation with different data sizes
+    if sizes is None:
+        sizes = [10, 100, 1000, 10000]
+    
     print("Benchmarking filter...")
     
     for size in sizes:
@@ -42,8 +45,11 @@ def benchmark_filter(sizes=[10, 100, 1000, 10000]):
         print(f"  size={size:6}: {avg_time:.3f}ms (result size: {len(result)})")
 
 
-def benchmark_map(sizes=[10, 100, 1000, 10000]):
+def benchmark_map(sizes=None):
     # Benchmark map operation with different data sizes
+    if sizes is None:
+        sizes = [10, 100, 1000, 10000]
+    
     print("\nBenchmarking map...")
     
     for size in sizes:
@@ -68,8 +74,11 @@ def benchmark_map(sizes=[10, 100, 1000, 10000]):
         print(f"  size={size:6}: {avg_time:.3f}ms")
 
 
-def benchmark_reduce(sizes=[10, 100, 1000, 10000]):
+def benchmark_reduce(sizes=None):
     # Benchmark reduce operation with different data sizes
+    if sizes is None:
+        sizes = [10, 100, 1000, 10000]
+    
     print("\nBenchmarking reduce...")
     
     for size in sizes:
@@ -94,8 +103,11 @@ def benchmark_reduce(sizes=[10, 100, 1000, 10000]):
         print(f"  size={size:6}: {avg_time:.3f}ms (result: {result})")
 
 
-def benchmark_sort(sizes=[10, 100, 1000, 10000]):
+def benchmark_sort(sizes=None):
     # Benchmark sort operation with different data sizes
+    if sizes is None:
+        sizes = [10, 100, 1000, 10000]
+    
     print("\nBenchmarking sort...")
     
     for size in sizes:
@@ -124,8 +136,11 @@ def benchmark_sort(sizes=[10, 100, 1000, 10000]):
         print(f"  size={size:6}: {avg_time:.3f}ms")
 
 
-def benchmark_group_by(sizes=[10, 100, 1000, 5000]):
+def benchmark_group_by(sizes=None):
     # Benchmark group_by operation with different data sizes
+    if sizes is None:
+        sizes = [10, 100, 1000, 5000]
+    
     print("\nBenchmarking group_by...")
     
     for size in sizes:
@@ -150,8 +165,11 @@ def benchmark_group_by(sizes=[10, 100, 1000, 5000]):
         print(f"  size={size:6}: {avg_time:.3f}ms (groups: {len(result)})")
 
 
-def benchmark_flatten(sizes=[10, 100, 1000, 5000]):
+def benchmark_flatten(sizes=None):
     # Benchmark flatten operation with different data sizes
+    if sizes is None:
+        sizes = [10, 100, 1000, 5000]
+    
     print("\nBenchmarking flatten...")
     
     for size in sizes:
@@ -177,8 +195,11 @@ def benchmark_flatten(sizes=[10, 100, 1000, 5000]):
         print(f"  size={size:6}: {avg_time:.3f}ms (result size: {len(result)})")
 
 
-def benchmark_distinct(sizes=[10, 100, 1000, 5000]):
+def benchmark_distinct(sizes=None):
     # Benchmark distinct operation with different data sizes
+    if sizes is None:
+        sizes = [10, 100, 1000, 5000]
+    
     print("\nBenchmarking distinct...")
     
     for size in sizes:
@@ -219,8 +240,9 @@ def main():
     benchmark_flatten()
     benchmark_distinct()
     
-    # Show profiler report
+    # Show profiler report and save data
     profiler = get_profiler()
+    profiler.save_profiles()  # Explicitly save profiler data to disk
     print("\n" + "=" * 60)
     print(profiler.get_report())
     print("\nProfile data saved to .ioc_profile.json")

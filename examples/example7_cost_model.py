@@ -89,6 +89,17 @@ def example_compare_strategies():
     print()
 
 
+def _print_intent_performance(profiler, intent_type, sizes):
+    """Helper to print performance data for an intent type."""
+    print(f"{intent_type.capitalize()} performance:")
+    for size in sizes:
+        naive_cost = profiler.get_cost_estimate(intent_type, "NaiveStrategy", size)
+        opt_cost = profiler.get_cost_estimate(intent_type, "OptimizedStrategy", size)
+        speedup = naive_cost / opt_cost if opt_cost > 0 else 1.0
+        print(f"  size={size:6}: Naive={naive_cost:8.3f}ms  Optimized={opt_cost:8.3f}ms  Speedup={speedup:.2f}x")
+    print()
+
+
 def example_profiler_data():
     # Show the profiler's performance data
     print("\nExample 3: Profiler Performance Data")
@@ -100,23 +111,10 @@ def example_profiler_data():
     print("Sample of recorded performance data:")
     print()
     
-    # Show filter performance
-    print("Filter performance:")
-    for size in [10, 100, 1000, 10000]:
-        naive_cost = profiler.get_cost_estimate("filter", "NaiveStrategy", size)
-        opt_cost = profiler.get_cost_estimate("filter", "OptimizedStrategy", size)
-        speedup = naive_cost / opt_cost if opt_cost > 0 else 1.0
-        print(f"  size={size:6}: Naive={naive_cost:8.3f}ms  Optimized={opt_cost:8.3f}ms  Speedup={speedup:.2f}x")
-    print()
-    
-    # Show map performance
-    print("Map performance:")
-    for size in [10, 100, 1000, 10000]:
-        naive_cost = profiler.get_cost_estimate("map", "NaiveStrategy", size)
-        opt_cost = profiler.get_cost_estimate("map", "OptimizedStrategy", size)
-        speedup = naive_cost / opt_cost if opt_cost > 0 else 1.0
-        print(f"  size={size:6}: Naive={naive_cost:8.3f}ms  Optimized={opt_cost:8.3f}ms  Speedup={speedup:.2f}x")
-    print()
+    # Show performance for different intent types
+    sizes = [10, 100, 1000, 10000]
+    _print_intent_performance(profiler, "filter", sizes)
+    _print_intent_performance(profiler, "map", sizes)
 
 
 def example_cache_benefit():
