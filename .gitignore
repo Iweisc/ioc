@@ -25,6 +25,16 @@ venv/
 ENV/
 env/
 
+# Node/TypeScript
+node_modules/
+dist/
+*.tsbuildinfo
+.npm
+.eslintcache
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
 # IDE
 .vscode/
 .idea/
@@ -43,6 +53,11 @@ htmlcov/
 
 # IOC specific
 *.iog.backup
+.ioc_profile.json
 
 # Planning documents
 NEXT_STEPS.md
+
+# TypeScript port documentation (archived)
+TYPESCRIPT_PORT.md
+TYPESCRIPT_PORT_SUMMARY.md
