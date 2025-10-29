@@ -58,8 +58,8 @@ export type OptimizationMode = 'speed' | 'memory' | 'balanced';
  * Intent Graph - represents a program as a DAG
  */
 export class Graph {
-  private nodes: Map<string, IntentNode> = new Map();
-  private outputNodes: string[] = [];
+  nodes: Map<string, IntentNode> = new Map();
+  outputs: string[] = [];
 
   /**
    * Generate unique node ID
@@ -94,7 +94,7 @@ export class Graph {
    * Get output nodes
    */
   getOutputs(): string[] {
-    return [...this.outputNodes];
+    return [...this.outputs];
   }
 
   /**
@@ -285,8 +285,8 @@ export class Graph {
     const node = this.getNode(nodeId);
     if (!node) throw new Error(`Node not found: ${nodeId}`);
 
-    if (!this.outputNodes.includes(nodeId)) {
-      this.outputNodes.push(nodeId);
+    if (!this.outputs.includes(nodeId)) {
+      this.outputs.push(nodeId);
     }
     return nodeId;
   }
@@ -314,7 +314,7 @@ export class Graph {
     };
 
     // Start from outputs
-    for (const outputId of this.outputNodes) {
+    for (const outputId of this.outputs) {
       visit(outputId);
     }
 
@@ -339,8 +339,43 @@ export class Graph {
       lines.push(`  ${shortId}: ${node.intentType}${inputsStr}`);
     }
 
-    lines.push(`Outputs: ${this.outputNodes.map((id) => id.slice(0, 12)).join(', ')}`);
+    lines.push(`Outputs: ${this.outputs.map((id) => id.slice(0, 12)).join(', ')}`);
 
     return lines.join('\n');
+  }
+
+  /**
+   * Deep clone the graph
+   */
+  clone(): Graph {
+    const cloned = new Graph();
+    
+    // Clone all nodes
+    for (const [id, node] of this.nodes.entries()) {
+      const clonedNode: IntentNode = {
+        id: node.id,
+        intentType: node.intentType,
+        inputs: [...node.inputs],
+        params: { ...node.params },
+        outputType: node.outputType,
+        metadata: { ...node.metadata },
+      };
+      cloned.nodes.set(id, clonedNode);
+    }
+    
+    // Clone outputs
+    cloned.outputs = [...this.outputs];
+    
+    return cloned;
+  }
+
+  /**
+   * Apply optimization passes to the graph
+   */
+  optimize(passes?: string[]): void {
+    // Lazy import to avoid circular dependency
+    const { GraphOptimizer } = require('./optimizer');
+    const optimizer = new GraphOptimizer(this);
+    optimizer.optimize(passes);
   }
 }
