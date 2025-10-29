@@ -1,0 +1,394 @@
+[
+  {
+    "intent_type": "filter",
+    "strategy_name": "NaiveStrategy",
+    "input_size": 10,
+    "execution_time_ms": 0.015412399989145342,
+    "sample_count": 1
+  },
+  {
+    "intent_type": "filter",
+    "strategy_name": "OptimizedStrategy",
+    "input_size": 10,
+    "execution_time_ms": 0.009025049985211808,
+    "sample_count": 1
+  },
+  {
+    "intent_type": "filter",
+    "strategy_name": "NaiveStrategy",
+    "input_size": 100,
+    "execution_time_ms": 0.02388554994467995,
+    "sample_count": 1
+  },
+  {
+    "intent_type": "filter",
+    "strategy_name": "OptimizedStrategy",
+    "input_size": 100,
+    "execution_time_ms": 0.012424950000422541,
+    "sample_count": 1
+  },
+  {
+    "intent_type": "filter",
+    "strategy_name": "NaiveStrategy",
+    "input_size": 1000,
+    "execution_time_ms": 0.11069364991271868,
+    "sample_count": 1
+  },
+  {
+    "intent_type": "filter",
+    "strategy_name": "OptimizedStrategy",
+    "input_size": 1000,
+    "execution_time_ms": 0.04849580018344568,
+    "sample_count": 1
+  },
+  {
+    "intent_type": "filter",
+    "strategy_name": "NaiveStrategy",
+    "input_size": 10000,
+    "execution_time_ms": 1.0887104999255826,
+    "sample_count": 1
+  },
+  {
+    "intent_type": "filter",
+    "strategy_name": "OptimizedStrategy",
+    "input_size": 10000,
+    "execution_time_ms": 0.42126880002797407,
+    "sample_count": 1
+  },
+  {
+    "intent_type": "map",
+    "strategy_name": "NaiveStrategy",
+    "input_size": 10,
+    "execution_time_ms": 0.012935399945490644,
+    "sample_count": 1
+  },
+  {
+    "intent_type": "map",
+    "strategy_name": "OptimizedStrategy",
+    "input_size": 10,
+    "execution_time_ms": 0.012979049961359124,
+    "sample_count": 1
+  },
+  {
+    "intent_type": "map",
+    "strategy_name": "NaiveStrategy",
+    "input_size": 100,
+    "execution_time_ms": 0.021102000027894974,
+    "sample_count": 1
+  },
+  {
+    "intent_type": "map",
+    "strategy_name": "OptimizedStrategy",
+    "input_size": 100,
+    "execution_time_ms": 0.019045899989578174,
+    "sample_count": 1
+  },
+  {
+    "intent_type": "map",
+    "strategy_name": "NaiveStrategy",
+    "input_size": 1000,
+    "execution_time_ms": 0.09986044997276622,
+    "sample_count": 1
+  },
+  {
+    "intent_type": "map",
+    "strategy_name": "OptimizedStrategy",
+    "input_size": 1000,
+    "execution_time_ms": 0.07518120005443052,
+    "sample_count": 1
+  },
+  {
+    "intent_type": "map",
+    "strategy_name": "NaiveStrategy",
+    "input_size": 10000,
+    "execution_time_ms": 0.8893352000086452,
+    "sample_count": 1
+  },
+  {
+    "intent_type": "map",
+    "strategy_name": "OptimizedStrategy",
+    "input_size": 10000,
+    "execution_time_ms": 0.6079519499962771,
+    "sample_count": 1
+  },
+  {
+    "intent_type": "reduce",
+    "strategy_name": "NaiveStrategy",
+    "input_size": 10,
+    "execution_time_ms": 0.01205819985443668,
+    "sample_count": 1
+  },
+  {
+    "intent_type": "reduce",
+    "strategy_name": "OptimizedStrategy",
+    "input_size": 10,
+    "execution_time_ms": 0.009820700051932363,
+    "sample_count": 1
+  },
+  {
+    "intent_type": "reduce",
+    "strategy_name": "NaiveStrategy",
+    "input_size": 100,
+    "execution_time_ms": 0.020751999954882194,
+    "sample_count": 1
+  },
+  {
+    "intent_type": "reduce",
+    "strategy_name": "OptimizedStrategy",
+    "input_size": 100,
+    "execution_time_ms": 0.011583099967538146,
+    "sample_count": 1
+  },
+  {
+    "intent_type": "reduce",
+    "strategy_name": "NaiveStrategy",
+    "input_size": 1000,
+    "execution_time_ms": 0.1163416000053985,
+    "sample_count": 1
+  },
+  {
+    "intent_type": "reduce",
+    "strategy_name": "OptimizedStrategy",
+    "input_size": 1000,
+    "execution_time_ms": 0.048418699952890165,
+    "sample_count": 1
+  },
+  {
+    "intent_type": "reduce",
+    "strategy_name": "NaiveStrategy",
+    "input_size": 10000,
+    "execution_time_ms": 0.9634104001179367,
+    "sample_count": 1
+  },
+  {
+    "intent_type": "reduce",
+    "strategy_name": "OptimizedStrategy",
+    "input_size": 10000,
+    "execution_time_ms": 0.36293735010985984,
+    "sample_count": 1
+  },
+  {
+    "intent_type": "sort",
+    "strategy_name": "NaiveStrategy",
+    "input_size": 10,
+    "execution_time_ms": 0.007937350073916605,
+    "sample_count": 1
+  },
+  {
+    "intent_type": "sort",
+    "strategy_name": "OptimizedStrategy",
+    "input_size": 10,
+    "execution_time_ms": 0.007754099988233065,
+    "sample_count": 1
+  },
+  {
+    "intent_type": "sort",
+    "strategy_name": "NaiveStrategy",
+    "input_size": 100,
+    "execution_time_ms": 0.00825000015538535,
+    "sample_count": 1
+  },
+  {
+    "intent_type": "sort",
+    "strategy_name": "OptimizedStrategy",
+    "input_size": 100,
+    "execution_time_ms": 0.00819570004750858,
+    "sample_count": 1
+  },
+  {
+    "intent_type": "sort",
+    "strategy_name": "NaiveStrategy",
+    "input_size": 1000,
+    "execution_time_ms": 0.011891650001416565,
+    "sample_count": 1
+  },
+  {
+    "intent_type": "sort",
+    "strategy_name": "OptimizedStrategy",
+    "input_size": 1000,
+    "execution_time_ms": 0.011560549910427653,
+    "sample_count": 1
+  },
+  {
+    "intent_type": "sort",
+    "strategy_name": "NaiveStrategy",
+    "input_size": 10000,
+    "execution_time_ms": 0.05209999999351567,
+    "sample_count": 1
+  },
+  {
+    "intent_type": "sort",
+    "strategy_name": "OptimizedStrategy",
+    "input_size": 10000,
+    "execution_time_ms": 0.053108299880477716,
+    "sample_count": 1
+  },
+  {
+    "intent_type": "group_by",
+    "strategy_name": "NaiveStrategy",
+    "input_size": 10,
+    "execution_time_ms": 0.022866549943501013,
+    "sample_count": 1
+  },
+  {
+    "intent_type": "group_by",
+    "strategy_name": "OptimizedStrategy",
+    "input_size": 10,
+    "execution_time_ms": 0.022639600138063543,
+    "sample_count": 1
+  },
+  {
+    "intent_type": "group_by",
+    "strategy_name": "NaiveStrategy",
+    "input_size": 100,
+    "execution_time_ms": 0.03663934990072448,
+    "sample_count": 1
+  },
+  {
+    "intent_type": "group_by",
+    "strategy_name": "OptimizedStrategy",
+    "input_size": 100,
+    "execution_time_ms": 0.030895899908500724,
+    "sample_count": 1
+  },
+  {
+    "intent_type": "group_by",
+    "strategy_name": "NaiveStrategy",
+    "input_size": 1000,
+    "execution_time_ms": 0.17517910000606207,
+    "sample_count": 1
+  },
+  {
+    "intent_type": "group_by",
+    "strategy_name": "OptimizedStrategy",
+    "input_size": 1000,
+    "execution_time_ms": 0.13824570005454007,
+    "sample_count": 1
+  },
+  {
+    "intent_type": "group_by",
+    "strategy_name": "NaiveStrategy",
+    "input_size": 5000,
+    "execution_time_ms": 0.7680290999360295,
+    "sample_count": 1
+  },
+  {
+    "intent_type": "group_by",
+    "strategy_name": "OptimizedStrategy",
+    "input_size": 5000,
+    "execution_time_ms": 0.5445832498935488,
+    "sample_count": 1
+  },
+  {
+    "intent_type": "flatten",
+    "strategy_name": "NaiveStrategy",
+    "input_size": 10,
+    "execution_time_ms": 0.01400409996676899,
+    "sample_count": 1
+  },
+  {
+    "intent_type": "flatten",
+    "strategy_name": "OptimizedStrategy",
+    "input_size": 10,
+    "execution_time_ms": 0.008508250039085397,
+    "sample_count": 1
+  },
+  {
+    "intent_type": "flatten",
+    "strategy_name": "NaiveStrategy",
+    "input_size": 100,
+    "execution_time_ms": 0.0205416999051522,
+    "sample_count": 1
+  },
+  {
+    "intent_type": "flatten",
+    "strategy_name": "OptimizedStrategy",
+    "input_size": 100,
+    "execution_time_ms": 0.010099849987454945,
+    "sample_count": 1
+  },
+  {
+    "intent_type": "flatten",
+    "strategy_name": "NaiveStrategy",
+    "input_size": 1000,
+    "execution_time_ms": 0.08137290010381548,
+    "sample_count": 1
+  },
+  {
+    "intent_type": "flatten",
+    "strategy_name": "OptimizedStrategy",
+    "input_size": 1000,
+    "execution_time_ms": 0.025283300010414678,
+    "sample_count": 1
+  },
+  {
+    "intent_type": "flatten",
+    "strategy_name": "NaiveStrategy",
+    "input_size": 5000,
+    "execution_time_ms": 0.3508437499021966,
+    "sample_count": 1
+  },
+  {
+    "intent_type": "flatten",
+    "strategy_name": "OptimizedStrategy",
+    "input_size": 5000,
+    "execution_time_ms": 0.08640835003461689,
+    "sample_count": 1
+  },
+  {
+    "intent_type": "distinct",
+    "strategy_name": "NaiveStrategy",
+    "input_size": 10,
+    "execution_time_ms": 0.021058250013084034,
+    "sample_count": 1
+  },
+  {
+    "intent_type": "distinct",
+    "strategy_name": "OptimizedStrategy",
+    "input_size": 10,
+    "execution_time_ms": 0.008322649955516681,
+    "sample_count": 1
+  },
+  {
+    "intent_type": "distinct",
+    "strategy_name": "NaiveStrategy",
+    "input_size": 100,
+    "execution_time_ms": 0.026912499833997572,
+    "sample_count": 1
+  },
+  {
+    "intent_type": "distinct",
+    "strategy_name": "OptimizedStrategy",
+    "input_size": 100,
+    "execution_time_ms": 0.009835300170379924,
+    "sample_count": 1
+  },
+  {
+    "intent_type": "distinct",
+    "strategy_name": "NaiveStrategy",
+    "input_size": 1000,
+    "execution_time_ms": 0.09103335000872903,
+    "sample_count": 1
+  },
+  {
+    "intent_type": "distinct",
+    "strategy_name": "OptimizedStrategy",
+    "input_size": 1000,
+    "execution_time_ms": 0.025943449918486294,
+    "sample_count": 1
+  },
+  {
+    "intent_type": "distinct",
+    "strategy_name": "NaiveStrategy",
+    "input_size": 5000,
+    "execution_time_ms": 0.3906458500750887,
+    "sample_count": 1
+  },
+  {
+    "intent_type": "distinct",
+    "strategy_name": "OptimizedStrategy",
+    "input_size": 5000,
+    "execution_time_ms": 0.0956604500515823,
+    "sample_count": 1
+  }
+]
