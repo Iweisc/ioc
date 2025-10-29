@@ -223,7 +223,7 @@ def test_common_subexpression_elimination():
     assert result[0] == result[1], f"Expected identical outputs, got {result}"
     assert result[0] == [14, 20], f"Expected [14, 20], got {result[0]}"
     
-    print(f"  Pass (CSE deduplicated nodes correctly)")
+    print("  Pass (CSE deduplicated nodes correctly)")
 
 
 def test_cse_with_constants():
@@ -256,7 +256,7 @@ def test_cse_with_constants():
     # Note: This test verifies CSE works, but map nodes with lambda may not be deduplicated
     # since lambda creates new function objects each time
     
-    print(f"  Pass (CSE handled constants)")
+    print("  Pass (CSE handled constants)")
 
 
 def test_cse_preserves_different_operations():
@@ -283,44 +283,153 @@ def test_cse_preserves_different_operations():
     fn = g.compile(auto_optimize=False)
     result = fn(data=[3, 7, 12, 2])
     
-    assert len(result) == 2, f"Expected 2 outputs"
+    assert len(result) == 2, "Expected 2 outputs"
     assert result[0] == [14, 24], f"Expected [14, 24], got {result[0]}"
     assert result[1] == [24], f"Expected [24], got {result[1]}"
     
-    print(f"  Pass (CSE preserved different operations)")
+    print("  Pass (CSE preserved different operations)")
 
 
-def test_filter_before_map_disabled():
-    # Test that filter-before-map is currently disabled (placeholder)
-    print("Test: Filter-before-map (disabled)")
+def test_filter_before_map_independent():
+    # Test filter-before-map with independent predicate
+    print("Test: Filter-before-map (independent predicate)")
     
     g = Graph()
     data = g.input("data", list)
     
-    # Create map -> filter pattern
+    # Create map -> filter pattern where predicate is independent
+    # Transform: upper(), Predicate: length > 3
+    # These are independent - length doesn't change with upper()
+    mapped = g.map(data, lambda x: x.upper())
+    filtered = g.filter(mapped, lambda x: len(x) > 3)
+    
+    g.output(filtered)
+    
+    # Track node connections before optimization
+    filter_node_id = filtered
+    map_node_id = mapped
+    
+    optimizer = GraphOptimizer(g)
+    optimizer.optimize(passes=["filter_before_map"])
+    
+    # After optimization, filter should come before map
+    filter_node = g.nodes[filter_node_id]
+    map_node = g.nodes[map_node_id]
+    
+    # Filter should now take the original input
+    assert filter_node.inputs[0] == data, "Filter should now take original input"
+    # Map should now take filter's output
+    assert map_node.inputs[0] == filter_node_id, "Map should now take filter's output"
+    
+    # Verify correctness
+    fn = g.compile(auto_optimize=False)
+    result = fn(data=["hi", "test", "hello", "x"])
+    expected = ["TEST", "HELLO"]  # "test" and "hello" have len > 3, uppercased
+    
+    assert result == expected, f"Expected {expected}, got {result}"
+    
+    print("  Pass (filter_before_map reordered independent operations)")
+
+
+def test_filter_before_map_dependent():
+    # Test filter-before-map with dependent predicate (should NOT reorder)
+    print("Test: Filter-before-map (dependent predicate)")
+    
+    g = Graph()
+    data = g.input("data", list)
+    
+    # Create map -> filter pattern where predicate depends on map
+    # Transform: x * 2, Predicate: x > 10
+    # These are dependent - predicate checks transformed value
     mapped = g.map(data, lambda x: x * 2)
     filtered = g.filter(mapped, lambda x: x > 10)
     
     g.output(filtered)
     
-    nodes_before = len(g.nodes)
+    filter_node_id = filtered
+    map_node_id = mapped
+    
+    # Store original structure
+    original_filter_inputs = g.nodes[filter_node_id].inputs.copy()
+    original_map_inputs = g.nodes[map_node_id].inputs.copy()
     
     optimizer = GraphOptimizer(g)
     optimizer.optimize(passes=["filter_before_map"])
     
-    nodes_after = len(g.nodes)
+    # Should NOT reorder (predicate depends on transformation)
+    assert g.nodes[filter_node_id].inputs == original_filter_inputs, "Filter inputs should be unchanged"
+    assert g.nodes[map_node_id].inputs == original_map_inputs, "Map inputs should be unchanged"
     
-    # Should NOT reorder (pass is disabled)
-    assert nodes_after == nodes_before, "filter_before_map should be a no-op (disabled)"
-    
-    # Verify correctness is preserved
+    # Verify correctness
     fn = g.compile(auto_optimize=False)
     result = fn(data=[3, 7, 10])
     expected = [14, 20]  # (3*2=6, 7*2=14, 10*2=20) -> filter >10 -> [14, 20]
     
     assert result == expected, f"Expected {expected}, got {result}"
     
-    print(f"  Pass (filter_before_map correctly disabled)")
+    print("  Pass (filter_before_map correctly preserved dependent operations)")
+
+
+def test_filter_before_map_with_multiple_consumers():
+    # Test that filter-before-map doesn't optimize when map has multiple consumers
+    print("Test: Filter-before-map (multiple consumers)")
+    
+    g = Graph()
+    data = g.input("data", list)
+    
+    # Create map with multiple consumers
+    mapped = g.map(data, lambda x: x.upper())
+    filtered = g.filter(mapped, lambda x: len(x) > 3)
+    
+    # Add another consumer of the map
+    another_filter = g.filter(mapped, lambda x: x.startswith("T"))
+    
+    g.output(filtered)
+    
+    # Store original structure
+    original_filter_inputs = g.nodes[filtered].inputs.copy()
+    
+    optimizer = GraphOptimizer(g)
+    optimizer.optimize(passes=["filter_before_map"])
+    
+    # Should NOT reorder (map has multiple consumers)
+    assert g.nodes[filtered].inputs == original_filter_inputs, "Should not reorder with multiple consumers"
+    
+    # Verify output correctness
+    fn = g.compile(auto_optimize=False)
+    result = fn(data=["hi", "test", "hello", "x"])
+    expected = ["TEST", "HELLO"]  # Only strings with len > 3, uppercased
+    
+    assert result == expected, f"Expected {expected}, got {result}"
+    
+    print("  Pass (filter_before_map correctly skipped multiple consumer case)")
+
+
+def test_filter_before_map_end_to_end():
+    # End-to-end test showing performance benefit
+    print("Test: Filter-before-map (end-to-end)")
+    
+    g = Graph()
+    data = g.input("data", list)
+    
+    # Expensive transformation with independent filter
+    # This pattern benefits from reordering: filter first to reduce work
+    mapped = g.map(data, lambda x: x.lower().strip())
+    filtered = g.filter(mapped, lambda x: len(x) > 2)  # len is independent
+    
+    g.output(filtered)
+    
+    optimizer = GraphOptimizer(g)
+    optimizer.optimize(passes=["filter_before_map"])
+    
+    # Verify correctness with real data
+    fn = g.compile(auto_optimize=False)
+    result = fn(data=["HI", "TEST", "HELLO", "X", "  OK  "])
+    expected = ["test", "hello", "ok"]  # "TEST", "HELLO", "OK" have len > 2 after strip
+    
+    assert result == expected, f"Expected {expected}, got {result}"
+    
+    print("  Pass (filter_before_map end-to-end optimization works correctly)")
 
 
 def main():
@@ -335,7 +444,10 @@ def main():
         test_common_subexpression_elimination,
         test_cse_with_constants,
         test_cse_preserves_different_operations,
-        test_filter_before_map_disabled,
+        test_filter_before_map_independent,
+        test_filter_before_map_dependent,
+        test_filter_before_map_with_multiple_consumers,
+        test_filter_before_map_end_to_end,
     ]
     
     passed = 0
