@@ -156,6 +156,15 @@ export class DifferentialTester {
 
   /**
    * Execute graph with a specific strategy
+   * 
+   * @deprecated This method is a placeholder for future strategy-specific execution.
+   * Currently returns stub data. To actually execute a graph, use SolverKernel.compile()
+   * and call the resulting function.
+   * 
+   * Future implementation will:
+   * - Compile the graph with the specified strategy (naive/optimized/vectorized)
+   * - Execute with the provided data
+   * - Return actual results and timing information
    */
   private executeWithStrategy(
     strategyName: string,
@@ -166,8 +175,12 @@ export class DifferentialTester {
     let error: Error | undefined;
 
     try {
-      // TODO: Actually execute with specific strategy
-      // For now, just execute normally
+      // STUB: Strategy-specific execution not yet implemented
+      // For actual execution, use:
+      //   import { SolverKernel } from '../solvers/kernel';
+      //   const kernel = new SolverKernel(this.graph);
+      //   const compiled = kernel.compile(strategyName === 'optimized' ? 'speed' : 'balanced');
+      //   result = compiled(data);
       result = null;
     } catch (e) {
       error = e as Error;
@@ -187,6 +200,15 @@ export class DifferentialTester {
 
   /**
    * Execute a graph and return result
+   * 
+   * @deprecated This method is a placeholder for future graph execution.
+   * Currently returns stub data. To actually execute a graph, use SolverKernel.compile()
+   * and call the resulting function.
+   * 
+   * Future implementation will:
+   * - Compile the graph
+   * - Execute with the provided data
+   * - Return actual results and timing information
    */
   private executeGraph(
     graph: Graph,
@@ -198,7 +220,12 @@ export class DifferentialTester {
     let error: Error | undefined;
 
     try {
-      // TODO: Actually execute the graph
+      // STUB: Graph execution not yet implemented
+      // For actual execution, use:
+      //   import { SolverKernel } from '../solvers/kernel';
+      //   const kernel = new SolverKernel(graph);
+      //   const compiled = kernel.compile('balanced');
+      //   result = compiled(data);
       result = null;
     } catch (e) {
       error = e as Error;

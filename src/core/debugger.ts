@@ -137,22 +137,45 @@ export class IOCDebugger {
   }
 
   /**
-   * Execute the graph step-by-step and record each operation
+   * Trace execution step by step
+   * 
+   * @deprecated STUB: Step-by-step execution tracing not yet implemented
+   * 
+   * Future implementation will:
+   * - Compile the graph with instrumentation
+   * - Execute step-by-step, recording intermediate values
+   * - Track execution time for each node
+   * - Capture errors with full stack traces
+   * 
+   * For now, use SolverKernel.getGeneratedCode() to inspect the generated code,
+   * then manually debug the compiled function.
    */
   trace(_data: Record<string, any>, verbose = false): ExecutionTrace[] {
     this.debugMode.traceExecution = true;
     this.debugMode.verbose = verbose;
     this.debugMode.clearTraces();
 
-    // TODO: Implement actual step-by-step execution
-    // For now, this is a placeholder
-    console.warn('Trace execution not yet fully implemented');
+    console.warn('[Debugger.trace] Step-by-step execution tracing not yet implemented');
+    console.warn('Use SolverKernel.getGeneratedCode() to inspect generated code instead');
 
     return this.debugMode.executionTraces;
   }
 
   /**
    * Binary search for the node that causes incorrect output or error
+   * 
+   * @deprecated STUB: Automated bisection not yet implemented
+   * 
+   * Future implementation will:
+   * - Binary search through execution order to find the first failing node
+   * - Compile and execute partial graphs
+   * - Compare intermediate results with expected values
+   * - Return the node ID that introduces the bug
+   * 
+   * For manual bisection:
+   * 1. Use graph.getExecutionOrder() to see node sequence
+   * 2. Use graph.visualize() to understand dependencies
+   * 3. Inspect generated code with SolverKernel.getGeneratedCode()
    */
   bisect(
     _data: Record<string, any>,
@@ -160,17 +183,29 @@ export class IOCDebugger {
   ): string | null {
     const executionOrder = this.graph.getExecutionOrder();
 
-    console.log(`Bisecting ${executionOrder.length} nodes...`);
-
-    // TODO: Implement actual bisection
-    // For now, this is a placeholder
-    console.warn('Bisect not yet fully implemented');
+    console.log(`[Debugger.bisect] Would bisect ${executionOrder.length} nodes`);
+    console.warn('[Debugger.bisect] Automated bisection not yet implemented');
+    console.warn('Use graph.getExecutionOrder() and manual inspection instead');
 
     return null;
   }
 
   /**
    * Compare execution with and without optimizations
+   * 
+   * @deprecated STUB: Optimization comparison not yet implemented
+   * 
+   * Future implementation will:
+   * - Clone the graph
+   * - Apply optimization passes to one copy
+   * - Execute both versions with the same data
+   * - Compare results and performance
+   * - Report any differences
+   * 
+   * For manual comparison:
+   * 1. Use DifferentialTester.testWithOptimizations() from differential.ts
+   * 2. Compare graph.visualize() output before and after optimize()
+   * 3. Use GraphOptimizer.getOptimizationReport() to see what changed
    */
   compare(
     _data: Record<string, any>,
@@ -180,9 +215,8 @@ export class IOCDebugger {
     optimized: any;
     comparison: any;
   } {
-    // TODO: Implement actual comparison
-    // For now, this is a placeholder
-    console.warn('Compare not yet fully implemented');
+    console.warn('[Debugger.compare] Optimization comparison not yet implemented');
+    console.warn('Use DifferentialTester.testWithOptimizations() instead');
 
     return {
       original: {},
@@ -193,15 +227,23 @@ export class IOCDebugger {
 
   /**
    * Format comparison report as human-readable string
+   * 
+   * @deprecated STUB: Report formatting depends on compare() implementation
+   * 
+   * Once compare() is implemented, this will format the comparison results
+   * into a readable report showing differences and performance metrics.
+   * 
+   * For now, use DifferentialTester.formatReport() from differential.ts
    */
   formatComparison(_comparison: any): string {
     const lines: string[] = [
       'Comparison Report:',
       '='.repeat(60),
+      '',
+      'STUB: Formatting not yet implemented',
+      '',
+      'Use DifferentialTester.formatReport() for actual differential reports',
     ];
-
-    // TODO: Implement actual formatting
-    lines.push('Not yet implemented');
 
     return lines.join('\n');
   }

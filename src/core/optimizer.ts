@@ -339,6 +339,22 @@ export class GraphOptimizer {
 
   /**
    * Test if a predicate is independent of a transformation
+   * 
+   * This method uses test cases to determine if a predicate can be safely
+   * applied before or after a transformation. It checks if:
+   *   map(f).filter(p) === filter(p').map(f)
+   * where p' is the predicate applied to the original data.
+   * 
+   * LIMITATIONS:
+   * - Test case coverage may not be exhaustive for all input domains
+   * - Complex predicates or transforms may not be accurately detected
+   * - False positives are possible if test cases don't cover edge cases
+   * 
+   * The optimization is conservative: it only applies when test cases confirm
+   * independence. If uncertain, the reordering is skipped.
+   * 
+   * Users can bypass this check by manually reordering operations in their
+   * graph construction if they know their predicate is independent.
    */
   private isPredicateIndependent(transform: Function, predicate: Function): boolean {
     const testCases = [

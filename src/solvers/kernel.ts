@@ -211,7 +211,25 @@ export class SolverKernel {
     // Store for debugging
     this.generatedCode = fullCode;
 
-    // Compile the code
+    // Compile the code using Function constructor
+    // 
+    // SECURITY NOTE: We use the Function constructor here to dynamically compile
+    // the generated code into an executable function. While this is similar to eval(),
+    // it is safe in this context because:
+    // 
+    // 1. The code is generated entirely by our own code generation system, not from
+    //    untrusted user input
+    // 2. User-provided functions (predicates, transforms) are passed as closed-over
+    //    variables (execGlobals), not embedded as strings in the generated code
+    // 3. All string interpolation in code generation uses node IDs and variable names
+    //    that we control, never user strings
+    // 4. The generated code is available for inspection via getGeneratedCode()
+    // 
+    // Alternative approaches like vm.runInContext or worker threads would add
+    // significant complexity and performance overhead for no security benefit in
+    // this controlled code generation scenario.
+    // 
+    // eslint-disable-next-line no-new-func
     const execGlobals = { ...context.variables };
     const compiledFn = new Function(
       ...Object.keys(execGlobals),

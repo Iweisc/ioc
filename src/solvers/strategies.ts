@@ -39,13 +39,40 @@ abstract class BaseStrategy {
   }
 
   /**
-   * Generate code for FLATTEN intent (same for all strategies)
+   * Generate code for FLATTEN intent (naive - only supports depth=1)
    */
   protected generateFlattenCodeNaive(node: IntentNode): string {
     const inputId = node.inputs[0];
+    const depth = getParam(node, 'depth') || 1;
+    
+    if (depth !== 1) {
+      // For depth > 1, generate nested loops
+      const loops: string[] = [];
+      const pushIndent = '  '.repeat(depth);
+      
+      // Build nested loops
+      for (let i = 0; i < depth; i++) {
+        const indent = '  '.repeat(i);
+        const varName = i === 0 ? inputId : `_item${i}`;
+        const nextVar = `_item${i + 1}`;
+        loops.push(`${indent}for (const ${nextVar} of ${varName}) {`);
+      }
+      
+      loops.push(`${pushIndent}${node.id}.push(_item${depth})`);
+      
+      // Close loops
+      for (let i = depth - 1; i >= 0; i--) {
+        const indent = '  '.repeat(i);
+        loops.push(`${indent}}`);
+      }
+      
+      return `${node.id} = []\n${loops.join('\n')}`;
+    }
+    
+    // Simple single-level flatten
     return `${node.id} = []
-for (_sublist of ${inputId}) {
-  for (_item of _sublist) {
+for (const _sublist of ${inputId}) {
+  for (const _item of _sublist) {
     ${node.id}.push(_item)
   }
 }`;
@@ -56,17 +83,34 @@ for (_sublist of ${inputId}) {
    */
   protected generateFlattenCodeOptimized(node: IntentNode): string {
     const inputId = node.inputs[0];
-    return `${node.id} = ${inputId}.flat()`;
+    const depth = getParam(node, 'depth') || 1;
+    return `${node.id} = ${inputId}.flat(${depth})`;
   }
 
   /**
    * Generate code for DISTINCT intent (naive)
    */
-  protected generateDistinctCodeNaive(node: IntentNode): string {
+  protected generateDistinctCodeNaive(node: IntentNode, context: ExecutionContext): string {
     const inputId = node.inputs[0];
+    const keyFn = getParam(node, 'keyFn');
+    
+    if (keyFn) {
+      const keyName = `key_${node.id}`;
+      context.variables[keyName] = keyFn;
+      return `${node.id} = []
+const _seen = new Set()
+for (const _item of ${inputId}) {
+  const _key = ${keyName}(_item)
+  if (!_seen.has(_key)) {
+    _seen.add(_key)
+    ${node.id}.push(_item)
+  }
+}`;
+    }
+    
     return `${node.id} = []
 const _seen = new Set()
-for (_item of ${inputId}) {
+for (const _item of ${inputId}) {
   if (!_seen.has(_item)) {
     _seen.add(_item)
     ${node.id}.push(_item)
@@ -77,8 +121,26 @@ for (_item of ${inputId}) {
   /**
    * Generate code for DISTINCT intent (optimized)
    */
-  protected generateDistinctCodeOptimized(node: IntentNode): string {
+  protected generateDistinctCodeOptimized(node: IntentNode, context: ExecutionContext): string {
     const inputId = node.inputs[0];
+    const keyFn = getParam(node, 'keyFn');
+    
+    if (keyFn) {
+      // When keyFn is provided, we need to track by key but return original items
+      const keyName = `key_${node.id}`;
+      context.variables[keyName] = keyFn;
+      return `${node.id} = []
+const _seen = new Set()
+for (const _item of ${inputId}) {
+  const _key = ${keyName}(_item)
+  if (!_seen.has(_key)) {
+    _seen.add(_key)
+    ${node.id}.push(_item)
+  }
+}`;
+    }
+    
+    // Simple case: no keyFn, just deduplicate primitives
     return `${node.id} = [...new Set(${inputId})]`;
   }
 
@@ -246,7 +308,7 @@ for (_left of ${leftId}) {
         return this.generateFlattenCodeNaive(node);
 
       case IntentType.DISTINCT:
-        return this.generateDistinctCodeNaive(node);
+        return this.generateDistinctCodeNaive(node, context);
 
       case IntentType.ASSERT:
         return this.generateAssertCode(node, context);
@@ -381,7 +443,7 @@ export class OptimizedStrategy extends Strategy {
         return this.generateFlattenCodeOptimized(node);
 
       case IntentType.DISTINCT:
-        return this.generateDistinctCodeOptimized(node);
+        return this.generateDistinctCodeOptimized(node, context);
 
       case IntentType.ASSERT:
         return this.generateAssertCode(node, context);
