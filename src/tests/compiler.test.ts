@@ -365,3 +365,152 @@ describe('Compiler', () => {
     });
   });
 });
+
+  describe('Arithmetic Predicate Compilation', () => {
+    it('should compile arithmetic predicate - modulo equals', () => {
+      const predicate = {
+        type: 'compare_arithmetic' as const,
+        arithmeticOp: 'mod' as const,
+        arithmeticValue: 2,
+        comparisonOp: 'eq' as const,
+        comparisonValue: 0,
+      };
+      const fn = compilePredicateFunction(predicate);
+
+      expect(fn(4)).toBe(true); // 4 % 2 == 0
+      expect(fn(6)).toBe(true); // 6 % 2 == 0
+      expect(fn(5)).toBe(false); // 5 % 2 == 1
+      expect(fn(7)).toBe(false); // 7 % 2 == 1
+    });
+
+    it('should compile arithmetic predicate - multiply greater than', () => {
+      const predicate = {
+        type: 'compare_arithmetic' as const,
+        arithmeticOp: 'multiply' as const,
+        arithmeticValue: 3,
+        comparisonOp: 'gt' as const,
+        comparisonValue: 10,
+      };
+      const fn = compilePredicateFunction(predicate);
+
+      expect(fn(5)).toBe(true); // 5 * 3 = 15 > 10
+      expect(fn(4)).toBe(true); // 4 * 3 = 12 > 10
+      expect(fn(3)).toBe(false); // 3 * 3 = 9 not > 10
+      expect(fn(2)).toBe(false); // 2 * 3 = 6 not > 10
+    });
+
+    it('should compile arithmetic predicate - add less than', () => {
+      const predicate = {
+        type: 'compare_arithmetic' as const,
+        arithmeticOp: 'add' as const,
+        arithmeticValue: 5,
+        comparisonOp: 'lt' as const,
+        comparisonValue: 20,
+      };
+      const fn = compilePredicateFunction(predicate);
+
+      expect(fn(10)).toBe(true); // 10 + 5 = 15 < 20
+      expect(fn(12)).toBe(true); // 12 + 5 = 17 < 20
+      expect(fn(15)).toBe(false); // 15 + 5 = 20 not < 20
+      expect(fn(20)).toBe(false); // 20 + 5 = 25 not < 20
+    });
+
+    it('should compile arithmetic predicate - subtract greater than or equal', () => {
+      const predicate = {
+        type: 'compare_arithmetic' as const,
+        arithmeticOp: 'subtract' as const,
+        arithmeticValue: 10,
+        comparisonOp: 'gte' as const,
+        comparisonValue: 0,
+      };
+      const fn = compilePredicateFunction(predicate);
+
+      expect(fn(15)).toBe(true); // 15 - 10 = 5 >= 0
+      expect(fn(10)).toBe(true); // 10 - 10 = 0 >= 0
+      expect(fn(5)).toBe(false); // 5 - 10 = -5 not >= 0
+    });
+
+    it('should compile arithmetic predicate - divide less than or equal', () => {
+      const predicate = {
+        type: 'compare_arithmetic' as const,
+        arithmeticOp: 'divide' as const,
+        arithmeticValue: 2,
+        comparisonOp: 'lte' as const,
+        comparisonValue: 5,
+      };
+      const fn = compilePredicateFunction(predicate);
+
+      expect(fn(8)).toBe(true); // 8 / 2 = 4 <= 5
+      expect(fn(10)).toBe(true); // 10 / 2 = 5 <= 5
+      expect(fn(12)).toBe(false); // 12 / 2 = 6 not <= 5
+    });
+
+    it('should compile arithmetic predicate - not equals', () => {
+      const predicate = {
+        type: 'compare_arithmetic' as const,
+        arithmeticOp: 'mod' as const,
+        arithmeticValue: 3,
+        comparisonOp: 'ne' as const,
+        comparisonValue: 0,
+      };
+      const fn = compilePredicateFunction(predicate);
+
+      expect(fn(10)).toBe(true); // 10 % 3 = 1 != 0
+      expect(fn(11)).toBe(true); // 11 % 3 = 2 != 0
+      expect(fn(9)).toBe(false); // 9 % 3 = 0 not != 0
+      expect(fn(12)).toBe(false); // 12 % 3 = 0 not != 0
+    });
+
+    it('should handle edge cases with zero arithmetic value', () => {
+      const predicate = {
+        type: 'compare_arithmetic' as const,
+        arithmeticOp: 'add' as const,
+        arithmeticValue: 0,
+        comparisonOp: 'eq' as const,
+        comparisonValue: 5,
+      };
+      const fn = compilePredicateFunction(predicate);
+
+      expect(fn(5)).toBe(true); // 5 + 0 = 5 == 5
+      expect(fn(0)).toBe(false); // 0 + 0 = 0 != 5
+    });
+
+    it('should handle negative arithmetic values', () => {
+      const predicate = {
+        type: 'compare_arithmetic' as const,
+        arithmeticOp: 'multiply' as const,
+        arithmeticValue: -2,
+        comparisonOp: 'lt' as const,
+        comparisonValue: 0,
+      };
+      const fn = compilePredicateFunction(predicate);
+
+      expect(fn(5)).toBe(true); // 5 * -2 = -10 < 0
+      expect(fn(-3)).toBe(false); // -3 * -2 = 6 not < 0
+    });
+
+    it('should handle all arithmetic operations in filter context', () => {
+      const operations: Array<'multiply' | 'add' | 'subtract' | 'divide' | 'mod'> = [
+        'multiply',
+        'add',
+        'subtract',
+        'divide',
+        'mod',
+      ];
+
+      operations.forEach((op) => {
+        const predicate = {
+          type: 'compare_arithmetic' as const,
+          arithmeticOp: op,
+          arithmeticValue: 2,
+          comparisonOp: 'gt' as const,
+          comparisonValue: 0,
+        };
+        const fn = compilePredicateFunction(predicate);
+
+        // Should compile without errors
+        expect(typeof fn).toBe('function');
+      });
+    });
+  });
+});
