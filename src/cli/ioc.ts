@@ -16,6 +16,9 @@ import { Lexer } from '../parser/lexer.js';
 import { Parser } from '../parser/parser.js';
 import { ASTToGraphConverter } from '../parser/ast-to-graph.js';
 
+/**
+ * Print the CLI usage banner with command summaries and example invocations to stdout.
+ */
 function printUsage() {
   console.log(
     `
@@ -41,6 +44,13 @@ Examples:
   );
 }
 
+/**
+ * Read the file at the given path and return its contents decoded as UTF-8.
+ *
+ * On read failure, logs an error message to stderr and exits the process with code 1.
+ *
+ * @returns The file contents as a UTF-8 decoded string
+ */
 function readFile(filePath: string): string {
   try {
     return fs.readFileSync(filePath, 'utf-8');
@@ -50,6 +60,13 @@ function readFile(filePath: string): string {
   }
 }
 
+/**
+ * Parses IOC source into an AST and converts it to an internal graph representation.
+ *
+ * On parse or conversion errors, prints an error message and exits the process with code 1.
+ *
+ * @returns An object containing the parsed `ast` and the converted `graph`.
+ */
 function parseIOC(source: string) {
   try {
     // Security: Validate input size before parsing (DoS prevention)
@@ -77,6 +94,15 @@ function parseIOC(source: string) {
   }
 }
 
+/**
+ * Read, compile, and execute an IOC program from a file and print its result.
+ *
+ * Reads the IOC source at `filePath`, parses and compiles it, optionally parses `inputJson` as input, and executes the compiled program. If `debug` is true, prints a simple execution plan (node id and type) before running. Prints the program result as pretty-printed JSON to stdout. On parse, input JSON, or execution errors, prints an error to stderr and exits the process with code 1.
+ *
+ * @param inputJson - Optional JSON string to use as the program input; if provided it will be parsed and passed to the compiled program.
+ * @param debug - If true, log the program's execution plan (node ids and types) before executing.
+ * @param unsafe - If true, skip security validation (use only with trusted .ioc files).
+ */
 function runCommand(filePath: string, inputJson?: string, debug = false, unsafe = false) {
   const source = readFile(filePath);
   const { graph } = parseIOC(source);
@@ -129,6 +155,14 @@ function runCommand(filePath: string, inputJson?: string, debug = false, unsafe 
   }
 }
 
+/**
+ * Compile an .ioc source file into a JavaScript module that loads the serialized IOC program.
+ *
+ * If `outputPath` is provided, writes the generated JS to that file and prints the path; otherwise prints the generated code to stdout.
+ *
+ * @param filePath - Path to the input `.ioc` source file
+ * @param outputPath - Optional path to write the generated JavaScript file; when omitted the code is printed to stdout
+ */
 function compileCommand(filePath: string, outputPath?: string) {
   const source = readFile(filePath);
   const { graph } = parseIOC(source);
@@ -158,6 +192,16 @@ export const compiledProgram = loadIOC(program);
   }
 }
 
+/**
+ * Validate an IOC program file and report validation results.
+ *
+ * Reads the IOC source at `filePath`, parses it into a graph, and runs validation.
+ * If validation succeeds, prints "Valid" and a per-node summary of each node's id,
+ * capability maxComplexity, and terminationGuarantee. If validation fails, prints
+ * "Validation failed:" followed by each validation error and exits the process with code 1.
+ *
+ * @param filePath - Path to the IOC source file to validate
+ */
 function validateCommand(filePath: string) {
   const source = readFile(filePath);
   const { graph } = parseIOC(source);
@@ -182,6 +226,17 @@ function validateCommand(filePath: string) {
   }
 }
 
+/**
+ * Parse command-line arguments and dispatch the IOC CLI commands.
+ *
+ * Supports the following commands:
+ * - `run <file> [--input <json>] [--debug]` — compile and execute the IOC program, optionally with input JSON and debug output
+ * - `compile <file> [--output <path>]` — compile the IOC program and write or print generated JavaScript
+ * - `validate <file>` — validate the IOC program and print validation results
+ *
+ * When no arguments or a help flag is provided, prints usage and exits with code 0.
+ * For a missing file path or an unknown command, prints an error, shows usage, and exits with code 1.
+ */
 function main() {
   const args = process.argv.slice(2);
 

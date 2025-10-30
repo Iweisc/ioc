@@ -126,7 +126,10 @@ export enum ComplexityClass {
 }
 
 /**
- * Get complexity class for a safe predicate
+ * Estimate the worst-case complexity class for a SafePredicate.
+ *
+ * @param predicate - The predicate to analyze.
+ * @returns The ComplexityClass representing the highest (worst-case) complexity among the predicate and its sub-predicates.
  */
 export function getPredicateComplexity(predicate: SafePredicate): ComplexityClass {
   switch (predicate.type) {
@@ -158,8 +161,19 @@ export function getPredicateComplexity(predicate: SafePredicate): ComplexityClas
 }
 
 /**
- * Get complexity class for a safe transform
- */
+ * Estimate the worst-case ComplexityClass for a SafeTransform.
+ *
+ * Maps transform variants to conservative complexity estimates:
+ * - `identity`, `constant`, `property`, `arithmetic` => CONSTANT
+ * - `string` => LINEAR
+ * - `array` => CONSTANT for `length`, LINEAR otherwise
+ * - `conditional` => maximum of the condition's predicate complexity and both branch transforms
+ * - `compose` => maximum complexity among composed transforms
+ * - `construct` => maximum complexity among field transforms
+ * - default => CONSTANT
+ *
+ * @param transform - The SafeTransform to analyze
+ * @returns The worst-case ComplexityClass for `transform`
 export function getTransformComplexity(transform: SafeTransform): ComplexityClass {
   switch (transform.type) {
     case 'identity':
@@ -221,7 +235,9 @@ export function getTransformComplexity(transform: SafeTransform): ComplexityClas
 }
 
 /**
- * Validate that a SafeValue is actually safe (no functions, etc.)
+ * Checks whether a value conforms to the SafeValue structure.
+ *
+ * @returns `true` if the value is `null`, a number, string, or boolean, an array whose elements are all SafeValue, or a plain object whose property values are all SafeValue; `false` otherwise.
  */
 export function validateSafeValue(value: unknown): value is SafeValue {
   if (value === null) return true;

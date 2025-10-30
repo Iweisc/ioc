@@ -42,7 +42,13 @@ export class CompilationContext {
 }
 
 /**
- * Compile a comparison operation
+ * Convert a comparison operator and two operand expressions into a JavaScript expression that performs that comparison.
+ *
+ * @param op - The comparison operator (e.g., `eq`, `ne`, `gt`, `gte`, `lt`, `lte`, `in`, `contains`, `matches`)
+ * @param left - JavaScript expression used as the left-hand operand
+ * @param right - JavaScript expression used as the right-hand operand
+ * @returns A string containing a JavaScript expression that yields `true` when the comparison holds and `false` otherwise
+ * @throws Error if `op` is an unknown comparison operator
  */
 function compileComparison(op: ComparisonOp, left: string, right: string): string {
   switch (op) {
@@ -71,7 +77,11 @@ function compileComparison(op: ComparisonOp, left: string, right: string): strin
 }
 
 /**
- * Compile a safe predicate to JavaScript expression
+ * Compiles a SafePredicate into a JavaScript boolean expression string that references the given input identifier.
+ *
+ * @param inputVar - Identifier to use for the input value inside the generated expression (defaults to `'x'`).
+ * @returns A JavaScript expression string that evaluates the predicate against the specified input identifier.
+ * @throws Error if the predicate has an unknown predicate type or an unknown expectedType for a type check.
  */
 export function compilePredicate(predicate: SafePredicate, inputVar: string = 'x'): string {
   switch (predicate.type) {
@@ -142,7 +152,11 @@ export function compilePredicate(predicate: SafePredicate, inputVar: string = 'x
 }
 
 /**
- * Compile a safe transform to JavaScript expression
+ * Compile a SafeTransform into a JavaScript expression string.
+ *
+ * @param transform - The transform specification to compile.
+ * @param inputVar - The variable name to use for the input value in the generated expression (defaults to `'x'`).
+ * @returns The generated JavaScript expression as a string that applies the given transform to `inputVar`.
  */
 export function compileTransform(transform: SafeTransform, inputVar: string = 'x'): string {
   switch (transform.type) {
@@ -268,8 +282,12 @@ export function compileTransform(transform: SafeTransform, inputVar: string = 'x
 }
 
 /**
- * Compile a reduction operation to JavaScript code
- * Includes validation for empty arrays where appropriate
+ * Compile a ReductionOp into a JavaScript expression operating on an array.
+ * Includes validation for empty arrays where appropriate.
+ *
+ * @param reduction - The reduction operation to compile.
+ * @param arrayVar - The identifier to use for the input array in the generated expression (defaults to 'arr').
+ * @returns A JavaScript expression as a string that performs the specified reduction on `arrayVar`.
  */
 export function compileReduction(reduction: ReductionOp, arrayVar: string = 'arr'): string {
   switch (reduction.type) {
@@ -323,7 +341,10 @@ export function compileReduction(reduction: ReductionOp, arrayVar: string = 'arr
 }
 
 /**
- * Compile predicate to executable function
+ * Produces a predicate function that evaluates inputs against the given SafePredicate.
+ *
+ * @param predicate - The SafePredicate to compile into an executable predicate.
+ * @returns A function that returns `true` if its input satisfies `predicate`, `false` otherwise.
  */
 export function compilePredicateFunction(predicate: SafePredicate): (x: any) => boolean {
   const code = compilePredicate(predicate, 'x');
@@ -332,7 +353,10 @@ export function compilePredicateFunction(predicate: SafePredicate): (x: any) => 
 }
 
 /**
- * Compile transform to executable function
+ * Create a JavaScript function that applies the given SafeTransform to an input value.
+ *
+ * @param transform - The SafeTransform to compile into an executable function
+ * @returns A function that accepts `x` and returns the result of applying `transform` to `x`
  */
 export function compileTransformFunction(transform: SafeTransform): (x: any) => any {
   const code = compileTransform(transform, 'x');
@@ -341,7 +365,10 @@ export function compileTransformFunction(transform: SafeTransform): (x: any) => 
 }
 
 /**
- * Compile reduction to executable function
+ * Create a function that applies the specified reduction operation to a provided array.
+ *
+ * @param reduction - Reduction operation descriptor that will be compiled into the returned function
+ * @returns A function which, when called with an array, returns the result of applying `reduction` to that array
  */
 export function compileReductionFunction(reduction: ReductionOp): (arr: any[]) => any {
   const code = compileReduction(reduction, 'arr');
@@ -350,7 +377,12 @@ export function compileReductionFunction(reduction: ReductionOp): (arr: any[]) =
 }
 
 /**
- * Get estimated cost for executing a predicate
+ * Estimate an execution cost score for a SafePredicate.
+ *
+ * Maps the predicate's complexity class to a numeric cost used for planning or optimization.
+ *
+ * @param predicate - The predicate to evaluate for complexity
+ * @returns A numeric cost: `1` for constant, `10` for logarithmic, `100` for linear, and `1000` for higher or unknown complexity classes
  */
 export function estimatePredicateCost(predicate: SafePredicate): number {
   const complexity = getPredicateComplexity(predicate);
@@ -367,7 +399,10 @@ export function estimatePredicateCost(predicate: SafePredicate): number {
 }
 
 /**
- * Get estimated cost for executing a transform
+ * Estimate the execution cost of a transform.
+ *
+ * @param transform - The transform whose complexity will be evaluated
+ * @returns A numeric cost score: `1` for constant complexity, `10` for logarithmic, `100` for linear, and `1000` for higher or unknown complexity
  */
 export function estimateTransformCost(transform: SafeTransform): number {
   const complexity = getTransformComplexity(transform);

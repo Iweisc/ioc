@@ -13,6 +13,13 @@ import { Predicate, Transform, Reduce } from '../dsl/safe-types.js';
 import { saveIOCFile, loadIOCFile } from '../dsl/ioc-format.js';
 import * as path from 'path';
 
+/**
+ * Demonstrates the Safe IOC workflow by building, validating, serializing, saving/loading, compiling, and executing example SafeGraph pipelines.
+ *
+ * Constructs three example graphs (numeric processing, complex object transforms, and conditional transforms), validates and serializes them to the .ioc format, attempts to save and load a .ioc file, compiles the graphs with termination verification, executes sample inputs, and prints diagnostic output to the console.
+ *
+ * Side effects: prints diagnostic messages to stdout and may write a .ioc file to disk.
+ */
 async function main() {
   console.log('='.repeat(70));
   console.log('IOC Safe Language Example');
