@@ -122,3 +122,893 @@ output uppercased
     expect(result).toEqual(['HELLO', 'WORLD']);
   });
 });
+
+describe('Lexer - Token Generation', () => {
+  describe('Keywords', () => {
+    it('should tokenize all keywords correctly', () => {
+      const keywords = 'input output filter map reduce where with by if then else let and or not';
+      const lexer = new Lexer(keywords);
+      const tokens = lexer.tokenize();
+
+      expect(tokens[0]!.type).toBe('INPUT');
+      expect(tokens[1]!.type).toBe('OUTPUT');
+      expect(tokens[2]!.type).toBe('FILTER');
+      expect(tokens[3]!.type).toBe('MAP');
+      expect(tokens[4]!.type).toBe('REDUCE');
+      expect(tokens[5]!.type).toBe('WHERE');
+      expect(tokens[6]!.type).toBe('WITH');
+      expect(tokens[7]!.type).toBe('BY');
+      expect(tokens[8]!.type).toBe('IF');
+      expect(tokens[9]!.type).toBe('THEN');
+      expect(tokens[10]!.type).toBe('ELSE');
+      expect(tokens[11]!.type).toBe('LET');
+      expect(tokens[12]!.type).toBe('AND');
+      expect(tokens[13]!.type).toBe('OR');
+      expect(tokens[14]!.type).toBe('NOT');
+    });
+
+    it('should tokenize boolean literals', () => {
+      const lexer = new Lexer('true false');
+      const tokens = lexer.tokenize();
+
+      expect(tokens[0]!.type).toBe('BOOLEAN');
+      expect(tokens[0]!.value).toBe('true');
+      expect(tokens[1]!.type).toBe('BOOLEAN');
+      expect(tokens[1]!.value).toBe('false');
+    });
+  });
+
+  describe('Operators', () => {
+    it('should tokenize comparison operators', () => {
+      const lexer = new Lexer('> < >= <= == !=');
+      const tokens = lexer.tokenize();
+
+      expect(tokens[0]!.type).toBe('GT');
+      expect(tokens[1]!.type).toBe('LT');
+      expect(tokens[2]!.type).toBe('GTE');
+      expect(tokens[3]!.type).toBe('LTE');
+      expect(tokens[4]!.type).toBe('EQ');
+      expect(tokens[5]!.type).toBe('NEQ');
+    });
+
+    it('should tokenize arithmetic operators', () => {
+      const lexer = new Lexer('+ - * / %');
+      const tokens = lexer.tokenize();
+
+      expect(tokens[0]!.type).toBe('PLUS');
+      expect(tokens[1]!.type).toBe('MINUS');
+      expect(tokens[2]!.type).toBe('STAR');
+      expect(tokens[3]!.type).toBe('SLASH');
+      expect(tokens[4]!.type).toBe('PERCENT');
+    });
+
+    it('should tokenize assignment operator', () => {
+      const lexer = new Lexer('x = 5');
+      const tokens = lexer.tokenize();
+
+      expect(tokens[1]!.type).toBe('ASSIGN');
+    });
+
+    it('should tokenize dot operator', () => {
+      const lexer = new Lexer('x.property');
+      const tokens = lexer.tokenize();
+
+      expect(tokens[1]!.type).toBe('DOT');
+    });
+  });
+
+  describe('Delimiters', () => {
+    it('should tokenize parentheses', () => {
+      const lexer = new Lexer('(x)');
+      const tokens = lexer.tokenize();
+
+      expect(tokens[0]!.type).toBe('LPAREN');
+      expect(tokens[2]!.type).toBe('RPAREN');
+    });
+
+    it('should tokenize brackets', () => {
+      const lexer = new Lexer('[1, 2, 3]');
+      const tokens = lexer.tokenize();
+
+      expect(tokens[0]!.type).toBe('LBRACKET');
+      expect(tokens[6]!.type).toBe('RBRACKET');
+    });
+
+    it('should tokenize colons and commas', () => {
+      const lexer = new Lexer('name: string, age: number');
+      const tokens = lexer.tokenize();
+
+      expect(tokens[1]!.type).toBe('COLON');
+      expect(tokens[3]!.type).toBe('COMMA');
+    });
+  });
+
+  describe('Literals', () => {
+    it('should tokenize integers', () => {
+      const lexer = new Lexer('42');
+      const tokens = lexer.tokenize();
+
+      expect(tokens[0]!.type).toBe('NUMBER');
+      expect(tokens[0]!.value).toBe('42');
+    });
+
+    it('should tokenize floating point numbers', () => {
+      const lexer = new Lexer('3.14159');
+      const tokens = lexer.tokenize();
+
+      expect(tokens[0]!.type).toBe('NUMBER');
+      expect(tokens[0]!.value).toBe('3.14159');
+    });
+
+    it('should tokenize identifiers', () => {
+      const lexer = new Lexer('myVariable _private data123');
+      const tokens = lexer.tokenize();
+
+      expect(tokens[0]!.type).toBe('IDENTIFIER');
+      expect(tokens[0]!.value).toBe('myVariable');
+      expect(tokens[1]!.type).toBe('IDENTIFIER');
+      expect(tokens[1]!.value).toBe('_private');
+      expect(tokens[2]!.type).toBe('IDENTIFIER');
+      expect(tokens[2]!.value).toBe('data123');
+    });
+
+    it('should tokenize double-quoted strings', () => {
+      const lexer = new Lexer('"hello world"');
+      const tokens = lexer.tokenize();
+
+      expect(tokens[0]!.type).toBe('STRING');
+      expect(tokens[0]!.value).toBe('hello world');
+    });
+
+    it('should tokenize single-quoted strings', () => {
+      const lexer = new Lexer("'hello world'");
+      const tokens = lexer.tokenize();
+
+      expect(tokens[0]!.type).toBe('STRING');
+      expect(tokens[0]!.value).toBe('hello world');
+    });
+
+    it('should handle escape sequences in strings', () => {
+      const lexer = new Lexer('"line1\\nline2\\ttab"');
+      const tokens = lexer.tokenize();
+
+      expect(tokens[0]!.type).toBe('STRING');
+      expect(tokens[0]!.value).toBe('line1\nline2\ttab');
+    });
+
+    it('should throw on unterminated strings', () => {
+      const lexer = new Lexer('"unterminated');
+      expect(() => lexer.tokenize()).toThrow('Unterminated string');
+    });
+  });
+
+  describe('Comments and Whitespace', () => {
+    it('should skip comments', () => {
+      const lexer = new Lexer('x # this is a comment\ny');
+      const tokens = lexer.tokenize();
+
+      expect(tokens[0]!.value).toBe('x');
+      expect(tokens[1]!.type).toBe('NEWLINE');
+      expect(tokens[2]!.value).toBe('y');
+    });
+
+    it('should skip whitespace', () => {
+      const lexer = new Lexer('  x   \t  y  ');
+      const tokens = lexer.tokenize();
+
+      expect(tokens[0]!.value).toBe('x');
+      expect(tokens[1]!.value).toBe('y');
+    });
+
+    it('should track line numbers correctly', () => {
+      const lexer = new Lexer('line1\nline2\nline3');
+      const tokens = lexer.tokenize();
+
+      expect(tokens[0]!.line).toBe(1);
+      expect(tokens[1]!.line).toBe(1);
+      expect(tokens[2]!.line).toBe(2);
+      expect(tokens[3]!.line).toBe(2);
+      expect(tokens[4]!.line).toBe(3);
+    });
+
+    it('should track column numbers correctly', () => {
+      const lexer = new Lexer('abc def');
+      const tokens = lexer.tokenize();
+
+      expect(tokens[0]!.column).toBe(1);
+      expect(tokens[1]!.column).toBe(5);
+    });
+  });
+
+  describe('Edge Cases', () => {
+    it('should handle empty input', () => {
+      const lexer = new Lexer('');
+      const tokens = lexer.tokenize();
+
+      expect(tokens).toHaveLength(1);
+      expect(tokens[0]!.type).toBe('EOF');
+    });
+
+    it('should handle only whitespace', () => {
+      const lexer = new Lexer('   \t\n  ');
+      const tokens = lexer.tokenize();
+
+      expect(tokens[tokens.length - 1]!.type).toBe('EOF');
+    });
+
+    it('should throw on unexpected characters', () => {
+      const lexer = new Lexer('$@!');
+      expect(() => lexer.tokenize()).toThrow('Unexpected character');
+    });
+
+    it('should handle newlines correctly', () => {
+      const lexer = new Lexer('line1\nline2');
+      const tokens = lexer.tokenize();
+
+      expect(tokens[1]!.type).toBe('NEWLINE');
+    });
+  });
+});
+
+describe('Parser - Statement Parsing', () => {
+  describe('Input Declarations', () => {
+    it('should parse input without type annotation', () => {
+      const source = 'input data';
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      expect(ast.statements).toHaveLength(1);
+      expect(ast.statements[0]!.type).toBe('input');
+      if (ast.statements[0]!.type === 'input') {
+        expect(ast.statements[0].name).toBe('data');
+        expect(ast.statements[0].dataType).toBeUndefined();
+      }
+    });
+
+    it('should parse input with type annotation', () => {
+      const source = 'input numbers: number[]';
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      expect(ast.statements[0]!.type).toBe('input');
+      if (ast.statements[0]!.type === 'input') {
+        expect(ast.statements[0].name).toBe('numbers');
+        expect(ast.statements[0].dataType).toBe('number[]');
+      }
+    });
+
+    it('should parse input with object type', () => {
+      const source = 'input users: object[]';
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      if (ast.statements[0]!.type === 'input') {
+        expect(ast.statements[0].dataType).toBe('object[]');
+      }
+    });
+  });
+
+  describe('Filter Statements', () => {
+    it('should parse filter with simple comparison', () => {
+      const source = 'filtered = filter data where x > 10';
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      expect(ast.statements[0]!.type).toBe('filter');
+      if (ast.statements[0]!.type === 'filter') {
+        expect(ast.statements[0].target).toBe('filtered');
+        expect(ast.statements[0].source).toBe('data');
+        expect(ast.statements[0].predicate.type).toBe('comparison');
+      }
+    });
+
+    it('should parse filter with all comparison operators', () => {
+      const operators = [
+        ['x > 5', 'gt'],
+        ['x < 5', 'lt'],
+        ['x >= 5', 'gte'],
+        ['x <= 5', 'lte'],
+        ['x == 5', 'eq'],
+        ['x != 5', 'neq'],
+      ];
+
+      operators.forEach(([expr, expectedOp]) => {
+        const source = `filtered = filter data where ${expr}`;
+        const lexer = new Lexer(source);
+        const parser = new Parser(lexer.tokenize());
+        const ast = parser.parse();
+
+        if (ast.statements[0]!.type === 'filter') {
+          const predicate = ast.statements[0].predicate;
+          if (predicate.type === 'comparison') {
+            expect(predicate.operator).toBe(expectedOp);
+          }
+        }
+      });
+    });
+
+    it('should parse filter with property access', () => {
+      const source = 'adults = filter users where x.age >= 18';
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      if (ast.statements[0]!.type === 'filter') {
+        const predicate = ast.statements[0].predicate;
+        expect(predicate.type).toBe('property');
+        if (predicate.type === 'property') {
+          expect(predicate.property).toBe('age');
+          expect(predicate.operator).toBe('gte');
+          expect(predicate.value).toBe(18);
+        }
+      }
+    });
+
+    it('should parse filter with string comparison', () => {
+      const source = 'filtered = filter users where x.name == "Alice"';
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      if (ast.statements[0]!.type === 'filter') {
+        const predicate = ast.statements[0].predicate;
+        if (predicate.type === 'property') {
+          expect(predicate.value).toBe('Alice');
+        }
+      }
+    });
+
+    it('should parse filter with boolean comparison', () => {
+      const source = 'filtered = filter users where x.active == true';
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      if (ast.statements[0]!.type === 'filter') {
+        const predicate = ast.statements[0].predicate;
+        if (predicate.type === 'property') {
+          expect(predicate.value).toBe(true);
+        }
+      }
+    });
+  });
+
+  describe('Map Statements', () => {
+    it('should parse map with arithmetic operation', () => {
+      const source = 'doubled = map numbers with x * 2';
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      expect(ast.statements[0]!.type).toBe('map');
+      if (ast.statements[0]!.type === 'map') {
+        expect(ast.statements[0].target).toBe('doubled');
+        expect(ast.statements[0].source).toBe('numbers');
+        expect(ast.statements[0].transform.type).toBe('arithmetic');
+      }
+    });
+
+    it('should parse map with all arithmetic operators', () => {
+      const operators = [
+        ['x * 2', 'multiply'],
+        ['x + 2', 'add'],
+        ['x - 2', 'subtract'],
+        ['x / 2', 'divide'],
+        ['x % 2', 'mod'],
+      ];
+
+      operators.forEach(([expr, expectedOp]) => {
+        const source = `result = map data with ${expr}`;
+        const lexer = new Lexer(source);
+        const parser = new Parser(lexer.tokenize());
+        const ast = parser.parse();
+
+        if (ast.statements[0]!.type === 'map') {
+          const transform = ast.statements[0].transform;
+          if (transform.type === 'arithmetic') {
+            expect(transform.operator).toBe(expectedOp);
+            expect(transform.value).toBe(2);
+          }
+        }
+      });
+    });
+
+    it('should parse map with property access', () => {
+      const source = 'names = map users with x.name';
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      if (ast.statements[0]!.type === 'map') {
+        const transform = ast.statements[0].transform;
+        expect(transform.type).toBe('property');
+        if (transform.type === 'property') {
+          expect(transform.property).toBe('name');
+        }
+      }
+    });
+
+    it('should parse map with string functions', () => {
+      const functions = ['uppercase', 'lowercase', 'trim'];
+
+      functions.forEach((fn) => {
+        const source = `result = map data with ${fn}(x)`;
+        const lexer = new Lexer(source);
+        const parser = new Parser(lexer.tokenize());
+        const ast = parser.parse();
+
+        if (ast.statements[0]!.type === 'map') {
+          const transform = ast.statements[0].transform;
+          expect(transform.type).toBe('string');
+          if (transform.type === 'string') {
+            expect(transform.operation).toBe(fn);
+          }
+        }
+      });
+    });
+  });
+
+  describe('Reduce Statements', () => {
+    it('should parse reduce with sum', () => {
+      const source = 'total = reduce numbers by sum';
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      expect(ast.statements[0]!.type).toBe('reduce');
+      if (ast.statements[0]!.type === 'reduce') {
+        expect(ast.statements[0].target).toBe('total');
+        expect(ast.statements[0].source).toBe('numbers');
+        expect(ast.statements[0].operation).toBe('sum');
+      }
+    });
+
+    it('should parse all reduction operations', () => {
+      const operations = ['sum', 'product', 'max', 'min', 'average', 'count', 'first', 'last', 'join'];
+
+      operations.forEach((op) => {
+        const source = `result = reduce data by ${op}`;
+        const lexer = new Lexer(source);
+        const parser = new Parser(lexer.tokenize());
+        const ast = parser.parse();
+
+        if (ast.statements[0]!.type === 'reduce') {
+          expect(ast.statements[0].operation).toBe(op);
+        }
+      });
+    });
+
+    it('should throw on unknown reduction operation', () => {
+      const source = 'result = reduce data by unknown';
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+
+      expect(() => parser.parse()).toThrow('Unknown reduction operation');
+    });
+  });
+
+  describe('Output Statements', () => {
+    it('should parse output statement', () => {
+      const source = 'output result';
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      expect(ast.statements[0]!.type).toBe('output');
+      if (ast.statements[0]!.type === 'output') {
+        expect(ast.statements[0].source).toBe('result');
+      }
+    });
+  });
+
+  describe('Error Handling', () => {
+    it('should throw on unexpected token at statement level', () => {
+      const source = '123';
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+
+      expect(() => parser.parse()).toThrow('Unexpected token');
+    });
+
+    it('should throw on missing assignment operator', () => {
+      const source = 'result filter data where x > 0';
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+
+      expect(() => parser.parse()).toThrow();
+    });
+
+    it('should throw on missing WHERE keyword', () => {
+      const source = 'result = filter data x > 0';
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+
+      expect(() => parser.parse()).toThrow('Expected WHERE');
+    });
+
+    it('should throw on missing WITH keyword', () => {
+      const source = 'result = map data x * 2';
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+
+      expect(() => parser.parse()).toThrow('Expected WITH');
+    });
+
+    it('should throw on missing BY keyword', () => {
+      const source = 'result = reduce data sum';
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+
+      expect(() => parser.parse()).toThrow('Expected BY');
+    });
+  });
+
+  describe('Complex Expressions', () => {
+    it('should parse complete pipeline', () => {
+      const source = `
+input data: number[]
+filtered = filter data where x > 0
+mapped = map filtered with x * 2
+result = reduce mapped by sum
+output result
+      `.trim();
+
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      expect(ast.statements).toHaveLength(5);
+      expect(ast.statements[0]!.type).toBe('input');
+      expect(ast.statements[1]!.type).toBe('filter');
+      expect(ast.statements[2]!.type).toBe('map');
+      expect(ast.statements[3]!.type).toBe('reduce');
+      expect(ast.statements[4]!.type).toBe('output');
+    });
+
+    it('should parse multiple filters', () => {
+      const source = `
+input data: number[]
+positive = filter data where x > 0
+even = filter positive where x % 2 == 0
+output even
+      `.trim();
+
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      expect(ast.statements).toHaveLength(4);
+      expect(ast.statements[1]!.type).toBe('filter');
+      expect(ast.statements[2]!.type).toBe('filter');
+    });
+  });
+});
+
+describe('ASTToGraphConverter', () => {
+  describe('Basic Conversions', () => {
+    it('should convert input declaration', () => {
+      const source = 'input data: number[]';
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      const converter = new ASTToGraphConverter();
+      const graph = converter.convert(ast);
+
+      expect(graph).toBeDefined();
+    });
+
+    it('should convert filter statement', () => {
+      const source = `
+input data: number[]
+filtered = filter data where x > 10
+output filtered
+      `.trim();
+
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      const converter = new ASTToGraphConverter();
+      const graph = converter.convert(ast);
+      const compiledFn = graph.compile();
+
+      const result = compiledFn([5, 15, 8, 20]);
+      expect(result).toEqual([15, 20]);
+    });
+
+    it('should convert map statement', () => {
+      const source = `
+input data: number[]
+doubled = map data with x * 2
+output doubled
+      `.trim();
+
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      const converter = new ASTToGraphConverter();
+      const graph = converter.convert(ast);
+      const compiledFn = graph.compile();
+
+      const result = compiledFn([1, 2, 3]);
+      expect(result).toEqual([2, 4, 6]);
+    });
+
+    it('should convert reduce statement', () => {
+      const source = `
+input data: number[]
+total = reduce data by sum
+output total
+      `.trim();
+
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      const converter = new ASTToGraphConverter();
+      const graph = converter.convert(ast);
+      const compiledFn = graph.compile();
+
+      const result = compiledFn([1, 2, 3, 4]);
+      expect(result).toBe(10);
+    });
+  });
+
+  describe('Complex Pipelines', () => {
+    it('should handle filter-map-reduce pipeline', () => {
+      const source = `
+input numbers: number[]
+positive = filter numbers where x > 0
+doubled = map positive with x * 2
+total = reduce doubled by sum
+output total
+      `.trim();
+
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      const converter = new ASTToGraphConverter();
+      const graph = converter.convert(ast);
+      const compiledFn = graph.compile();
+
+      const result = compiledFn([1, -2, 3, -4, 5]);
+      expect(result).toBe(18); // (1 + 3 + 5) * 2 = 18
+    });
+
+    it('should handle property access in filters', () => {
+      const source = `
+input users: object[]
+adults = filter users where x.age >= 18
+output adults
+      `.trim();
+
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      const converter = new ASTToGraphConverter();
+      const graph = converter.convert(ast);
+      const compiledFn = graph.compile();
+
+      const users = [
+        { name: 'Alice', age: 25 },
+        { name: 'Bob', age: 15 },
+        { name: 'Charlie', age: 30 },
+      ];
+
+      const result = compiledFn(users);
+      expect(result).toHaveLength(2);
+      expect(result[0].name).toBe('Alice');
+      expect(result[1].name).toBe('Charlie');
+    });
+
+    it('should handle property extraction in maps', () => {
+      const source = `
+input users: object[]
+names = map users with x.name
+output names
+      `.trim();
+
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      const converter = new ASTToGraphConverter();
+      const graph = converter.convert(ast);
+      const compiledFn = graph.compile();
+
+      const users = [
+        { name: 'Alice', age: 25 },
+        { name: 'Bob', age: 30 },
+      ];
+
+      const result = compiledFn(users);
+      expect(result).toEqual(['Alice', 'Bob']);
+    });
+  });
+
+  describe('Arithmetic Operations', () => {
+    it('should handle all arithmetic operators', () => {
+      const testCases = [
+        { op: 'x + 5', input: [1, 2, 3], expected: [6, 7, 8] },
+        { op: 'x - 5', input: [10, 20, 30], expected: [5, 15, 25] },
+        { op: 'x * 3', input: [1, 2, 3], expected: [3, 6, 9] },
+        { op: 'x / 2', input: [10, 20, 30], expected: [5, 10, 15] },
+        { op: 'x % 3', input: [10, 11, 12], expected: [1, 2, 0] },
+      ];
+
+      testCases.forEach(({ op, input, expected }) => {
+        const source = `
+input data: number[]
+result = map data with ${op}
+output result
+        `.trim();
+
+        const lexer = new Lexer(source);
+        const parser = new Parser(lexer.tokenize());
+        const ast = parser.parse();
+
+        const converter = new ASTToGraphConverter();
+        const graph = converter.convert(ast);
+        const compiledFn = graph.compile();
+
+        const result = compiledFn(input);
+        expect(result).toEqual(expected);
+      });
+    });
+  });
+
+  describe('Reduction Operations', () => {
+    it('should handle sum reduction', () => {
+      const source = `
+input data: number[]
+total = reduce data by sum
+output total
+      `.trim();
+
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      const converter = new ASTToGraphConverter();
+      const graph = converter.convert(ast);
+      const compiledFn = graph.compile();
+
+      expect(compiledFn([1, 2, 3, 4])).toBe(10);
+    });
+
+    it('should handle max reduction', () => {
+      const source = `
+input data: number[]
+maximum = reduce data by max
+output maximum
+      `.trim();
+
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      const converter = new ASTToGraphConverter();
+      const graph = converter.convert(ast);
+      const compiledFn = graph.compile();
+
+      expect(compiledFn([3, 7, 2, 9, 1])).toBe(9);
+    });
+
+    it('should handle min reduction', () => {
+      const source = `
+input data: number[]
+minimum = reduce data by min
+output minimum
+      `.trim();
+
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      const converter = new ASTToGraphConverter();
+      const graph = converter.convert(ast);
+      const compiledFn = graph.compile();
+
+      expect(compiledFn([3, 7, 2, 9, 1])).toBe(1);
+    });
+
+    it('should handle count reduction', () => {
+      const source = `
+input data: number[]
+cnt = reduce data by count
+output cnt
+      `.trim();
+
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      const converter = new ASTToGraphConverter();
+      const graph = converter.convert(ast);
+      const compiledFn = graph.compile();
+
+      expect(compiledFn([1, 2, 3, 4, 5])).toBe(5);
+    });
+  });
+
+  describe('String Operations', () => {
+    it('should handle uppercase transform', () => {
+      const source = `
+input words: string[]
+upper = map words with uppercase(x)
+output upper
+      `.trim();
+
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      const converter = new ASTToGraphConverter();
+      const graph = converter.convert(ast);
+      const compiledFn = graph.compile();
+
+      expect(compiledFn(['hello', 'world'])).toEqual(['HELLO', 'WORLD']);
+    });
+
+    it('should handle lowercase transform', () => {
+      const source = `
+input words: string[]
+lower = map words with lowercase(x)
+output lower
+      `.trim();
+
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      const converter = new ASTToGraphConverter();
+      const graph = converter.convert(ast);
+      const compiledFn = graph.compile();
+
+      expect(compiledFn(['HELLO', 'WORLD'])).toEqual(['hello', 'world']);
+    });
+
+    it('should handle trim transform', () => {
+      const source = `
+input words: string[]
+trimmed = map words with trim(x)
+output trimmed
+      `.trim();
+
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      const converter = new ASTToGraphConverter();
+      const graph = converter.convert(ast);
+      const compiledFn = graph.compile();
+
+      expect(compiledFn(['  hello  ', '  world  '])).toEqual(['hello', 'world']);
+    });
+  });
+
+  describe('Error Handling', () => {
+    it('should throw on undefined variable', () => {
+      const source = `
+input data: number[]
+result = map nonexistent with x * 2
+output result
+      `.trim();
+
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      const converter = new ASTToGraphConverter();
+      expect(() => converter.convert(ast)).toThrow('Undefined variable');
+    });
+  });
+});
