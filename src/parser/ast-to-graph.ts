@@ -176,6 +176,9 @@ export class ASTToGraphConverter {
       case 'or':
         return { type: 'or', predicates };
       case 'not':
+        if (predicates.length === 0) {
+          throw new Error("Logical 'not' must have exactly one predicate");
+        }
         return { type: 'not', predicate: predicates[0]! };
       default:
         throw new Error(`Unknown logical operator: ${expr.operator}`);
