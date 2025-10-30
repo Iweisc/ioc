@@ -21,14 +21,19 @@ function printUsage() {
 IOC - Intent-Oriented Computing Language
 
 Usage:
-  ioc run <file.ioc> [--input <json>] [--debug]  Run an .ioc program
-  ioc compile <file.ioc> [--output <js>]         Compile to JavaScript
-  ioc validate <file.ioc>                        Validate syntax and safety
-  ioc help                                       Show this help message
+  ioc run <file.ioc> [--input <json>] [--debug] [--unsafe]  Run an .ioc program
+  ioc compile <file.ioc> [--output <js>]                    Compile to JavaScript
+  ioc validate <file.ioc>                                   Validate syntax and safety
+  ioc help                                                  Show this help message
+
+Flags:
+  --debug    Show execution plan before running
+  --unsafe   Skip security validation (use only with trusted .ioc files)
 
 Examples:
   ioc run pipeline.ioc --input '[1,2,3,4,5]'
   ioc run pipeline.ioc --input '[1,2,3,4,5]' --debug
+  ioc run untrusted.ioc --input '[1,2,3]'  (validates security by default)
   ioc compile app.ioc --output app.js
   ioc validate my-program.ioc
   `.trim()
@@ -62,9 +67,23 @@ function parseIOC(source: string) {
   }
 }
 
-function runCommand(filePath: string, inputJson?: string, debug = false) {
+function runCommand(filePath: string, inputJson?: string, debug = false, unsafe = false) {
   const source = readFile(filePath);
   const { graph } = parseIOC(source);
+
+  // Validate security unless --unsafe flag is set
+  if (!unsafe) {
+    const validation = graph.validate();
+    if (!validation.valid) {
+      console.error('Security validation failed:');
+      for (const error of validation.errors) {
+        console.error(`  ${error}`);
+      }
+      console.error('');
+      console.error('Use --unsafe flag to skip validation (not recommended for untrusted files)');
+      process.exit(1);
+    }
+  }
 
   // Compile the graph
   const compiledFn = graph.compile();
@@ -175,7 +194,8 @@ function main() {
       const inputIndex = args.indexOf('--input');
       const inputJson = inputIndex !== -1 ? args[inputIndex + 1] : undefined;
       const debug = args.includes('--debug');
-      runCommand(filePath, inputJson, debug);
+      const unsafe = args.includes('--unsafe');
+      runCommand(filePath, inputJson, debug, unsafe);
       break;
     }
 

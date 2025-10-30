@@ -3,6 +3,9 @@
  *
  * Compiles safe predicates, transforms, and reductions to JavaScript
  * These can then be further compiled to WebAssembly for performance
+ *
+ * SECURITY: This compiler generates code via Function constructor.
+ * All inputs are validated and sanitized to prevent code injection.
  */
 
 import {
@@ -14,6 +17,13 @@ import {
   getPredicateComplexity,
   getTransformComplexity,
 } from './safe-types.js';
+import {
+  validatePropertyPath,
+  validateRegexPattern,
+  validateStringArg,
+  safeSerialize,
+  compileInRestrictedContext,
+} from './security.js';
 
 /**
  * Compilation context tracks variables and generates unique names
@@ -66,14 +76,23 @@ function compileComparison(op: ComparisonOp, left: string, right: string): strin
 export function compilePredicate(predicate: SafePredicate, inputVar: string = 'x'): string {
   switch (predicate.type) {
     case 'compare': {
-      const value = JSON.stringify(predicate.value);
+      const value = safeSerialize(predicate.value);
+      // Special handling for 'matches' operator
+      if (predicate.op === 'matches' && typeof predicate.value === 'string') {
+        validateRegexPattern(predicate.value);
+      }
       return compileComparison(predicate.op, inputVar, value);
     }
 
     case 'compare_property': {
       const property = predicate.property;
-      const value = JSON.stringify(predicate.value);
+      validatePropertyPath([property]); // Validate property name
+      const value = safeSerialize(predicate.value);
       const propAccess = `${inputVar}?.${property}`;
+      // Special handling for 'matches' operator
+      if (predicate.op === 'matches' && typeof predicate.value === 'string') {
+        validateRegexPattern(predicate.value);
+      }
       return compileComparison(predicate.op, propAccess, value);
     }
 
@@ -134,6 +153,7 @@ export function compileTransform(transform: SafeTransform, inputVar: string = 'x
       return JSON.stringify(transform.value);
 
     case 'property': {
+      validatePropertyPath(transform.path); // Validate all property names
       let result = inputVar;
       for (const key of transform.path) {
         result = `${result}?.${key}`;
@@ -165,6 +185,9 @@ export function compileTransform(transform: SafeTransform, inputVar: string = 'x
 
     case 'string': {
       const { op, args = [] } = transform;
+      // Validate all string arguments
+      args.forEach(validateStringArg);
+
       switch (op) {
         case 'uppercase':
           return `${inputVar}.toUpperCase()`;
@@ -173,13 +196,24 @@ export function compileTransform(transform: SafeTransform, inputVar: string = 'x
         case 'trim':
           return `${inputVar}.trim()`;
         case 'concat':
-          return `${inputVar}.concat(${args.map((a) => JSON.stringify(a)).join(', ')})`;
+          return `${inputVar}.concat(${args.map((a) => safeSerialize(a)).join(', ')})`;
         case 'substring':
-          return `${inputVar}.substring(${args.map((a) => JSON.stringify(a)).join(', ')})`;
+          return `${inputVar}.substring(${args.map((a) => safeSerialize(a)).join(', ')})`;
         case 'split':
-          return `${inputVar}.split(${JSON.stringify(args[0])})`;
+          // Validate split pattern if it could be a regex
+          if (typeof args[0] === 'string') {
+            validateStringArg(args[0]);
+          }
+          return `${inputVar}.split(${safeSerialize(args[0])})`;
         case 'replace':
-          return `${inputVar}.replace(${JSON.stringify(args[0])}, ${JSON.stringify(args[1])})`;
+          // Validate replace pattern if it could be a regex
+          if (typeof args[0] === 'string') {
+            validateStringArg(args[0]);
+          }
+          if (typeof args[1] === 'string') {
+            validateStringArg(args[1]);
+          }
+          return `${inputVar}.replace(${safeSerialize(args[0])}, ${safeSerialize(args[1])})`;
         default:
           throw new Error(`Unknown string op: ${op}`);
       }
@@ -287,8 +321,8 @@ export function compileReduction(reduction: ReductionOp, arrayVar: string = 'arr
  */
 export function compilePredicateFunction(predicate: SafePredicate): (x: any) => boolean {
   const code = compilePredicate(predicate, 'x');
-  // eslint-disable-next-line no-new-func
-  return new Function('x', `return ${code}`) as (x: any) => boolean;
+  // Use restricted context compilation for additional security
+  return compileInRestrictedContext(code, ['x']) as (x: any) => boolean;
 }
 
 /**
@@ -296,8 +330,8 @@ export function compilePredicateFunction(predicate: SafePredicate): (x: any) => 
  */
 export function compileTransformFunction(transform: SafeTransform): (x: any) => any {
   const code = compileTransform(transform, 'x');
-  // eslint-disable-next-line no-new-func
-  return new Function('x', `return ${code}`) as (x: any) => any;
+  // Use restricted context compilation for additional security
+  return compileInRestrictedContext(code, ['x']) as (x: any) => any;
 }
 
 /**
@@ -305,8 +339,8 @@ export function compileTransformFunction(transform: SafeTransform): (x: any) => 
  */
 export function compileReductionFunction(reduction: ReductionOp): (arr: any[]) => any {
   const code = compileReduction(reduction, 'arr');
-  // eslint-disable-next-line no-new-func
-  return new Function('arr', `return ${code}`) as (arr: any[]) => any;
+  // Use restricted context compilation for additional security
+  return compileInRestrictedContext(code, ['arr']) as (arr: any[]) => any;
 }
 
 /**

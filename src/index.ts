@@ -66,3 +66,14 @@ export type { Token } from './parser/lexer';
 export { Parser } from './parser/parser';
 export { ASTToGraphConverter } from './parser/ast-to-graph';
 export type { Program, ASTNode } from './parser/ast';
+
+// Security
+export {
+  validatePropertyPath,
+  validateRegexPattern,
+  validateStringArg,
+  safeSerialize,
+  validateComplexity,
+  createSandboxContext,
+  compileInRestrictedContext,
+} from './dsl/security';
