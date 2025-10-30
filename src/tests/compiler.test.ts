@@ -365,3 +365,207 @@ describe('Compiler', () => {
     });
   });
 });
+// Additional tests for arithmetic predicates (added based on new compare_arithmetic support)
+describe('Arithmetic Predicates', () => {
+  describe('compilePredicate with compare_arithmetic', () => {
+    it('should compile modulo arithmetic predicate', () => {
+      const predicate: SafePredicate = {
+        type: 'compare_arithmetic',
+        arithmeticOp: 'mod',
+        arithmeticValue: 2,
+        comparisonOp: 'eq',
+        comparisonValue: 0,
+      };
+      const code = compilePredicate(predicate, 'x');
+      expect(code).toContain('(x % 2)');
+      expect(code).toContain('=== 0');
+    });
+
+    it('should compile multiply arithmetic predicate', () => {
+      const predicate: SafePredicate = {
+        type: 'compare_arithmetic',
+        arithmeticOp: 'multiply',
+        arithmeticValue: 3,
+        comparisonOp: 'gt',
+        comparisonValue: 10,
+      };
+      const code = compilePredicate(predicate, 'x');
+      expect(code).toContain('(x * 3)');
+      expect(code).toContain('> 10');
+    });
+
+    it('should compile add arithmetic predicate', () => {
+      const predicate: SafePredicate = {
+        type: 'compare_arithmetic',
+        arithmeticOp: 'add',
+        arithmeticValue: 5,
+        comparisonOp: 'lt',
+        comparisonValue: 100,
+      };
+      const code = compilePredicate(predicate, 'x');
+      expect(code).toContain('(x + 5)');
+      expect(code).toContain('< 100');
+    });
+
+    it('should compile subtract arithmetic predicate', () => {
+      const predicate: SafePredicate = {
+        type: 'compare_arithmetic',
+        arithmeticOp: 'subtract',
+        arithmeticValue: 10,
+        comparisonOp: 'gte',
+        comparisonValue: 0,
+      };
+      const code = compilePredicate(predicate, 'x');
+      expect(code).toContain('(x - 10)');
+      expect(code).toContain('>= 0');
+    });
+
+    it('should compile divide arithmetic predicate', () => {
+      const predicate: SafePredicate = {
+        type: 'compare_arithmetic',
+        arithmeticOp: 'divide',
+        arithmeticValue: 2,
+        comparisonOp: 'lte',
+        comparisonValue: 50,
+      };
+      const code = compilePredicate(predicate, 'x');
+      expect(code).toContain('(x / 2)');
+      expect(code).toContain('<= 50');
+    });
+
+    it('should compile arithmetic predicate with not equal comparison', () => {
+      const predicate: SafePredicate = {
+        type: 'compare_arithmetic',
+        arithmeticOp: 'mod',
+        arithmeticValue: 3,
+        comparisonOp: 'ne',
+        comparisonValue: 0,
+      };
+      const code = compilePredicate(predicate, 'x');
+      expect(code).toContain('(x % 3)');
+      expect(code).toContain('!== 0');
+    });
+  });
+
+  describe('compilePredicateFunction with arithmetic predicates', () => {
+    it('should create working predicate for even number check', () => {
+      const predicate: SafePredicate = {
+        type: 'compare_arithmetic',
+        arithmeticOp: 'mod',
+        arithmeticValue: 2,
+        comparisonOp: 'eq',
+        comparisonValue: 0,
+      };
+      const fn = compilePredicateFunction(predicate);
+      
+      expect(fn(2)).toBe(true);
+      expect(fn(4)).toBe(true);
+      expect(fn(6)).toBe(true);
+      expect(fn(1)).toBe(false);
+      expect(fn(3)).toBe(false);
+      expect(fn(5)).toBe(false);
+    });
+
+    it('should create working predicate for divisibility check', () => {
+      const predicate: SafePredicate = {
+        type: 'compare_arithmetic',
+        arithmeticOp: 'mod',
+        arithmeticValue: 5,
+        comparisonOp: 'eq',
+        comparisonValue: 0,
+      };
+      const fn = compilePredicateFunction(predicate);
+      
+      expect(fn(5)).toBe(true);
+      expect(fn(10)).toBe(true);
+      expect(fn(15)).toBe(true);
+      expect(fn(7)).toBe(false);
+      expect(fn(13)).toBe(false);
+    });
+
+    it('should create working predicate for arithmetic comparison', () => {
+      const predicate: SafePredicate = {
+        type: 'compare_arithmetic',
+        arithmeticOp: 'multiply',
+        arithmeticValue: 2,
+        comparisonOp: 'gt',
+        comparisonValue: 10,
+      };
+      const fn = compilePredicateFunction(predicate);
+      
+      expect(fn(6)).toBe(true);
+      expect(fn(10)).toBe(true);
+      expect(fn(3)).toBe(false);
+      expect(fn(5)).toBe(false);
+    });
+
+    it('should handle edge cases with arithmetic predicates', () => {
+      const predicate: SafePredicate = {
+        type: 'compare_arithmetic',
+        arithmeticOp: 'add',
+        arithmeticValue: 10,
+        comparisonOp: 'eq',
+        comparisonValue: 10,
+      };
+      const fn = compilePredicateFunction(predicate);
+      
+      expect(fn(0)).toBe(true);
+      expect(fn(-10)).toBe(false);
+      expect(fn(10)).toBe(false);
+    });
+  });
+
+  describe('arithmetic predicate edge cases', () => {
+    it('should handle negative arithmetic values', () => {
+      const predicate: SafePredicate = {
+        type: 'compare_arithmetic',
+        arithmeticOp: 'add',
+        arithmeticValue: -5,
+        comparisonOp: 'eq',
+        comparisonValue: 0,
+      };
+      const fn = compilePredicateFunction(predicate);
+      expect(fn(5)).toBe(true);
+      expect(fn(0)).toBe(false);
+    });
+
+    it('should handle negative comparison values', () => {
+      const predicate: SafePredicate = {
+        type: 'compare_arithmetic',
+        arithmeticOp: 'subtract',
+        arithmeticValue: 10,
+        comparisonOp: 'lt',
+        comparisonValue: -5,
+      };
+      const fn = compilePredicateFunction(predicate);
+      expect(fn(0)).toBe(true);
+      expect(fn(10)).toBe(false);
+    });
+
+    it('should handle zero as arithmetic value', () => {
+      const predicate: SafePredicate = {
+        type: 'compare_arithmetic',
+        arithmeticOp: 'add',
+        arithmeticValue: 0,
+        comparisonOp: 'eq',
+        comparisonValue: 5,
+      };
+      const fn = compilePredicateFunction(predicate);
+      expect(fn(5)).toBe(true);
+      expect(fn(0)).toBe(false);
+    });
+
+    it('should handle division by negative numbers', () => {
+      const predicate: SafePredicate = {
+        type: 'compare_arithmetic',
+        arithmeticOp: 'divide',
+        arithmeticValue: -2,
+        comparisonOp: 'gt',
+        comparisonValue: -5,
+      };
+      const fn = compilePredicateFunction(predicate);
+      expect(fn(-8)).toBe(true);
+      expect(fn(-12)).toBe(false);
+    });
+  });
+});

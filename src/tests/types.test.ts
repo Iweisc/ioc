@@ -127,3 +127,145 @@ describe('inferType', () => {
     expect(type).toBeInstanceOf(AnyType);
   });
 });
+
+// Additional tests for arithmetic predicate complexity
+describe('Arithmetic Predicate Complexity', () => {
+  it('should return CONSTANT complexity for compare_arithmetic predicates', () => {
+    const predicate: SafePredicate = {
+      type: 'compare_arithmetic',
+      arithmeticOp: 'mod',
+      arithmeticValue: 2,
+      comparisonOp: 'eq',
+      comparisonValue: 0,
+    };
+
+    const complexity = getPredicateComplexity(predicate);
+    expect(complexity).toBe(ComplexityClass.CONSTANT);
+  });
+
+  it('should handle arithmetic predicates in AND combinations', () => {
+    const arithmeticPred: SafePredicate = {
+      type: 'compare_arithmetic',
+      arithmeticOp: 'multiply',
+      arithmeticValue: 3,
+      comparisonOp: 'gt',
+      comparisonValue: 10,
+    };
+
+    const combinedPred: SafePredicate = {
+      type: 'and',
+      predicates: [arithmeticPred, Predicate.lt(100)],
+    };
+
+    const complexity = getPredicateComplexity(combinedPred);
+    expect(complexity).toBe(ComplexityClass.CONSTANT);
+  });
+
+  it('should handle arithmetic predicates in OR combinations', () => {
+    const arithmeticPred1: SafePredicate = {
+      type: 'compare_arithmetic',
+      arithmeticOp: 'add',
+      arithmeticValue: 5,
+      comparisonOp: 'eq',
+      comparisonValue: 10,
+    };
+
+    const arithmeticPred2: SafePredicate = {
+      type: 'compare_arithmetic',
+      arithmeticOp: 'subtract',
+      arithmeticValue: 5,
+      comparisonOp: 'eq',
+      comparisonValue: 0,
+    };
+
+    const combinedPred: SafePredicate = {
+      type: 'or',
+      predicates: [arithmeticPred1, arithmeticPred2],
+    };
+
+    const complexity = getPredicateComplexity(combinedPred);
+    expect(complexity).toBe(ComplexityClass.CONSTANT);
+  });
+
+  it('should handle negated arithmetic predicates', () => {
+    const arithmeticPred: SafePredicate = {
+      type: 'compare_arithmetic',
+      arithmeticOp: 'divide',
+      arithmeticValue: 2,
+      comparisonOp: 'ne',
+      comparisonValue: 5,
+    };
+
+    const negatedPred: SafePredicate = {
+      type: 'not',
+      predicate: arithmeticPred,
+    };
+
+    const complexity = getPredicateComplexity(negatedPred);
+    expect(complexity).toBe(ComplexityClass.CONSTANT);
+  });
+});
+
+describe('Arithmetic Predicate Type Safety', () => {
+  it('should accept all arithmetic operations', () => {
+    const operations: Array<'multiply' | 'add' | 'subtract' | 'divide' | 'mod'> = [
+      'multiply',
+      'add',
+      'subtract',
+      'divide',
+      'mod',
+    ];
+
+    operations.forEach((op) => {
+      const predicate: SafePredicate = {
+        type: 'compare_arithmetic',
+        arithmeticOp: op,
+        arithmeticValue: 2,
+        comparisonOp: 'eq',
+        comparisonValue: 0,
+      };
+
+      expect(predicate.type).toBe('compare_arithmetic');
+      expect(predicate.arithmeticOp).toBe(op);
+    });
+  });
+
+  it('should accept all comparison operators', () => {
+    const comparisons: Array<'gt' | 'lt' | 'gte' | 'lte' | 'eq' | 'ne'> = [
+      'gt',
+      'lt',
+      'gte',
+      'lte',
+      'eq',
+      'ne',
+    ];
+
+    comparisons.forEach((comp) => {
+      const predicate: SafePredicate = {
+        type: 'compare_arithmetic',
+        arithmeticOp: 'mod',
+        arithmeticValue: 2,
+        comparisonOp: comp,
+        comparisonValue: 0,
+      };
+
+      expect(predicate.comparisonOp).toBe(comp);
+    });
+  });
+
+  it('should accept various comparison values', () => {
+    const values: Array<number | string | boolean> = [0, 1, -5, 'test', true, false];
+
+    values.forEach((value) => {
+      const predicate: SafePredicate = {
+        type: 'compare_arithmetic',
+        arithmeticOp: 'add',
+        arithmeticValue: 10,
+        comparisonOp: 'eq',
+        comparisonValue: value,
+      };
+
+      expect(predicate.comparisonValue).toBe(value);
+    });
+  });
+});

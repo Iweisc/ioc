@@ -1012,3 +1012,246 @@ output result
     });
   });
 });
+// Additional tests for arithmetic predicate parsing
+describe('Parser Arithmetic Predicates', () => {
+  describe('Modulo predicate parsing', () => {
+    it('should parse x % 2 == 0 predicate', () => {
+      const tokens = new Lexer('filtered = filter numbers where x % 2 == 0').tokenize();
+      const parser = new Parser(tokens);
+      const ast = parser.parse();
+
+      expect(ast.statements).toHaveLength(1);
+      const stmt = ast.statements[0] as FilterStatement;
+      expect(stmt.type).toBe('filter');
+      expect(stmt.predicate.type).toBe('arithmetic');
+
+      const pred = stmt.predicate as ArithmeticPredicate;
+      expect(pred.arithmeticOp).toBe('mod');
+      expect(pred.arithmeticValue).toBe(2);
+      expect(pred.comparisonOp).toBe('eq');
+      expect(pred.comparisonValue).toBe(0);
+    });
+
+    it('should parse x % 3 != 0 predicate', () => {
+      const tokens = new Lexer('filtered = filter data where x % 3 != 0').tokenize();
+      const parser = new Parser(tokens);
+      const ast = parser.parse();
+
+      const stmt = ast.statements[0] as FilterStatement;
+      const pred = stmt.predicate as ArithmeticPredicate;
+
+      expect(pred.type).toBe('arithmetic');
+      expect(pred.arithmeticOp).toBe('mod');
+      expect(pred.arithmeticValue).toBe(3);
+      expect(pred.comparisonOp).toBe('neq');
+      expect(pred.comparisonValue).toBe(0);
+    });
+
+    it('should parse x % 5 == 1 predicate', () => {
+      const tokens = new Lexer('filtered = filter items where x % 5 == 1').tokenize();
+      const parser = new Parser(tokens);
+      const ast = parser.parse();
+
+      const stmt = ast.statements[0] as FilterStatement;
+      const pred = stmt.predicate as ArithmeticPredicate;
+
+      expect(pred.arithmeticOp).toBe('mod');
+      expect(pred.arithmeticValue).toBe(5);
+      expect(pred.comparisonValue).toBe(1);
+    });
+  });
+
+  describe('Multiplication predicate parsing', () => {
+    it('should parse x * 2 > 10 predicate', () => {
+      const tokens = new Lexer('filtered = filter numbers where x * 2 > 10').tokenize();
+      const parser = new Parser(tokens);
+      const ast = parser.parse();
+
+      const stmt = ast.statements[0] as FilterStatement;
+      const pred = stmt.predicate as ArithmeticPredicate;
+
+      expect(pred.type).toBe('arithmetic');
+      expect(pred.arithmeticOp).toBe('multiply');
+      expect(pred.arithmeticValue).toBe(2);
+      expect(pred.comparisonOp).toBe('gt');
+      expect(pred.comparisonValue).toBe(10);
+    });
+
+    it('should parse x * 3 < 100 predicate', () => {
+      const tokens = new Lexer('result = filter data where x * 3 < 100').tokenize();
+      const parser = new Parser(tokens);
+      const ast = parser.parse();
+
+      const stmt = ast.statements[0] as FilterStatement;
+      const pred = stmt.predicate as ArithmeticPredicate;
+
+      expect(pred.arithmeticOp).toBe('multiply');
+      expect(pred.arithmeticValue).toBe(3);
+      expect(pred.comparisonOp).toBe('lt');
+      expect(pred.comparisonValue).toBe(100);
+    });
+  });
+
+  describe('Addition predicate parsing', () => {
+    it('should parse x + 5 >= 10 predicate', () => {
+      const tokens = new Lexer('filtered = filter values where x + 5 >= 10').tokenize();
+      const parser = new Parser(tokens);
+      const ast = parser.parse();
+
+      const stmt = ast.statements[0] as FilterStatement;
+      const pred = stmt.predicate as ArithmeticPredicate;
+
+      expect(pred.type).toBe('arithmetic');
+      expect(pred.arithmeticOp).toBe('add');
+      expect(pred.arithmeticValue).toBe(5);
+      expect(pred.comparisonOp).toBe('gte');
+      expect(pred.comparisonValue).toBe(10);
+    });
+
+    it('should parse x + 10 == 20 predicate', () => {
+      const tokens = new Lexer('result = filter items where x + 10 == 20').tokenize();
+      const parser = new Parser(tokens);
+      const ast = parser.parse();
+
+      const stmt = ast.statements[0] as FilterStatement;
+      const pred = stmt.predicate as ArithmeticPredicate;
+
+      expect(pred.arithmeticOp).toBe('add');
+      expect(pred.arithmeticValue).toBe(10);
+      expect(pred.comparisonValue).toBe(20);
+    });
+  });
+
+  describe('Subtraction predicate parsing', () => {
+    it('should parse x - 5 > 0 predicate', () => {
+      const tokens = new Lexer('filtered = filter numbers where x - 5 > 0').tokenize();
+      const parser = new Parser(tokens);
+      const ast = parser.parse();
+
+      const stmt = ast.statements[0] as FilterStatement;
+      const pred = stmt.predicate as ArithmeticPredicate;
+
+      expect(pred.type).toBe('arithmetic');
+      expect(pred.arithmeticOp).toBe('subtract');
+      expect(pred.arithmeticValue).toBe(5);
+      expect(pred.comparisonOp).toBe('gt');
+      expect(pred.comparisonValue).toBe(0);
+    });
+
+    it('should parse x - 10 <= 50 predicate', () => {
+      const tokens = new Lexer('result = filter data where x - 10 <= 50').tokenize();
+      const parser = new Parser(tokens);
+      const ast = parser.parse();
+
+      const stmt = ast.statements[0] as FilterStatement;
+      const pred = stmt.predicate as ArithmeticPredicate;
+
+      expect(pred.arithmeticOp).toBe('subtract');
+      expect(pred.arithmeticValue).toBe(10);
+      expect(pred.comparisonOp).toBe('lte');
+      expect(pred.comparisonValue).toBe(50);
+    });
+  });
+
+  describe('Division predicate parsing', () => {
+    it('should parse x / 2 < 25 predicate', () => {
+      const tokens = new Lexer('filtered = filter numbers where x / 2 < 25').tokenize();
+      const parser = new Parser(tokens);
+      const ast = parser.parse();
+
+      const stmt = ast.statements[0] as FilterStatement;
+      const pred = stmt.predicate as ArithmeticPredicate;
+
+      expect(pred.type).toBe('arithmetic');
+      expect(pred.arithmeticOp).toBe('divide');
+      expect(pred.arithmeticValue).toBe(2);
+      expect(pred.comparisonOp).toBe('lt');
+      expect(pred.comparisonValue).toBe(25);
+    });
+
+    it('should parse x / 5 >= 10 predicate', () => {
+      const tokens = new Lexer('result = filter values where x / 5 >= 10').tokenize();
+      const parser = new Parser(tokens);
+      const ast = parser.parse();
+
+      const stmt = ast.statements[0] as FilterStatement;
+      const pred = stmt.predicate as ArithmeticPredicate;
+
+      expect(pred.arithmeticOp).toBe('divide');
+      expect(pred.arithmeticValue).toBe(5);
+      expect(pred.comparisonOp).toBe('gte');
+      expect(pred.comparisonValue).toBe(10);
+    });
+  });
+
+  describe('Arithmetic predicate edge cases', () => {
+    it('should handle negative arithmetic values', () => {
+      const tokens = new Lexer('filtered = filter numbers where x + -5 == 0').tokenize();
+      const parser = new Parser(tokens);
+      const ast = parser.parse();
+
+      const stmt = ast.statements[0] as FilterStatement;
+      const pred = stmt.predicate as ArithmeticPredicate;
+
+      expect(pred.arithmeticValue).toBe(-5);
+    });
+
+    it('should handle decimal arithmetic values', () => {
+      const tokens = new Lexer('filtered = filter data where x * 2.5 > 10').tokenize();
+      const parser = new Parser(tokens);
+      const ast = parser.parse();
+
+      const stmt = ast.statements[0] as FilterStatement;
+      const pred = stmt.predicate as ArithmeticPredicate;
+
+      expect(pred.arithmeticValue).toBe(2.5);
+    });
+
+    it('should handle large arithmetic values', () => {
+      const tokens = new Lexer('filtered = filter numbers where x + 1000000 < 2000000').tokenize();
+      const parser = new Parser(tokens);
+      const ast = parser.parse();
+
+      const stmt = ast.statements[0] as FilterStatement;
+      const pred = stmt.predicate as ArithmeticPredicate;
+
+      expect(pred.arithmeticValue).toBe(1000000);
+      expect(pred.comparisonValue).toBe(2000000);
+    });
+
+    it('should parse simple comparison when no arithmetic operator present', () => {
+      const tokens = new Lexer('filtered = filter numbers where x > 10').tokenize();
+      const parser = new Parser(tokens);
+      const ast = parser.parse();
+
+      const stmt = ast.statements[0] as FilterStatement;
+
+      expect(stmt.predicate.type).toBe('comparison');
+      expect(stmt.predicate.type).not.toBe('arithmetic');
+    });
+  });
+
+  describe('Arithmetic predicate with different comparison values', () => {
+    it('should handle string comparison values', () => {
+      const tokens = new Lexer('filtered = filter items where x + 5 == "test"').tokenize();
+      const parser = new Parser(tokens);
+      const ast = parser.parse();
+
+      const stmt = ast.statements[0] as FilterStatement;
+      const pred = stmt.predicate as ArithmeticPredicate;
+
+      expect(pred.comparisonValue).toBe('test');
+    });
+
+    it('should handle boolean comparison values', () => {
+      const tokens = new Lexer('filtered = filter data where x * 2 == true').tokenize();
+      const parser = new Parser(tokens);
+      const ast = parser.parse();
+
+      const stmt = ast.statements[0] as FilterStatement;
+      const pred = stmt.predicate as ArithmeticPredicate;
+
+      expect(pred.comparisonValue).toBe(true);
+    });
+  });
+});

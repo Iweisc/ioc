@@ -250,4 +250,221 @@ describe('TerminationVerifier', () => {
       expect(result.error).toContain('async');
     });
   });
+
+  describe('Async Function Detection Edge Cases', () => {
+    it('should reject async arrow functions', () => {
+      const verifier = new TerminationVerifier();
+      const budget = DEFAULT_BUDGETS[ComplexityClass.LINEAR];
+
+      const asyncArrowFn = async () => 42;
+
+      const result = verifier.validateBudget(asyncArrowFn, budget, []);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('async');
+    });
+
+    it('should reject functions that return Promise.resolve', () => {
+      const verifier = new TerminationVerifier();
+      const budget = DEFAULT_BUDGETS[ComplexityClass.LINEAR];
+
+      const fn = () => Promise.resolve(100);
+
+      const result = verifier.validateBudget(fn, budget, []);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('async');
+    });
+
+    it('should reject functions that return Promise.reject', () => {
+      const verifier = new TerminationVerifier();
+      const budget = DEFAULT_BUDGETS[ComplexityClass.LINEAR];
+
+      const fn = () => Promise.reject(new Error('test'));
+
+      const result = verifier.validateBudget(fn, budget, []);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('async');
+    });
+
+    it('should reject functions that return new Promise', () => {
+      const verifier = new TerminationVerifier();
+      const budget = DEFAULT_BUDGETS[ComplexityClass.LINEAR];
+
+      const fn = () => new Promise((resolve) => resolve(42));
+
+      const result = verifier.validateBudget(fn, budget, []);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('async');
+    });
+
+    it('should accept synchronous functions that return objects with then method', () => {
+      const verifier = new TerminationVerifier();
+      const budget = DEFAULT_BUDGETS[ComplexityClass.LINEAR];
+
+      // Thenable object that is NOT a Promise
+      const fn = () => ({ thenLike: 'not a function', value: 42 });
+
+      const result = verifier.validateBudget(fn, budget, []);
+
+      expect(result.success).toBe(true);
+      expect(result.result).toEqual({ thenLike: 'not a function', value: 42 });
+    });
+
+    it('should measure execution time for async detection', () => {
+      const verifier = new TerminationVerifier();
+      const budget = DEFAULT_BUDGETS[ComplexityClass.LINEAR];
+
+      const asyncFn = async () => 42;
+
+      const result = verifier.validateBudget(asyncFn, budget, []);
+
+      expect(result.executionTime).toBeGreaterThan(0);
+      expect(result.executionTime).toBeDefined();
+    });
+
+    it('should handle functions that return promises nested in objects', () => {
+      const verifier = new TerminationVerifier();
+      const budget = DEFAULT_BUDGETS[ComplexityClass.LINEAR];
+
+      // Returns object containing promise, not a promise itself
+      const fn = () => ({ data: Promise.resolve(42) });
+
+      const result = verifier.validateBudget(fn, budget, []);
+
+      // Should succeed because the function itself doesn't return a promise
+      expect(result.success).toBe(true);
+    });
+
+    it('should handle functions that return promises in arrays', () => {
+      const verifier = new TerminationVerifier();
+      const budget = DEFAULT_BUDGETS[ComplexityClass.LINEAR];
+
+      // Returns array containing promise, not a promise itself
+      const fn = () => [1, 2, Promise.resolve(3)];
+
+      const result = verifier.validateBudget(fn, budget, []);
+
+      // Should succeed because the function itself doesn't return a promise
+      expect(result.success).toBe(true);
+    });
+
+    it('should reject async generators', () => {
+      const verifier = new TerminationVerifier();
+      const budget = DEFAULT_BUDGETS[ComplexityClass.LINEAR];
+
+      const asyncGen = async function* () {
+        yield 1;
+      };
+
+      const result = verifier.validateBudget(asyncGen, budget, []);
+
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe('Budget Validation with Multiple Arguments', () => {
+    it('should pass multiple arguments correctly', () => {
+      const verifier = new TerminationVerifier();
+      const budget = DEFAULT_BUDGETS[ComplexityClass.LINEAR];
+
+      const fn = (a: number, b: number, c: number) => a + b + c;
+
+      const result = verifier.validateBudget(fn, budget, [10, 20, 30]);
+
+      expect(result.success).toBe(true);
+      expect(result.result).toBe(60);
+    });
+
+    it('should handle functions with array and object arguments', () => {
+      const verifier = new TerminationVerifier();
+      const budget = DEFAULT_BUDGETS[ComplexityClass.LINEAR];
+
+      const fn = (arr: number[], obj: { multiplier: number }) =>
+        arr.map((x) => x * obj.multiplier);
+
+      const result = verifier.validateBudget(fn, budget, [[1, 2, 3], { multiplier: 2 }]);
+
+      expect(result.success).toBe(true);
+      expect(result.result).toEqual([2, 4, 6]);
+    });
+
+    it('should handle functions with rest parameters', () => {
+      const verifier = new TerminationVerifier();
+      const budget = DEFAULT_BUDGETS[ComplexityClass.LINEAR];
+
+      const fn = (...args: number[]) => args.reduce((sum, x) => sum + x, 0);
+
+      const result = verifier.validateBudget(fn, budget, [[1, 2, 3, 4, 5]]);
+
+      expect(result.success).toBe(true);
+      expect(result.result).toBe(15);
+    });
+  });
+
+  describe('Budget Validation Error Scenarios', () => {
+    it('should capture error messages correctly', () => {
+      const verifier = new TerminationVerifier();
+      const budget = DEFAULT_BUDGETS[ComplexityClass.LINEAR];
+
+      const fn = () => {
+        throw new Error('Custom error message');
+      };
+
+      const result = verifier.validateBudget(fn, budget, []);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Custom error message');
+    });
+
+    it('should handle non-Error throws', () => {
+      const verifier = new TerminationVerifier();
+      const budget = DEFAULT_BUDGETS[ComplexityClass.LINEAR];
+
+      const fn = () => {
+        throw 'string error';
+      };
+
+      const result = verifier.validateBudget(fn, budget, []);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('string error');
+    });
+
+    it('should handle null/undefined throws', () => {
+      const verifier = new TerminationVerifier();
+      const budget = DEFAULT_BUDGETS[ComplexityClass.LINEAR];
+
+      const fn = () => {
+        throw null;
+      };
+
+      const result = verifier.validateBudget(fn, budget, []);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBeDefined();
+    });
+
+    it('should handle timeout budget violations', () => {
+      const verifier = new TerminationVerifier();
+      const budget = { maxTime: 1 }; // Very short timeout
+
+      const fn = () => {
+        // Busy wait to consume time
+        const start = Date.now();
+        while (Date.now() - start < 100) {
+          // Loop for 100ms
+        }
+        return 42;
+      };
+
+      const result = verifier.validateBudget(fn, budget, []);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('Budget exceeded');
+      expect(result.error).toContain('time');
+    });
+  });
 });

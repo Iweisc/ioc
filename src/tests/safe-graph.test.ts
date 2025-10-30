@@ -689,3 +689,345 @@ describe('SafeGraph', () => {
     });
   });
 });
+// Additional tests for toJSON, fromProgram, and fromJSON methods
+describe('SafeGraph Serialization', () => {
+  describe('toJSON', () => {
+    it('should serialize graph to IOCProgram format', () => {
+      const graph = new SafeGraph('test-graph');
+      const input = graph.input('numbers');
+      const filtered = graph.filter(input, Predicate.gt(10));
+      graph.output(filtered);
+
+      const json = graph.toJSON();
+
+      expect(json).toHaveProperty('version');
+      expect(json).toHaveProperty('metadata');
+      expect(json).toHaveProperty('nodes');
+      expect(json).toHaveProperty('outputs');
+      expect(json.metadata?.name).toBe('test-graph');
+      expect(json.nodes).toHaveLength(2);
+      expect(json.outputs).toHaveLength(1);
+    });
+
+    it('should include all node details in serialization', () => {
+      const graph = new SafeGraph();
+      const input = graph.input('data');
+      const mapped = graph.map(input, Transform.multiply(2));
+      graph.output(mapped);
+
+      const json = graph.toJSON();
+
+      expect(json.nodes[0]).toHaveProperty('id');
+      expect(json.nodes[0]).toHaveProperty('type');
+      expect(json.nodes[0]).toHaveProperty('inputs');
+      expect(json.nodes[0]).toHaveProperty('params');
+      expect(json.nodes[0]).toHaveProperty('capability');
+    });
+
+    it('should serialize complex graphs correctly', () => {
+      const graph = new SafeGraph('complex-pipeline');
+      const input = graph.input('data');
+      const filtered = graph.filter(input, Predicate.gt(5));
+      const mapped = graph.map(filtered, Transform.multiply(3));
+      const reduced = graph.reduce(mapped, Reduce.sum());
+      graph.output(reduced);
+
+      const json = graph.toJSON();
+
+      expect(json.nodes).toHaveLength(4);
+      expect(json.outputs).toHaveLength(1);
+      expect(json.metadata?.name).toBe('complex-pipeline');
+    });
+
+    it('should preserve metadata in serialization', () => {
+      const graph = new SafeGraph('metadata-test');
+      const input = graph.input('x');
+      graph.output(input);
+
+      const json = graph.toJSON();
+
+      expect(json.metadata).toHaveProperty('name', 'metadata-test');
+      expect(json.metadata).toHaveProperty('created');
+      expect(json.metadata).toHaveProperty('modified');
+    });
+  });
+
+  describe('fromProgram', () => {
+    it('should reconstruct graph from IOCProgram', () => {
+      const originalGraph = new SafeGraph('test');
+      const input = originalGraph.input('data');
+      const filtered = originalGraph.filter(input, Predicate.lt(100));
+      originalGraph.output(filtered);
+
+      const program = originalGraph.toProgram();
+      const reconstructed = SafeGraph.fromProgram(program);
+
+      expect(reconstructed).toBeInstanceOf(SafeGraph);
+      expect(reconstructed.toJSON()).toEqual(program);
+    });
+
+    it('should preserve all nodes from program', () => {
+      const program: IOCProgram = {
+        version: '1.0.0',
+        metadata: { name: 'preserved-test' },
+        nodes: [
+          {
+            id: 'input_1',
+            type: IOCIntentType.INPUT,
+            inputs: [],
+            params: { intent: 'input', name: 'x' },
+            capability: {
+              maxComplexity: ComplexityClass.CONSTANT,
+              terminationGuarantee: 'structural',
+              sideEffects: 'pure',
+              parallelizable: true,
+              memoryBound: 'O(1)',
+            },
+          },
+          {
+            id: 'filter_1',
+            type: IOCIntentType.FILTER,
+            inputs: ['input_1'],
+            params: {
+              intent: 'filter',
+              predicate: { type: 'compare', op: 'gt', value: 0 },
+            },
+            capability: {
+              maxComplexity: ComplexityClass.LINEAR,
+              terminationGuarantee: 'structural',
+              sideEffects: 'pure',
+              parallelizable: true,
+              memoryBound: 'O(n)',
+            },
+          },
+        ],
+        outputs: ['filter_1'],
+        options: { optimizationLevel: 'basic', targetRuntime: 'javascript' },
+      };
+
+      const graph = SafeGraph.fromProgram(program);
+      const reconstructed = graph.toProgram();
+
+      expect(reconstructed.nodes).toHaveLength(2);
+      expect(reconstructed.outputs).toEqual(['filter_1']);
+      expect(reconstructed.metadata?.name).toBe('preserved-test');
+    });
+
+    it('should handle programs without metadata', () => {
+      const program: IOCProgram = {
+        version: '1.0.0',
+        nodes: [],
+        outputs: [],
+        options: { optimizationLevel: 'basic', targetRuntime: 'javascript' },
+      };
+
+      const graph = SafeGraph.fromProgram(program);
+
+      expect(graph).toBeInstanceOf(SafeGraph);
+      expect(graph.toJSON().metadata?.name).toBe('imported');
+    });
+
+    it('should preserve output node references', () => {
+      const program: IOCProgram = {
+        version: '1.0.0',
+        nodes: [
+          {
+            id: 'node_a',
+            type: IOCIntentType.INPUT,
+            inputs: [],
+            params: { intent: 'input', name: 'a' },
+            capability: {
+              maxComplexity: ComplexityClass.CONSTANT,
+              terminationGuarantee: 'structural',
+              sideEffects: 'pure',
+              parallelizable: true,
+              memoryBound: 'O(1)',
+            },
+          },
+          {
+            id: 'node_b',
+            type: IOCIntentType.INPUT,
+            inputs: [],
+            params: { intent: 'input', name: 'b' },
+            capability: {
+              maxComplexity: ComplexityClass.CONSTANT,
+              terminationGuarantee: 'structural',
+              sideEffects: 'pure',
+              parallelizable: true,
+              memoryBound: 'O(1)',
+            },
+          },
+        ],
+        outputs: ['node_a', 'node_b'],
+        options: { optimizationLevel: 'basic', targetRuntime: 'javascript' },
+      };
+
+      const graph = SafeGraph.fromProgram(program);
+      const result = graph.toProgram();
+
+      expect(result.outputs).toEqual(['node_a', 'node_b']);
+    });
+  });
+
+  describe('fromJSON', () => {
+    it('should reconstruct graph from JSON string', () => {
+      const originalGraph = new SafeGraph('json-test');
+      const input = originalGraph.input('values');
+      const mapped = originalGraph.map(input, Transform.add(10));
+      originalGraph.output(mapped);
+
+      const jsonString = JSON.stringify(originalGraph.toJSON());
+      const reconstructed = SafeGraph.fromJSON(jsonString);
+
+      expect(reconstructed).toBeInstanceOf(SafeGraph);
+      expect(reconstructed.toJSON()).toEqual(JSON.parse(jsonString));
+    });
+
+    it('should accept IOCProgram object directly', () => {
+      const program: IOCProgram = {
+        version: '1.0.0',
+        metadata: { name: 'direct-program' },
+        nodes: [
+          {
+            id: 'input_x',
+            type: IOCIntentType.INPUT,
+            inputs: [],
+            params: { intent: 'input', name: 'x' },
+            capability: {
+              maxComplexity: ComplexityClass.CONSTANT,
+              terminationGuarantee: 'structural',
+              sideEffects: 'pure',
+              parallelizable: true,
+              memoryBound: 'O(1)',
+            },
+          },
+        ],
+        outputs: ['input_x'],
+        options: { optimizationLevel: 'basic', targetRuntime: 'javascript' },
+      };
+
+      const graph = SafeGraph.fromJSON(program);
+
+      expect(graph).toBeInstanceOf(SafeGraph);
+      expect(graph.toJSON().metadata?.name).toBe('direct-program');
+    });
+
+    it('should handle round-trip serialization', () => {
+      const graph1 = new SafeGraph('round-trip');
+      const input = graph1.input('data');
+      const filtered = graph1.filter(input, Predicate.gte(10));
+      const sorted = graph1.sort(filtered, undefined, false);
+      graph1.output(sorted);
+
+      const json = JSON.stringify(graph1.toJSON());
+      const graph2 = SafeGraph.fromJSON(json);
+      const json2 = JSON.stringify(graph2.toJSON());
+
+      expect(json).toBe(json2);
+    });
+
+    it('should preserve complex predicates and transforms', () => {
+      const graph = new SafeGraph('complex-ops');
+      const input = graph.input('items');
+      const filtered = graph.filter(
+        input,
+        Predicate.and(Predicate.gt(5), Predicate.lt(100))
+      );
+      const mapped = graph.map(filtered, Transform.multiply(2));
+      graph.output(mapped);
+
+      const jsonString = JSON.stringify(graph.toJSON());
+      const reconstructed = SafeGraph.fromJSON(jsonString);
+      const program = reconstructed.toJSON();
+
+      const filterNode = program.nodes.find((n) => n.type === IOCIntentType.FILTER);
+      expect(filterNode).toBeDefined();
+      expect(filterNode?.params).toHaveProperty('predicate');
+    });
+  });
+
+  describe('Serialization edge cases', () => {
+    it('should handle empty graphs', () => {
+      const graph = new SafeGraph('empty');
+      const json = graph.toJSON();
+
+      expect(json.nodes).toEqual([]);
+      expect(json.outputs).toEqual([]);
+    });
+
+    it('should handle graphs with only inputs', () => {
+      const graph = new SafeGraph('inputs-only');
+      graph.input('a');
+      graph.input('b');
+
+      const json = graph.toJSON();
+
+      expect(json.nodes).toHaveLength(2);
+      expect(json.outputs).toEqual([]);
+    });
+
+    it('should handle graphs with constants', () => {
+      const graph = new SafeGraph('with-constants');
+      const const1 = graph.constant(42);
+      const const2 = graph.constant('hello');
+      graph.output(const1);
+      graph.output(const2);
+
+      const json = graph.toJSON();
+      const reconstructed = SafeGraph.fromJSON(json);
+
+      expect(reconstructed.toJSON().nodes).toHaveLength(2);
+    });
+
+    it('should preserve node IDs during serialization', () => {
+      const graph = new SafeGraph('id-preservation');
+      const input = graph.input('x');
+      const mapped = graph.map(input, Transform.multiply(2));
+      graph.output(mapped);
+
+      const json1 = graph.toJSON();
+      const nodeIds1 = json1.nodes.map((n) => n.id);
+
+      const reconstructed = SafeGraph.fromJSON(json1);
+      const json2 = reconstructed.toJSON();
+      const nodeIds2 = json2.nodes.map((n) => n.id);
+
+      expect(nodeIds1).toEqual(nodeIds2);
+    });
+  });
+
+  describe('Integration with compile', () => {
+    it('should compile reconstructed graphs successfully', () => {
+      const originalGraph = new SafeGraph('compilable');
+      const input = originalGraph.input('numbers');
+      const filtered = originalGraph.filter(input, Predicate.gt(5));
+      const mapped = originalGraph.map(filtered, Transform.multiply(2));
+      originalGraph.output(mapped);
+
+      const jsonString = JSON.stringify(originalGraph.toJSON());
+      const reconstructed = SafeGraph.fromJSON(jsonString);
+      const compiled = reconstructed.compile();
+
+      const result = compiled([1, 3, 6, 8, 10]);
+      expect(result).toEqual([12, 16, 20]);
+    });
+
+    it('should execute reconstructed graphs identically to originals', () => {
+      const graph1 = new SafeGraph('original');
+      const input1 = graph1.input('data');
+      const reduced1 = graph1.reduce(input1, Reduce.sum());
+      graph1.output(reduced1);
+
+      const compiled1 = graph1.compile();
+      const result1 = compiled1([10, 20, 30]);
+
+      const json = JSON.stringify(graph1.toJSON());
+      const graph2 = SafeGraph.fromJSON(json);
+      const compiled2 = graph2.compile();
+      const result2 = compiled2([10, 20, 30]);
+
+      expect(result1).toBe(result2);
+      expect(result2).toBe(60);
+    });
+  });
+});
