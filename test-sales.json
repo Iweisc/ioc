@@ -1,0 +1,12 @@
+[
+  {"id": "TXN001", "amount": 1250.00, "status": "success", "customer": "Acme Corp"},
+  {"id": "TXN002", "amount": 450.00, "status": "success", "customer": "Tech Inc"},
+  {"id": "TXN003", "amount": 2500.00, "status": "success", "customer": "Global Ltd"},
+  {"id": "TXN004", "amount": 1800.00, "status": "failed", "customer": "StartUp Co"},
+  {"id": "TXN005", "amount": 3200.00, "status": "success", "customer": "Enterprise LLC"},
+  {"id": "TXN006", "amount": 750.00, "status": "success", "customer": "Small Biz"},
+  {"id": "TXN007", "amount": 1500.00, "status": "success", "customer": "MegaCorp"},
+  {"id": "TXN008", "amount": 950.00, "status": "success", "customer": "Local Shop"},
+  {"id": "TXN009", "amount": 4100.00, "status": "success", "customer": "Big Client"},
+  {"id": "TXN010", "amount": 1100.00, "status": "pending", "customer": "New Customer"}
+]

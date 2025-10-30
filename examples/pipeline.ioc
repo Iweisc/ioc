@@ -1,0 +1,10 @@
+# Simple data pipeline example
+# Filters positive numbers, doubles them, and calculates the sum
+
+input numbers: number[]
+
+positive = filter numbers where x > 0
+doubled = map positive with x * 2
+total = reduce doubled by sum
+
+output total

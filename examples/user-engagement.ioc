@@ -1,0 +1,18 @@
+# User Engagement Analytics
+# Calculates average session duration for active users
+
+input sessions: object[]
+
+# Filter only completed sessions
+completed = filter sessions where x.status == "completed"
+
+# Filter sessions longer than 5 minutes (300 seconds)
+engaged = filter completed where x.duration > 300
+
+# Extract durations
+durations = map engaged with x.duration
+
+# Calculate average engagement time
+avg_duration = reduce durations by average
+
+output avg_duration

@@ -1,0 +1,18 @@
+# Sales Report Generator
+# Analyzes sales data and calculates revenue from high-value transactions
+
+input transactions: object[]
+
+# Filter successful transactions only
+successful = filter transactions where x.status == "success"
+
+# Filter high-value sales (over $1000)
+high_value = filter successful where x.amount > 1000
+
+# Extract amounts
+amounts = map high_value with x.amount
+
+# Calculate total high-value revenue
+total_revenue = reduce amounts by sum
+
+output total_revenue

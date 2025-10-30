@@ -1,0 +1,17 @@
+[
+  {"id": "P001", "name": "Wireless Headphones", "stock": 50, "price": 299, "rating": 4.5, "relevance_score": 8, "weekly_views": 2500, "days_since_update": 10},
+  {"id": "P002", "name": "Smart Watch", "stock": 0, "price": 399, "rating": 4.8, "relevance_score": 9, "weekly_views": 3000, "days_since_update": 5},
+  {"id": "P003", "name": "Laptop Stand", "stock": 100, "price": 89, "rating": 4.2, "relevance_score": 7, "weekly_views": 1500, "days_since_update": 15},
+  {"id": "P004", "name": "USB-C Hub", "stock": 200, "price": 49, "rating": 3.8, "relevance_score": 6, "weekly_views": 800, "days_since_update": 20},
+  {"id": "P005", "name": "Mechanical Keyboard", "stock": 30, "price": 159, "rating": 4.7, "relevance_score": 9, "weekly_views": 2200, "days_since_update": 8},
+  {"id": "P006", "name": "Monitor", "stock": 15, "price": 599, "rating": 4.9, "relevance_score": 8, "weekly_views": 1800, "days_since_update": 12},
+  {"id": "P007", "name": "Webcam", "stock": 80, "price": 129, "rating": 4.3, "relevance_score": 7, "weekly_views": 1200, "days_since_update": 25},
+  {"id": "P008", "name": "Mouse Pad", "stock": 150, "price": 25, "rating": 4.6, "relevance_score": 8, "weekly_views": 1800, "days_since_update": 18},
+  {"id": "P009", "name": "Desk Lamp", "stock": 40, "price": 79, "rating": 4.4, "relevance_score": 6, "weekly_views": 950, "days_since_update": 40},
+  {"id": "P010", "name": "Phone Stand", "stock": 120, "price": 35, "rating": 4.1, "relevance_score": 7, "weekly_views": 1100, "days_since_update": 22},
+  {"id": "P011", "name": "Cable Organizer", "stock": 200, "price": 15, "rating": 4.5, "relevance_score": 8, "weekly_views": 1600, "days_since_update": 14},
+  {"id": "P012", "name": "Wireless Mouse", "stock": 60, "price": 69, "rating": 4.8, "relevance_score": 9, "weekly_views": 2800, "days_since_update": 7},
+  {"id": "P013", "name": "Bluetooth Speaker", "stock": 45, "price": 149, "rating": 4.6, "relevance_score": 8, "weekly_views": 2100, "days_since_update": 11},
+  {"id": "P014", "name": "Screen Protector", "stock": 300, "price": 12, "rating": 4.0, "relevance_score": 5, "weekly_views": 600, "days_since_update": 30},
+  {"id": "P015", "name": "Charging Station", "stock": 25, "price": 89, "rating": 4.7, "relevance_score": 8, "weekly_views": 1400, "days_since_update": 16}
+]

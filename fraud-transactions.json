@@ -1,0 +1,12 @@
+[
+  {"id": "TX001", "status": "success", "amount": 15000, "time_since_last": 120, "transaction_count": 5, "location_risk": 8, "account_age": 15, "risk_score": 95},
+  {"id": "TX002", "status": "success", "amount": 5000, "time_since_last": 600, "transaction_count": 2, "location_risk": 3, "account_age": 180, "risk_score": 25},
+  {"id": "TX003", "status": "failed", "amount": 20000, "time_since_last": 60, "transaction_count": 8, "location_risk": 9, "account_age": 10, "risk_score": 98},
+  {"id": "TX004", "status": "success", "amount": 12000, "time_since_last": 180, "transaction_count": 4, "location_risk": 9, "account_age": 20, "risk_score": 92},
+  {"id": "TX005", "status": "success", "amount": 8000, "time_since_last": 400, "transaction_count": 3, "location_risk": 5, "account_age": 90, "risk_score": 45},
+  {"id": "TX006", "status": "success", "amount": 25000, "time_since_last": 90, "transaction_count": 6, "location_risk": 10, "account_age": 5, "risk_score": 99},
+  {"id": "TX007", "status": "success", "amount": 11000, "time_since_last": 240, "transaction_count": 4, "location_risk": 7, "account_age": 45, "risk_score": 78},
+  {"id": "TX008", "status": "success", "amount": 30000, "time_since_last": 150, "transaction_count": 5, "location_risk": 8, "account_age": 25, "risk_score": 88},
+  {"id": "TX009", "status": "success", "amount": 13500, "time_since_last": 200, "transaction_count": 7, "location_risk": 9, "account_age": 12, "risk_score": 94},
+  {"id": "TX010", "status": "success", "amount": 9500, "time_since_last": 320, "transaction_count": 2, "location_risk": 4, "account_age": 200, "risk_score": 30}
+]

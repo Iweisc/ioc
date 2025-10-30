@@ -1,354 +1,556 @@
 # IOC - Intent-Oriented Computing
 
-A compiler framework that transforms high-level semantic intents into optimized executable code.
+**A revolutionary programming paradigm where you express WHAT you want to compute, not HOW to compute it.**
 
-## What is IOC?
+## 🚀 What Makes IOC Different?
 
-IOC (Intent-Oriented Computing) is a programming paradigm where you express **what you want to compute** (the intent) rather than **how to compute it**. The compiler automatically generates optimized code, applies graph-level optimizations, and selects the best execution strategy.
+Traditional programming requires you to write JavaScript functions with arbitrary logic. IOC replaces this with a **safe, serializable DSL** where:
 
-### Key Features
+- ✅ **Termination is guaranteed** - No infinite loops, ever
+- ✅ **Fully serializable** - Save programs as JSON `.ioc` files
+- ✅ **Known complexity bounds** - Every operation has documented complexity (O(n), O(n log n), etc.)
+- ✅ **Reduced code execution risks** - Safer for serverless environments (with proper validation and limits)
+- ✅ **Hardware portable** - Same program, optimized per platform
+- ✅ **Auto-verifiable** - Empirical termination verification
 
-- 🎯 **Intent-Based Programming**: Express operations as semantic intents (filter, map, reduce, etc.)
-- ⚡ **Automatic Optimization**: Graph-level optimizations (fusion, reordering, dead code elimination)
-- 🔄 **Strategy Selection**: Automatically chooses between naive loops and optimized native methods
-- 📊 **Performance Profiling**: Learns optimal execution strategies over time
-- 🐛 **Rich Debugging**: Execution tracing, provenance tracking, differential testing
-- 💪 **Type Safe**: Full TypeScript type system with static checking
+## Quick Example
 
-## Quick Start
+**Traditional JavaScript:**
 
-### Installation
+```javascript
+const result = data
+  .filter((x) => x > 10)
+  .map((x) => x * 2)
+  .reduce((a, b) => a + b, 0);
+```
+
+**IOC Language (`.ioc` files):**
+
+```ioc
+# pipeline.ioc
+input numbers: number[]
+
+filtered = filter numbers where x > 10
+doubled = map filtered with x * 2
+total = reduce doubled by sum
+
+output total
+```
+
+**Run it:**
+
+```bash
+ioc run pipeline.ioc --input '[5, 12, 8, 20]'
+# Result: 64
+```
+
+**Or use the TypeScript API:**
+
+```typescript
+import { SafeGraph, Predicate, Transform, Reduce } from '@ioc/compiler';
+
+const graph = new SafeGraph();
+const input = graph.input('data');
+
+const filtered = graph.filter(input, Predicate.gt(10));
+const doubled = graph.map(filtered, Transform.multiply(2));
+const sum = graph.reduce(doubled, Reduce.sum());
+
+graph.output(sum);
+
+// Compile with termination verification
+const compiled = graph.compile();
+const result = compiled([5, 12, 8, 20]); // 64
+```
+
+**The difference?** IOC programs have:
+
+- No arbitrary JavaScript functions (fully serializable!)
+- Guaranteed termination
+- Known complexity bounds (documented for each operation)
+- Can be saved/loaded as `.ioc` files
+
+## Installation
 
 ```bash
 npm install @ioc/compiler
 ```
 
-### Basic Example
+## The .ioc Language
+
+IOC has its own custom syntax for writing programs in `.ioc` files!
+
+### Syntax Overview
+
+```ioc
+# Comments start with #
+input <name>: <type>
+
+<variable> = filter <source> where <predicate>
+<variable> = map <source> with <transform>
+<variable> = reduce <source> by <operation>
+
+output <variable>
+```
+
+### Complete Example
+
+```ioc
+# Process user data
+input users: object[]
+
+# Filter adults only
+adults = filter users where x.age >= 18
+
+# Extract names
+names = map adults with x.name
+
+# Convert to uppercase
+uppercase_names = map names with uppercase(x)
+
+# Output result
+output uppercase_names
+```
+
+Run it:
+
+```bash
+ioc run process_users.ioc --input '[{"name":"Alice","age":25},{"name":"Bob","age":17}]'
+# Result: ["ALICE"]
+```
+
+### Language Reference
+
+**Predicates** (for `filter` and `where`):
+
+- `x > 10`, `x < 100`, `x >= 18`, `x <= 65`
+- `x == "admin"`, `x != null`
+- `x.property > 18` (property access)
+- `x and y`, `x or y`, `not x` (logical operators)
+
+**Transforms** (for `map` and `with`):
+
+- `x * 2`, `x + 10`, `x - 5`, `x / 3` (arithmetic)
+- `x.name`, `x.email` (property access)
+- `uppercase(x)`, `lowercase(x)`, `trim(x)` (string operations)
+
+**Reductions** (for `reduce` and `by`):
+
+- `sum`, `product`, `average`
+- `max`, `min`, `count`
+- `first`, `last`, `join`
+
+**Note on Empty Arrays:**
+
+- `sum`, `product`, `count`, `join` handle empty arrays gracefully (return 0, 1, 0, "" respectively)
+- `min`, `max`, `average`, `first`, `last` throw clear errors on empty arrays
+- Always validate that arrays are non-empty before using operations that don't handle empty arrays
+
+### CLI Commands
+
+```bash
+# Run a program
+ioc run <file.ioc> --input '<json>'
+
+# Validate syntax and safety
+ioc validate <file.ioc>
+
+# Compile to JavaScript
+ioc compile <file.ioc> --output <file.js>
+```
+
+## TypeScript API
+
+### Core Concepts
+
+Every IOC program is a **directed acyclic graph (DAG)** of intents. Each intent has:
+
+1. **Type** - What operation to perform (`filter`, `map`, `reduce`, etc.)
+2. **Inputs** - Which nodes feed into this one
+3. **Parameters** - Safe, serializable configuration
+4. **Capability** - Complexity bounds and guarantees
+
+### Example: Complete Pipeline
 
 ```typescript
-import { Graph } from '@ioc/compiler';
+import { SafeGraph, Predicate, Transform, Reduce } from '@ioc/compiler';
 
-// Create a graph
-const graph = new Graph();
+const graph = new SafeGraph('DataProcessing');
 
-// Define input
-const data = graph.input('data');
+// Input
+const data = graph.input('data', 'number[]');
 
-// Build pipeline
-const positive = graph.filter(data, x => x > 0);
-const squared = graph.map(positive, x => x * x);
-const sum = graph.reduce(squared, (acc, x) => acc + x, 0);
+// Pipeline using ONLY safe constructs
+const filtered = graph.filter(data, Predicate.gt(10));
+const doubled = graph.map(filtered, Transform.multiply(2));
+const added = graph.map(doubled, Transform.add(5));
+const bounded = graph.filter(added, Predicate.lt(50));
+const sorted = graph.sort(bounded, undefined, true); // descending
+const sum = graph.reduce(sorted, Reduce.sum());
 
-// Mark output
 graph.output(sum);
 
-// Compile and execute
-const compiled = graph.compile();
-const result = compiled([1, -2, 3, -4, 5]); // Returns 35 (1² + 3² + 5²)
+// Save to .ioc file
+await saveIOCFile(graph.toProgram(), 'pipeline.ioc');
+
+// Load and execute later
+const loaded = await loadIOCFile('pipeline.ioc');
 ```
 
-## Architecture
+### Safe Predicates
 
-### Intent Graph
-
-IOC programs are represented as directed acyclic graphs (DAGs) where:
-- **Nodes** represent semantic intents (operations)
-- **Edges** represent data dependencies
-- **Types** track data types through the graph
-
-### Supported Intents
-
-| Intent | Description | Example |
-|--------|-------------|---------|
-| `input` | Define input parameter | `graph.input('data')` |
-| `constant` | Literal value | `graph.constant(42)` |
-| `filter` | Keep elements matching predicate | `graph.filter(data, x => x > 0)` |
-| `map` | Transform each element | `graph.map(data, x => x * 2)` |
-| `reduce` | Aggregate to single value | `graph.reduce(data, (a, b) => a + b, 0)` |
-| `sort` | Sort elements | `graph.sort(data, (a, b) => a - b)` |
-| `groupBy` | Group by key function | `graph.groupBy(data, x => x.type)` |
-| `join` | Combine two collections | `graph.join(left, right, keyL, keyR)` |
-| `flatten` | Flatten nested arrays | `graph.flatten(nested)` |
-| `distinct` | Remove duplicates | `graph.distinct(data)` |
-
-## Optimization
-
-IOC applies several graph-level optimizations:
-
-### 1. Dead Code Elimination
-Removes nodes that don't contribute to outputs.
-
-### 2. Common Subexpression Elimination
-Deduplicates identical computations.
-
-### 3. Filter Fusion
 ```typescript
-// Before:
-filter(filter(data, p1), p2)
+// Comparison
+Predicate.gt(10); // x > 10
+Predicate.lt(50); // x < 50
+Predicate.eq('hello'); // x === 'hello'
+Predicate.in([1, 2, 3]); // [1,2,3].includes(x)
 
-// After:
-filter(data, x => p1(x) && p2(x))
+// Property access
+Predicate.property.gt('age', 18); // x.age > 18
+Predicate.property.eq('status', 'active');
+
+// Type checks
+Predicate.isNumber();
+Predicate.isString();
+Predicate.isArray();
+
+// Combinators
+Predicate.and(Predicate.gt(0), Predicate.lt(100));
+Predicate.or(Predicate.eq('admin'), Predicate.eq('moderator'));
+Predicate.not(Predicate.eq(null));
 ```
 
-### 4. Map Fusion
-```typescript
-// Before:
-map(map(data, f), g)
+### Safe Transforms
 
-// After:
-map(data, x => g(f(x)))
+```typescript
+// Arithmetic
+Transform.add(5);
+Transform.multiply(2);
+Transform.divide(10);
+Transform.negate();
+
+// String operations
+Transform.uppercase();
+Transform.lowercase();
+Transform.trim();
+
+// Property access
+Transform.property('name');
+Transform.property('user', 'email'); // nested: x.user.email
+
+// Conditionals (fully serializable!)
+Transform.ifThenElse(
+  Predicate.gt(0),
+  Transform.multiply(2), // if true
+  Transform.add(100) // if false
+);
+
+// Composition
+Transform.compose(Transform.property('age'), Transform.multiply(12), Transform.add(5)); // (x.age * 12) + 5
+
+// Object construction
+Transform.construct({
+  fullName: Transform.property('name'),
+  isAdult: Transform.property('age'), // with implicit check
+});
 ```
 
-### 5. Filter-Before-Map Reordering
-```typescript
-// Before:
-filter(map(data, expensiveTransform), predicate)
+### Safe Reductions
 
-// After (if predicate is independent):
-map(filter(data, predicate), expensiveTransform)
+```typescript
+Reduce.sum(); // Sum all numbers
+Reduce.product(); // Multiply all numbers
+Reduce.min(); // Find minimum
+Reduce.max(); // Find maximum
+Reduce.count(); // Count elements
+Reduce.average(); // Calculate mean
+Reduce.first(); // Get first element
+Reduce.last(); // Get last element
+Reduce.any(Predicate.gt(10)); // Any element > 10?
+Reduce.all(Predicate.isNumber()); // All numbers?
 ```
 
-## Compilation
-
-IOC compiles intent graphs to optimized JavaScript:
+## Real-World Example
 
 ```typescript
-import { Graph, GraphOptimizer, SolverKernel } from '@ioc/compiler';
+import { SafeGraph, Predicate, Transform } from '@ioc/compiler';
 
-const graph = new Graph();
-// ... build graph ...
+const graph = new SafeGraph('UserProcessing');
 
-// Apply optimizations
-const optimizer = new GraphOptimizer(graph);
-optimizer.optimize();
+// Input: array of user objects
+const users = graph.input('users');
 
-// Compile with strategy selection
-const kernel = new SolverKernel(graph);
-const compiled = kernel.compile('speed'); // or 'memory', 'balanced'
+// Filter: adults only
+const adults = graph.filter(users, Predicate.property.gt('age', 18));
+
+// Transform: extract names
+const names = graph.map(adults, Transform.property('name'));
+
+// Transform: uppercase
+const upperNames = graph.map(names, Transform.uppercase());
+
+// Sort alphabetically
+const sorted = graph.sort(upperNames);
+
+graph.output(sorted);
+
+// Compile
+const process = graph.compile();
 
 // Execute
-const result = compiled(inputData);
+const users = [
+  { name: 'Alice', age: 25 },
+  { name: 'Bob', age: 17 },
+  { name: 'Charlie', age: 30 },
+];
 
-// Inspect generated code
-console.log(kernel.getGeneratedCode());
+const result = process(users); // ['ALICE', 'CHARLIE']
 ```
 
-### Generated Code Example
+## .ioc File Format
 
-```javascript
-function _ioc_compiled_fn(data) {
-  // filter: node_abc
-  node_abc = data.filter(pred_node_abc)
-  
-  // map: node_def
-  node_def = node_abc.map(transform_node_def)
-  
-  // reduce: node_ghi
-  node_ghi = node_def.reduce(op_node_ghi, 0)
-  
-  return node_ghi
+Programs are saved as JSON:
+
+```json
+{
+  "version": "1.0.0",
+  "metadata": {
+    "name": "DataProcessing",
+    "created": "2025-10-29T00:00:00.000Z"
+  },
+  "nodes": [
+    {
+      "id": "input_123",
+      "type": "input",
+      "inputs": [],
+      "params": {
+        "intent": "input",
+        "name": "data"
+      },
+      "capability": {
+        "maxComplexity": "O(1)",
+        "terminationGuarantee": "structural",
+        "sideEffects": "pure",
+        "parallelizable": true
+      }
+    },
+    {
+      "id": "filter_456",
+      "type": "filter",
+      "inputs": ["input_123"],
+      "params": {
+        "intent": "filter",
+        "predicate": {
+          "type": "compare",
+          "op": "gt",
+          "value": 10
+        }
+      },
+      "capability": {
+        "maxComplexity": "O(1)",
+        "terminationGuarantee": "structural"
+      }
+    }
+  ],
+  "outputs": ["filter_456"]
 }
 ```
 
-## Strategies
+## Termination Verification
 
-IOC supports multiple execution strategies:
+Every function is verified before execution:
 
-### NaiveStrategy
-Simple loops - readable but not optimized.
+```typescript
+const graph = new SafeGraph();
+const data = graph.input('data');
 
-```javascript
-result = []
-for (item of input) {
-  if (predicate(item)) {
-    result.push(item)
-  }
+// This will pass verification
+const safe = graph.filter(data, Predicate.gt(10));
+
+// Compilation includes verification
+const compiled = graph.compile(); // ✓ Verification passed
+
+// If a user-provided function fails verification, compilation throws
+```
+
+## Complexity Guarantees
+
+Every operation declares its complexity:
+
+```typescript
+IntentType.FILTER:    O(n)         // Linear scan
+IntentType.MAP:       O(n)         // Linear transform
+IntentType.REDUCE:    O(n)         // Linear aggregation
+IntentType.SORT:      O(n log n)   // Comparison sort
+IntentType.DISTINCT:  O(n)         // Hash-based dedup
+IntentType.JOIN:      O(n²)        // Nested loop join
+```
+
+## Why Use IOC?
+
+### 1. **Serverless Safety**
+
+Deploy user-generated computation without DoS risk:
+
+```typescript
+// User submits a .ioc file
+const program = await loadIOCFile(userUpload);
+
+// Validate before running
+const validation = validateIOCProgram(program);
+if (!validation.valid) {
+  return { error: validation.errors };
 }
+
+// Safe to execute - guaranteed termination
+const result = compileAndRun(program, userData);
 ```
 
-### OptimizedStrategy (Default)
-Uses native array methods for better performance.
+### 2. **Zero-Trust Compute**
 
-```javascript
-result = input.filter(predicate)
-```
-
-### VectorizedStrategy (Future)
-SIMD/WebAssembly for numerical operations.
-
-## Performance Profiling
-
-IOC learns optimal execution strategies over time:
+Run untrusted code safely:
 
 ```typescript
-import { getProfiler } from '@ioc/compiler';
+// Each node has explicit capability bounds
+node.capability = {
+  maxComplexity: 'O(n)',
+  terminationGuarantee: 'structural',
+  sideEffects: 'pure',
+};
 
-const profiler = getProfiler();
-
-// Profiler automatically tracks execution times
-// and selects the fastest strategy for each intent
-
-// View performance report
-console.log(profiler.getReport());
-
-// Save profiles for future runs
-profiler.saveProfiles();
+// Runtime enforces these bounds
 ```
 
-## Debugging
+### 3. **Cross-Platform Optimization**
 
-### Execution Tracing
-
-```typescript
-import { IOCDebugger } from '@ioc/compiler';
-
-const debugger = new IOCDebugger(graph);
-const traces = debugger.trace(inputData, verbose: true);
-
-console.log(debugger.debugMode.getTraceSummary());
-```
-
-### Provenance Tracking
+Same .ioc file, different backends:
 
 ```typescript
-import { ProvenanceTracker } from '@ioc/compiler';
+const program = loadIOCFile('pipeline.ioc');
 
-const provenance = new ProvenanceTracker();
-provenance.trackNodeCreation(nodeId, captureStack: true);
+// JavaScript execution
+const jsCompiled = compileToJS(program);
 
-// Later, if an error occurs:
-const report = provenance.generateErrorReport(nodeId, error);
-console.log(report); // Shows transformation history and source location
-```
+// WebAssembly execution (future)
+const wasmCompiled = compileToWASM(program);
 
-### Differential Testing
-
-```typescript
-import { DifferentialTester } from '@ioc/compiler';
-
-const tester = new DifferentialTester(graph);
-
-// Compare optimized vs unoptimized execution
-const result = tester.testWithOptimizations(inputData);
-
-console.log(tester.formatReport(result));
-// Shows: correctness, speedup, node reduction
+// Distributed execution (future)
+const distributedPlan = compileToDistributed(program);
 ```
 
 ## API Reference
 
-### Graph
+### SafeGraph
 
 ```typescript
-class Graph {
-  // Input/Output
-  input(name: string, typeHint?: IOCType): string
-  output(nodeId: string): string
-  constant(value: any): string
-  
-  // Transformations
-  filter(input: string, predicate: (x: any) => boolean): string
-  map(input: string, transform: (x: any) => any): string
-  reduce(input: string, operation: (acc: any, x: any) => any, initial?: any): string
-  sort(input: string, compareFn?: (a: any, b: any) => number): string
-  groupBy(input: string, keyFn: (x: any) => any): string
-  join(left: string, right: string, leftKey: Function, rightKey: Function): string
-  flatten(input: string, depth?: number): string
-  distinct(input: string, keyFn?: (x: any) => any): string
-  
-  // Utilities
-  getExecutionOrder(): string[]
-  visualize(): string
-  clone(): Graph
-  optimize(passes?: string[]): void
+class SafeGraph {
+  input(name: string, typeHint?: string): string;
+  constant(value: SafeValue): string;
+
+  filter(input: string, predicate: SafePredicate): string;
+  map(input: string, transform: SafeTransform): string;
+  reduce(input: string, operation: ReductionOp, initial?: SafeValue): string;
+
+  sort(input: string, keyTransform?: SafeTransform, descending?: boolean): string;
+  distinct(input: string, keyTransform?: SafeTransform): string;
+  flatten(input: string, depth?: number): string;
+  slice(input: string, start?: number, end?: number): string;
+
+  output(nodeId: string): string;
+
+  toProgram(): IOCProgram;
+  toIOC(): string;
+  validate(): { valid: boolean; errors: string[] };
+  compile(): Function;
 }
 ```
 
-### SolverKernel
+### File Operations
 
 ```typescript
-class SolverKernel {
-  constructor(graph: Graph, profiler?: PerformanceProfiler)
-  
-  compile(optimizeFor?: 'speed' | 'memory' | 'balanced', saveProfile?: boolean): Function
-  setSizeHint(nodeId: string, size: number): void
-  getGeneratedCode(): string
-  getStrategyReport(): string
-}
+// Save/load .ioc files
+async function saveIOCFile(program: IOCProgram, path: string): Promise<void>;
+async function loadIOCFile(path: string): Promise<IOCProgram>;
+
+// Serialize/deserialize
+function serializeIOC(program: IOCProgram): string;
+function deserializeIOC(json: string): IOCProgram;
+
+// Validation
+function validateIOCProgram(program: IOCProgram): { valid: boolean; errors: string[] };
 ```
 
 ## Examples
 
-See `src/examples/` for:
-- `basic.ts` - Simple filter/map/reduce pipeline
-- `comprehensive.ts` - Full feature demonstration with optimization
-
-## Testing
+See `src/examples/safe-ioc.ts` for comprehensive examples:
 
 ```bash
-# Run all tests
-npm test
-
-# Type checking
-npm run typecheck
-
-# Build
-npm run build
-
-# Run examples
-npx tsx src/examples/basic.ts
-npx tsx src/examples/comprehensive.ts
+npx tsx src/examples/safe-ioc.ts
 ```
 
-## Project Structure
+## Legacy API
 
-```
-src/
-├── core/
-│   ├── types.ts           # Type system
-│   ├── graph.ts           # Intent graph
-│   ├── optimizer.ts       # Graph optimizations
-│   ├── provenance.ts      # Provenance tracking
-│   ├── debugger.ts        # Debugging tools
-│   └── differential.ts    # Differential testing
-├── solvers/
-│   ├── strategies.ts      # Execution strategies
-│   ├── kernel.ts          # Code generator
-│   └── profiler.ts        # Performance profiling
-├── examples/
-│   ├── basic.ts
-│   └── comprehensive.ts
-└── tests/
-    └── types.test.ts
+The original Graph API (with JavaScript functions) is still available:
+
+```typescript
+import { Graph, SolverKernel } from '@ioc/compiler';
+
+const graph = new Graph();
+const data = graph.input('data');
+const filtered = graph.filter(data, (x) => x > 10); // JavaScript function
+
+const kernel = new SolverKernel(graph);
+const compiled = kernel.compile();
 ```
 
-## Python Implementation
+However, this approach:
 
-The original Python implementation is preserved in the `prototype` branch. The TypeScript port achieves 100% feature parity with improvements in:
-- Type safety
-- IDE support
-- Build system
-- Package ecosystem
+- ❌ Cannot serialize to `.ioc` files
+- ❌ No termination guarantees
+- ❌ Requires trust in user code
+
+**We recommend using SafeGraph for new projects.**
+
+## Roadmap
+
+- [x] Safe DSL with guaranteed termination
+- [x] .ioc file format
+- [x] Empirical verification
+- [x] JavaScript compilation
+- [ ] WebAssembly backend
+- [ ] Automatic parallelization
+- [ ] Distributed execution
+- [ ] GPU acceleration
+- [ ] Visual graph editor
+- [ ] Standard library of common patterns
+
+## Philosophy
+
+IOC is based on a simple principle:
+
+**"Most programs don't need Turing completeness. They need safety, predictability, and portability."**
+
+By constraining the language to decidable operations, we gain:
+
+- Guaranteed termination
+- Known complexity bounds
+- Serializable programs
+- Cross-platform optimization
+- Safe sandboxing
+
+This isn't "dumbing down" programming—it's **engineering discipline**.
 
 ## Contributing
 
-This is a research project exploring intent-oriented computing.
+This is a research project exploring constrained intent-oriented computing.
 
 ## License
 
 All Rights Reserved - Proprietary License
 
-This software is proprietary and confidential. Unauthorized copying, modification, distribution, or use of this software, via any medium, is strictly prohibited without explicit written permission from the copyright holder.
-
-## Links
-
-- **Repository**: https://github.com/Iweisc/ioc
-- **Python Prototype**: `prototype` branch
-- **TypeScript Port**: `ioc-ts` branch (current)
-
 ---
 
-**Status**: Production-ready ✅
-- All tests passing
-- Clean builds (ESM + CJS + types)
-- Full feature parity with Python
+**"Not magic. Better."**
+
+Built with ❤️ for a safer, more predictable computing future.

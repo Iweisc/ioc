@@ -1,0 +1,9 @@
+# Working with objects
+# Filter users by age, extract names
+
+input users: object[]
+
+adults = filter users where x.age >= 18
+names = map adults with x.name
+
+output names
