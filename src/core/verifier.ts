@@ -89,7 +89,13 @@ export interface BudgetValidationResult {
 export class TerminationVerifier {
   /**
    * Validate that a function executes within the given budget
-   * @param fn - The function to validate
+   *
+   * LIMITATION: This method only supports synchronous functions. Async functions
+   * or functions that return Promises will not be properly validated, as the timing
+   * and error handling will not account for asynchronous execution. If async support
+   * is needed, consider using a separate async validation method.
+   *
+   * @param fn - The synchronous function to validate
    * @param budget - The execution budget to enforce
    * @param args - Arguments to pass to the function
    * @returns Validation result with success status, result, error, and execution time
@@ -101,6 +107,17 @@ export class TerminationVerifier {
     try {
       // Execute the function with the provided arguments
       const result = fn(...args);
+
+      // Detect if the result is a Promise (async function was called)
+      if (result && typeof result === 'object' && typeof result.then === 'function') {
+        return {
+          success: false,
+          error:
+            'validateBudget does not support async functions or Promises. Use synchronous functions only.',
+          executionTime: performance.now() - startTime,
+        };
+      }
+
       const executionTime = performance.now() - startTime;
 
       // Check if execution exceeded time budget

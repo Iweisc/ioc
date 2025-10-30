@@ -48,11 +48,9 @@ describe('TerminationVerifier', () => {
       const verifier = new TerminationVerifier();
       const budget = DEFAULT_BUDGETS[ComplexityClass.LINEAR];
 
-      const result = verifier.validateBudget(
-        (arr: number[]) => arr.map((x) => x * 2),
-        budget,
-        [[1, 2, 3, 4, 5]]
-      );
+      const result = verifier.validateBudget((arr: number[]) => arr.map((x) => x * 2), budget, [
+        [1, 2, 3, 4, 5],
+      ]);
 
       expect(result.success).toBe(true);
       expect(result.result).toEqual([2, 4, 6, 8, 10]);
@@ -106,22 +104,30 @@ describe('TerminationVerifier', () => {
 
     it('should have budget for LOGARITHMIC complexity', () => {
       const budget = DEFAULT_BUDGETS[ComplexityClass.LOGARITHMIC];
-      expect(budget.maxIterations).toBeGreaterThan(DEFAULT_BUDGETS[ComplexityClass.CONSTANT].maxIterations!);
+      expect(budget.maxIterations).toBeGreaterThan(
+        DEFAULT_BUDGETS[ComplexityClass.CONSTANT].maxIterations!
+      );
     });
 
     it('should have budget for LINEAR complexity', () => {
       const budget = DEFAULT_BUDGETS[ComplexityClass.LINEAR];
-      expect(budget.maxIterations).toBeGreaterThan(DEFAULT_BUDGETS[ComplexityClass.LOGARITHMIC].maxIterations!);
+      expect(budget.maxIterations).toBeGreaterThan(
+        DEFAULT_BUDGETS[ComplexityClass.LOGARITHMIC].maxIterations!
+      );
     });
 
     it('should have budget for LINEARITHMIC complexity', () => {
       const budget = DEFAULT_BUDGETS[ComplexityClass.LINEARITHMIC];
-      expect(budget.maxIterations).toBeGreaterThan(DEFAULT_BUDGETS[ComplexityClass.LINEAR].maxIterations!);
+      expect(budget.maxIterations).toBeGreaterThan(
+        DEFAULT_BUDGETS[ComplexityClass.LINEAR].maxIterations!
+      );
     });
 
     it('should have budget for QUADRATIC complexity', () => {
       const budget = DEFAULT_BUDGETS[ComplexityClass.QUADRATIC];
-      expect(budget.maxIterations).toBeGreaterThan(DEFAULT_BUDGETS[ComplexityClass.LINEARITHMIC].maxIterations!);
+      expect(budget.maxIterations).toBeGreaterThan(
+        DEFAULT_BUDGETS[ComplexityClass.LINEARITHMIC].maxIterations!
+      );
     });
   });
 
@@ -182,11 +188,9 @@ describe('TerminationVerifier', () => {
       const verifier = new TerminationVerifier();
       const budget = DEFAULT_BUDGETS[ComplexityClass.LINEAR];
 
-      const result = verifier.validateBudget(
-        (arr: number[]) => arr.map((x) => x * 2),
-        budget,
-        [[]]
-      );
+      const result = verifier.validateBudget((arr: number[]) => arr.map((x) => x * 2), budget, [
+        [],
+      ]);
 
       expect(result.success).toBe(true);
       expect(result.result).toEqual([]);
@@ -196,11 +200,7 @@ describe('TerminationVerifier', () => {
       const verifier = new TerminationVerifier();
       const budget = DEFAULT_BUDGETS[ComplexityClass.CONSTANT];
 
-      const result = verifier.validateBudget(
-        (val: any) => val ?? 'default',
-        budget,
-        [null]
-      );
+      const result = verifier.validateBudget((val: any) => val ?? 'default', budget, [null]);
 
       expect(result.success).toBe(true);
       expect(result.result).toBe('default');
@@ -220,6 +220,34 @@ describe('TerminationVerifier', () => {
         const result = verifier.validateBudget(fn, budget, [input]);
         expect(result.success).toBe(true);
       });
+    });
+
+    it('should detect and reject async functions', () => {
+      const verifier = new TerminationVerifier();
+      const budget = DEFAULT_BUDGETS[ComplexityClass.LINEAR];
+
+      const asyncFn = async () => {
+        return 42;
+      };
+
+      const result = verifier.validateBudget(asyncFn, budget, []);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('async');
+    });
+
+    it('should detect and reject functions returning Promises', () => {
+      const verifier = new TerminationVerifier();
+      const budget = DEFAULT_BUDGETS[ComplexityClass.LINEAR];
+
+      const promiseFn = () => {
+        return Promise.resolve(42);
+      };
+
+      const result = verifier.validateBudget(promiseFn, budget, []);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('async');
     });
   });
 });
