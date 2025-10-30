@@ -16,6 +16,7 @@ import {
   TransformExpression,
   ComparisonPredicate,
   PropertyPredicate,
+  ArithmeticPredicate,
   LogicalPredicate,
   TypeCheckPredicate,
   ArithmeticTransform,
@@ -144,6 +145,8 @@ export class ASTToGraphConverter {
         return this.convertComparisonPredicate(expr as ComparisonPredicate);
       case 'property':
         return this.convertPropertyPredicate(expr as PropertyPredicate);
+      case 'arithmetic':
+        return this.convertArithmeticPredicate(expr as ArithmeticPredicate);
       case 'logical':
         return this.convertLogicalPredicate(expr as LogicalPredicate);
       case 'typecheck':
@@ -167,6 +170,17 @@ export class ASTToGraphConverter {
       op: (COMPARISON_OP_MAP[expr.operator] || expr.operator) as any,
       property: expr.property,
       value: expr.value,
+    };
+  }
+
+  private convertArithmeticPredicate(expr: ArithmeticPredicate): SafePredicate {
+    // Convert arithmetic predicate like "x % 2 == 0" to compare_arithmetic
+    return {
+      type: 'compare_arithmetic',
+      arithmeticOp: expr.arithmeticOp as any,
+      arithmeticValue: expr.arithmeticValue,
+      comparisonOp: (COMPARISON_OP_MAP[expr.comparisonOp] || expr.comparisonOp) as any,
+      comparisonValue: expr.comparisonValue,
     };
   }
 

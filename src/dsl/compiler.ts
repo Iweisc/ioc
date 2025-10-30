@@ -106,6 +106,21 @@ export function compilePredicate(predicate: SafePredicate, inputVar: string = 'x
       return compileComparison(predicate.op, propAccess, value);
     }
 
+    case 'compare_arithmetic': {
+      // Compile arithmetic operation: (x % 2) == 0
+      const arithmeticOps: Record<string, string> = {
+        multiply: '*',
+        add: '+',
+        subtract: '-',
+        divide: '/',
+        mod: '%',
+      };
+      const arithmeticOp = arithmeticOps[predicate.arithmeticOp];
+      const arithmeticExpr = `(${inputVar} ${arithmeticOp} ${predicate.arithmeticValue})`;
+      const value = safeSerialize(predicate.comparisonValue);
+      return compileComparison(predicate.comparisonOp, arithmeticExpr, value);
+    }
+
     case 'type_check': {
       const { expectedType } = predicate;
       switch (expectedType) {

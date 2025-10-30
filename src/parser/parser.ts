@@ -20,6 +20,7 @@ import {
   ReductionOperation,
   ComparisonPredicate,
   PropertyPredicate,
+  ArithmeticPredicate,
   ArithmeticTransform,
   StringTransform,
   PropertyTransform,
@@ -328,9 +329,29 @@ export class Parser {
       } as PropertyPredicate;
     }
 
-    // x comparator value
+    // x arithmetic_op value comparator value (e.g., x % 2 == 0)
+    // or x comparator value
     if (this.check(TokenType.IDENTIFIER)) {
       this.advance(); // skip 'x'
+
+      // Check if there's an arithmetic operator
+      if (this.isArithmeticOperator()) {
+        const arithmeticOp = this.parseArithmeticOperatorType();
+        this.advance(); // consume the arithmetic operator
+        const arithmeticValue = parseFloat(this.consume(TokenType.NUMBER).value);
+        const comparisonOp = this.parseComparisonOperator();
+        const comparisonValue = this.parseLiteralValue();
+
+        return {
+          type: 'arithmetic',
+          arithmeticOp,
+          arithmeticValue,
+          comparisonOp,
+          comparisonValue,
+        } as ArithmeticPredicate;
+      }
+
+      // Simple comparison: x comparator value
       const operator = this.parseComparisonOperator();
       const value = this.parseLiteralValue();
 
@@ -406,6 +427,35 @@ export class Parser {
     }
 
     throw this.error('Expected transform expression');
+  }
+
+  private isArithmeticOperator(): boolean {
+    const token = this.current();
+    return (
+      token.type === TokenType.STAR ||
+      token.type === TokenType.PLUS ||
+      token.type === TokenType.MINUS ||
+      token.type === TokenType.SLASH ||
+      token.type === TokenType.PERCENT
+    );
+  }
+
+  private parseArithmeticOperatorType(): 'multiply' | 'add' | 'subtract' | 'divide' | 'mod' {
+    const token = this.current();
+    switch (token.type) {
+      case TokenType.STAR:
+        return 'multiply';
+      case TokenType.PLUS:
+        return 'add';
+      case TokenType.MINUS:
+        return 'subtract';
+      case TokenType.SLASH:
+        return 'divide';
+      case TokenType.PERCENT:
+        return 'mod';
+      default:
+        throw this.error('Expected arithmetic operator');
+    }
   }
 
   private parseArithmeticOperator(): 'multiply' | 'add' | 'subtract' | 'divide' | 'mod' {
