@@ -1011,4 +1011,250 @@ output result
       expect(() => converter.convert(ast)).toThrow('Undefined variable');
     });
   });
+
+  describe('Arithmetic Predicates in Filters', () => {
+    it('should parse filter with modulo arithmetic predicate (even numbers)', () => {
+      const source = 'even = filter numbers where x % 2 == 0';
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      expect(ast.statements[0]!.type).toBe('filter');
+      if (ast.statements[0]!.type === 'filter') {
+        const predicate = ast.statements[0].predicate;
+        expect(predicate.type).toBe('arithmetic');
+        if (predicate.type === 'arithmetic') {
+          expect(predicate.arithmeticOp).toBe('mod');
+          expect(predicate.arithmeticValue).toBe(2);
+          expect(predicate.comparisonOp).toBe('eq');
+          expect(predicate.comparisonValue).toBe(0);
+        }
+      }
+    });
+
+    it('should parse filter with modulo arithmetic predicate (odd numbers)', () => {
+      const source = 'odd = filter numbers where x % 2 == 1';
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      if (ast.statements[0]!.type === 'filter') {
+        const predicate = ast.statements[0].predicate;
+        expect(predicate.type).toBe('arithmetic');
+        if (predicate.type === 'arithmetic') {
+          expect(predicate.arithmeticOp).toBe('mod');
+          expect(predicate.arithmeticValue).toBe(2);
+          expect(predicate.comparisonOp).toBe('eq');
+          expect(predicate.comparisonValue).toBe(1);
+        }
+      }
+    });
+
+    it('should parse filter with multiply arithmetic predicate', () => {
+      const source = 'filtered = filter numbers where x * 3 > 10';
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      if (ast.statements[0]!.type === 'filter') {
+        const predicate = ast.statements[0].predicate;
+        expect(predicate.type).toBe('arithmetic');
+        if (predicate.type === 'arithmetic') {
+          expect(predicate.arithmeticOp).toBe('multiply');
+          expect(predicate.arithmeticValue).toBe(3);
+          expect(predicate.comparisonOp).toBe('gt');
+          expect(predicate.comparisonValue).toBe(10);
+        }
+      }
+    });
+
+    it('should parse filter with add arithmetic predicate', () => {
+      const source = 'filtered = filter numbers where x + 5 < 20';
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      if (ast.statements[0]!.type === 'filter') {
+        const predicate = ast.statements[0].predicate;
+        expect(predicate.type).toBe('arithmetic');
+        if (predicate.type === 'arithmetic') {
+          expect(predicate.arithmeticOp).toBe('add');
+          expect(predicate.arithmeticValue).toBe(5);
+          expect(predicate.comparisonOp).toBe('lt');
+          expect(predicate.comparisonValue).toBe(20);
+        }
+      }
+    });
+
+    it('should parse filter with subtract arithmetic predicate', () => {
+      const source = 'filtered = filter numbers where x - 10 >= 0';
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      if (ast.statements[0]!.type === 'filter') {
+        const predicate = ast.statements[0].predicate;
+        expect(predicate.type).toBe('arithmetic');
+        if (predicate.type === 'arithmetic') {
+          expect(predicate.arithmeticOp).toBe('subtract');
+          expect(predicate.arithmeticValue).toBe(10);
+          expect(predicate.comparisonOp).toBe('gte');
+          expect(predicate.comparisonValue).toBe(0);
+        }
+      }
+    });
+
+    it('should parse filter with divide arithmetic predicate', () => {
+      const source = 'filtered = filter numbers where x / 2 <= 5';
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      if (ast.statements[0]!.type === 'filter') {
+        const predicate = ast.statements[0].predicate;
+        expect(predicate.type).toBe('arithmetic');
+        if (predicate.type === 'arithmetic') {
+          expect(predicate.arithmeticOp).toBe('divide');
+          expect(predicate.arithmeticValue).toBe(2);
+          expect(predicate.comparisonOp).toBe('lte');
+          expect(predicate.comparisonValue).toBe(5);
+        }
+      }
+    });
+
+    it('should parse filter with modulo not equals predicate', () => {
+      const source = 'filtered = filter numbers where x % 3 != 0';
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      if (ast.statements[0]!.type === 'filter') {
+        const predicate = ast.statements[0].predicate;
+        expect(predicate.type).toBe('arithmetic');
+        if (predicate.type === 'arithmetic') {
+          expect(predicate.arithmeticOp).toBe('mod');
+          expect(predicate.arithmeticValue).toBe(3);
+          expect(predicate.comparisonOp).toBe('neq');
+          expect(predicate.comparisonValue).toBe(0);
+        }
+      }
+    });
+
+    it('should parse filter with negative arithmetic operand', () => {
+      const source = 'filtered = filter numbers where x * -2 < 0';
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      if (ast.statements[0]!.type === 'filter') {
+        const predicate = ast.statements[0].predicate;
+        expect(predicate.type).toBe('arithmetic');
+        if (predicate.type === 'arithmetic') {
+          expect(predicate.arithmeticOp).toBe('multiply');
+          expect(predicate.arithmeticValue).toBe(-2);
+        }
+      }
+    });
+
+    it('should parse filter with floating point arithmetic operand', () => {
+      const source = 'filtered = filter numbers where x / 2.5 == 2';
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      if (ast.statements[0]!.type === 'filter') {
+        const predicate = ast.statements[0].predicate;
+        expect(predicate.type).toBe('arithmetic');
+        if (predicate.type === 'arithmetic') {
+          expect(predicate.arithmeticOp).toBe('divide');
+          expect(predicate.arithmeticValue).toBe(2.5);
+        }
+      }
+    });
+
+    it('should execute filter with arithmetic predicate end-to-end', () => {
+      const source = `
+input numbers: number[]
+even = filter numbers where x % 2 == 0
+output even
+      `.trim();
+
+      const lexer = new Lexer(source);
+      const tokens = lexer.tokenize();
+      const parser = new Parser(tokens);
+      const ast = parser.parse();
+
+      const converter = new ASTToGraphConverter();
+      const graph = converter.convert(ast);
+      const compiledFn = graph.compile();
+
+      const result = compiledFn([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+      expect(result).toEqual([2, 4, 6, 8, 10]);
+    });
+
+    it('should execute filter with arithmetic predicate - divisible by 3', () => {
+      const source = `
+input numbers: number[]
+divisibleBy3 = filter numbers where x % 3 == 0
+output divisibleBy3
+      `.trim();
+
+      const lexer = new Lexer(source);
+      const tokens = lexer.tokenize();
+      const parser = new Parser(tokens);
+      const ast = parser.parse();
+
+      const converter = new ASTToGraphConverter();
+      const graph = converter.convert(ast);
+      const compiledFn = graph.compile();
+
+      const result = compiledFn([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+      expect(result).toEqual([3, 6, 9, 12]);
+    });
+
+    it('should execute filter with arithmetic predicate - complex condition', () => {
+      const source = `
+input numbers: number[]
+filtered = filter numbers where x * 2 > 10
+output filtered
+      `.trim();
+
+      const lexer = new Lexer(source);
+      const tokens = lexer.tokenize();
+      const parser = new Parser(tokens);
+      const ast = parser.parse();
+
+      const converter = new ASTToGraphConverter();
+      const graph = converter.convert(ast);
+      const compiledFn = graph.compile();
+
+      const result = compiledFn([3, 4, 5, 6, 7]);
+      expect(result).toEqual([6, 7]); // 6*2=12>10, 7*2=14>10
+    });
+
+    it('should handle arithmetic predicate combined with map and reduce', () => {
+      const source = `
+input numbers: number[]
+even = filter numbers where x % 2 == 0
+doubled = map even with x * 2
+total = reduce doubled by sum
+output total
+      `.trim();
+
+      const lexer = new Lexer(source);
+      const tokens = lexer.tokenize();
+      const parser = new Parser(tokens);
+      const ast = parser.parse();
+
+      const converter = new ASTToGraphConverter();
+      const graph = converter.convert(ast);
+      const compiledFn = graph.compile();
+
+      const result = compiledFn([1, 2, 3, 4, 5, 6]);
+      // Even: [2, 4, 6]
+      // Doubled: [4, 8, 12]
+      // Sum: 24
+      expect(result).toBe(24);
+    });
+  });
 });

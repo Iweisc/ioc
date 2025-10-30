@@ -688,4 +688,395 @@ describe('SafeGraph', () => {
       expect(compiledRestored(testData)).toEqual(compiledOriginal(testData));
     });
   });
+
+  describe('Arithmetic Predicates in SafeGraph', () => {
+    it('should filter with arithmetic predicate - modulo even numbers', () => {
+      const graph = new SafeGraph();
+      const inputId = graph.input('numbers');
+      const filterId = graph.filter(inputId, {
+        type: 'compare_arithmetic',
+        arithmeticOp: 'mod',
+        arithmeticValue: 2,
+        comparisonOp: 'eq',
+        comparisonValue: 0,
+      });
+
+      graph.output(filterId);
+
+      const compiledFn = graph.compile();
+      const result = compiledFn([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+
+      expect(result).toEqual([2, 4, 6, 8, 10]);
+    });
+
+    it('should filter with arithmetic predicate - modulo odd numbers', () => {
+      const graph = new SafeGraph();
+      const inputId = graph.input('numbers');
+      const filterId = graph.filter(inputId, {
+        type: 'compare_arithmetic',
+        arithmeticOp: 'mod',
+        arithmeticValue: 2,
+        comparisonOp: 'eq',
+        comparisonValue: 1,
+      });
+
+      graph.output(filterId);
+
+      const compiledFn = graph.compile();
+      const result = compiledFn([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+
+      expect(result).toEqual([1, 3, 5, 7, 9]);
+    });
+
+    it('should filter with arithmetic predicate - multiply greater than', () => {
+      const graph = new SafeGraph();
+      const inputId = graph.input('numbers');
+      const filterId = graph.filter(inputId, {
+        type: 'compare_arithmetic',
+        arithmeticOp: 'multiply',
+        arithmeticValue: 3,
+        comparisonOp: 'gt',
+        comparisonValue: 10,
+      });
+
+      graph.output(filterId);
+
+      const compiledFn = graph.compile();
+      const result = compiledFn([2, 3, 4, 5, 6]);
+
+      expect(result).toEqual([4, 5, 6]); // 4*3=12, 5*3=15, 6*3=18
+    });
+
+    it('should filter with arithmetic predicate - add less than', () => {
+      const graph = new SafeGraph();
+      const inputId = graph.input('numbers');
+      const filterId = graph.filter(inputId, {
+        type: 'compare_arithmetic',
+        arithmeticOp: 'add',
+        arithmeticValue: 10,
+        comparisonOp: 'lt',
+        comparisonValue: 20,
+      });
+
+      graph.output(filterId);
+
+      const compiledFn = graph.compile();
+      const result = compiledFn([5, 9, 10, 15]);
+
+      expect(result).toEqual([5, 9]); // 5+10=15, 9+10=19
+    });
+
+    it('should filter with arithmetic predicate - subtract greater than or equal', () => {
+      const graph = new SafeGraph();
+      const inputId = graph.input('numbers');
+      const filterId = graph.filter(inputId, {
+        type: 'compare_arithmetic',
+        arithmeticOp: 'subtract',
+        arithmeticValue: 5,
+        comparisonOp: 'gte',
+        comparisonValue: 0,
+      });
+
+      graph.output(filterId);
+
+      const compiledFn = graph.compile();
+      const result = compiledFn([3, 5, 7, 10]);
+
+      expect(result).toEqual([5, 7, 10]); // 5-5=0, 7-5=2, 10-5=5
+    });
+
+    it('should filter with arithmetic predicate - divide less than or equal', () => {
+      const graph = new SafeGraph();
+      const inputId = graph.input('numbers');
+      const filterId = graph.filter(inputId, {
+        type: 'compare_arithmetic',
+        arithmeticOp: 'divide',
+        arithmeticValue: 2,
+        comparisonOp: 'lte',
+        comparisonValue: 5,
+      });
+
+      graph.output(filterId);
+
+      const compiledFn = graph.compile();
+      const result = compiledFn([8, 10, 12, 14]);
+
+      expect(result).toEqual([8, 10]); // 8/2=4, 10/2=5
+    });
+
+    it('should filter with arithmetic predicate - modulo not equals (not divisible)', () => {
+      const graph = new SafeGraph();
+      const inputId = graph.input('numbers');
+      const filterId = graph.filter(inputId, {
+        type: 'compare_arithmetic',
+        arithmeticOp: 'mod',
+        arithmeticValue: 3,
+        comparisonOp: 'ne',
+        comparisonValue: 0,
+      });
+
+      graph.output(filterId);
+
+      const compiledFn = graph.compile();
+      const result = compiledFn([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+
+      expect(result).toEqual([1, 2, 4, 5, 7, 8]); // Not divisible by 3
+    });
+
+    it('should combine arithmetic predicate with map and reduce', () => {
+      const graph = new SafeGraph('complex-pipeline');
+      const inputId = graph.input('numbers');
+
+      // Filter even numbers using arithmetic predicate
+      const filterId = graph.filter(inputId, {
+        type: 'compare_arithmetic',
+        arithmeticOp: 'mod',
+        arithmeticValue: 2,
+        comparisonOp: 'eq',
+        comparisonValue: 0,
+      });
+
+      // Double them
+      const mapId = graph.map(filterId, {
+        type: 'arithmetic',
+        op: 'multiply',
+        operand: 2,
+      });
+
+      // Sum
+      const reduceId = graph.reduce(mapId, { type: 'sum' });
+
+      graph.output(reduceId);
+
+      const compiledFn = graph.compile();
+      const result = compiledFn([1, 2, 3, 4, 5, 6]);
+
+      // Even: [2, 4, 6]
+      // Doubled: [4, 8, 12]
+      // Sum: 24
+      expect(result).toBe(24);
+    });
+
+    it('should handle arithmetic predicate with negative values', () => {
+      const graph = new SafeGraph();
+      const inputId = graph.input('numbers');
+      const filterId = graph.filter(inputId, {
+        type: 'compare_arithmetic',
+        arithmeticOp: 'multiply',
+        arithmeticValue: -1,
+        comparisonOp: 'gt',
+        comparisonValue: 0,
+      });
+
+      graph.output(filterId);
+
+      const compiledFn = graph.compile();
+      const result = compiledFn([-5, -3, -1, 0, 1, 3, 5]);
+
+      expect(result).toEqual([-5, -3, -1]); // Negative numbers * -1 > 0
+    });
+
+    it('should handle arithmetic predicate in complex filter chains', () => {
+      const graph = new SafeGraph();
+      const inputId = graph.input('numbers');
+
+      // First filter: divisible by 2
+      const filter1 = graph.filter(inputId, {
+        type: 'compare_arithmetic',
+        arithmeticOp: 'mod',
+        arithmeticValue: 2,
+        comparisonOp: 'eq',
+        comparisonValue: 0,
+      });
+
+      // Second filter: result when divided by 2 is greater than 3
+      const filter2 = graph.filter(filter1, {
+        type: 'compare_arithmetic',
+        arithmeticOp: 'divide',
+        arithmeticValue: 2,
+        comparisonOp: 'gt',
+        comparisonValue: 3,
+      });
+
+      graph.output(filter2);
+
+      const compiledFn = graph.compile();
+      const result = compiledFn([2, 4, 6, 8, 10, 12]);
+
+      // First: [2, 4, 6, 8, 10, 12] (all even)
+      // Second: [8, 10, 12] (8/2=4>3, 10/2=5>3, 12/2=6>3)
+      expect(result).toEqual([8, 10, 12]);
+    });
+  });
+
+  describe('SafeGraph Serialization and Deserialization', () => {
+    it('should serialize and deserialize graph with arithmetic predicate', () => {
+      const graph = new SafeGraph('arithmetic-test');
+      const inputId = graph.input('numbers');
+      const filterId = graph.filter(inputId, {
+        type: 'compare_arithmetic',
+        arithmeticOp: 'mod',
+        arithmeticValue: 2,
+        comparisonOp: 'eq',
+        comparisonValue: 0,
+      });
+      graph.output(filterId);
+
+      // Serialize to JSON
+      const json = graph.toJSON();
+      expect(json).toBeDefined();
+      expect(json.metadata?.name).toBe('arithmetic-test');
+
+      // Deserialize
+      const restored = SafeGraph.fromJSON(json);
+
+      // Test both graphs produce same results
+      const compiledOriginal = graph.compile();
+      const compiledRestored = restored.compile();
+
+      const testData = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+      expect(compiledRestored(testData)).toEqual(compiledOriginal(testData));
+    });
+
+    it('should serialize and deserialize complex graph with multiple node types', () => {
+      const graph = new SafeGraph('complex-graph');
+      const inputId = graph.input('data', 'number[]');
+
+      const filterId = graph.filter(inputId, {
+        type: 'compare_arithmetic',
+        arithmeticOp: 'mod',
+        arithmeticValue: 3,
+        comparisonOp: 'ne',
+        comparisonValue: 0,
+      });
+
+      const mapId = graph.map(filterId, {
+        type: 'arithmetic',
+        op: 'multiply',
+        operand: 2,
+      });
+
+      const reduceId = graph.reduce(mapId, { type: 'sum' });
+
+      graph.output(reduceId);
+
+      // Serialize to JSON string
+      const jsonString = JSON.stringify(graph.toJSON());
+      expect(jsonString).toBeDefined();
+
+      // Deserialize from JSON string
+      const restored = SafeGraph.fromJSON(jsonString);
+
+      // Test functionality
+      const compiledOriginal = graph.compile();
+      const compiledRestored = restored.compile();
+
+      const testData = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+      expect(compiledRestored(testData)).toEqual(compiledOriginal(testData));
+    });
+
+    it('should preserve metadata during serialization', () => {
+      const graph = new SafeGraph('test-graph');
+      graph.metadata = {
+        name: 'test-graph',
+        version: '1.0.0',
+        description: 'Test graph for serialization',
+      };
+
+      const inputId = graph.input('data');
+      const mapId = graph.map(inputId, { type: 'identity' });
+      graph.output(mapId);
+
+      const json = graph.toJSON();
+      const restored = SafeGraph.fromJSON(json);
+
+      expect(restored.metadata).toEqual(graph.metadata);
+    });
+
+    it('should handle empty graph serialization', () => {
+      const graph = new SafeGraph('empty');
+      const json = graph.toJSON();
+      const restored = SafeGraph.fromJSON(json);
+
+      expect(restored).toBeDefined();
+      expect(restored.metadata?.name).toBe('empty');
+    });
+
+    it('should deserialize from IOCProgram object', () => {
+      const graph = new SafeGraph('from-program');
+      const inputId = graph.input('numbers');
+      const filterId = graph.filter(inputId, {
+        type: 'compare',
+        op: 'gt',
+        value: 5,
+      });
+      graph.output(filterId);
+
+      const program = graph.toProgram();
+      const restored = SafeGraph.fromProgram(program);
+
+      const compiledOriginal = graph.compile();
+      const compiledRestored = restored.compile();
+
+      const testData = [1, 3, 5, 7, 9];
+      expect(compiledRestored(testData)).toEqual(compiledOriginal(testData));
+    });
+
+    it('should handle serialization with multiple outputs', () => {
+      const graph = new SafeGraph('multi-output');
+      const inputId = graph.input('numbers');
+
+      const filterId = graph.filter(inputId, {
+        type: 'compare',
+        op: 'gt',
+        value: 5,
+      });
+
+      const mapId = graph.map(inputId, {
+        type: 'arithmetic',
+        op: 'multiply',
+        operand: 2,
+      });
+
+      graph.output(filterId);
+      graph.output(mapId);
+
+      const json = graph.toJSON();
+      const restored = SafeGraph.fromJSON(json);
+
+      expect(restored.outputs.size).toBe(2);
+    });
+
+    it('should serialize graph with all predicate types', () => {
+      const graph = new SafeGraph('all-predicates');
+      const inputId = graph.input('data');
+
+      // Compare predicate
+      const filter1 = graph.filter(inputId, {
+        type: 'compare',
+        op: 'gt',
+        value: 0,
+      });
+
+      // Arithmetic predicate
+      const filter2 = graph.filter(filter1, {
+        type: 'compare_arithmetic',
+        arithmeticOp: 'mod',
+        arithmeticValue: 2,
+        comparisonOp: 'eq',
+        comparisonValue: 0,
+      });
+
+      graph.output(filter2);
+
+      const json = graph.toJSON();
+      const restored = SafeGraph.fromJSON(json);
+
+      const compiledOriginal = graph.compile();
+      const compiledRestored = restored.compile();
+
+      const testData = [-2, -1, 0, 1, 2, 3, 4, 5, 6];
+      expect(compiledRestored(testData)).toEqual(compiledOriginal(testData));
+    });
+  });
 });
