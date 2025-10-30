@@ -116,22 +116,41 @@ export function serializeIOC(program: IOCProgram): string {
 
 /**
  * Deserialize an IOC program from JSON string
+ *
+ * SECURITY: Validates input size and structure before parsing
  */
 export function deserializeIOC(json: string): IOCProgram {
+  // Security: Validate input size before parsing (DoS prevention)
+  const MAX_INPUT_SIZE = 10 * 1024 * 1024; // 10 MB for .ioc JSON files
+  const inputSize = Buffer.byteLength(json, 'utf-8');
+  if (inputSize > MAX_INPUT_SIZE) {
+    throw new Error(
+      `IOC file too large: ${inputSize} bytes exceeds maximum of ${MAX_INPUT_SIZE} bytes`
+    );
+  }
+
   const parsed = JSON.parse(json);
 
-  // Validate version
+  // Validate version (fail fast)
   if (!parsed.version || !parsed.version.startsWith('1.')) {
     throw new Error(`Unsupported .ioc version: ${parsed.version}`);
   }
 
-  // Validate required fields
+  // Validate required fields (fail fast)
   if (!Array.isArray(parsed.nodes)) {
     throw new Error('Invalid .ioc file: missing nodes array');
   }
 
   if (!Array.isArray(parsed.outputs)) {
     throw new Error('Invalid .ioc file: missing outputs array');
+  }
+
+  // Security: Validate node count
+  const MAX_NODES = 10000;
+  if (parsed.nodes.length > MAX_NODES) {
+    throw new Error(
+      `IOC program too complex: ${parsed.nodes.length} nodes exceeds maximum of ${MAX_NODES}`
+    );
   }
 
   return parsed as IOCProgram;

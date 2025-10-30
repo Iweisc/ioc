@@ -192,35 +192,52 @@ export class TerminationVerifier {
 export class BudgetEnforcer {
   /**
    * Wrap code with budget enforcement
+   * SECURITY: nodeId is sanitized to prevent code injection
    */
   static wrapCode(code: string, nodeId: string, budget: ExecutionBudget): string {
+    // Import sanitization functions
+    const { sanitizeIdentifier, escapeForComment, escapeForString } = require('../dsl/security.js');
+
+    // Sanitize nodeId before using it in generated code
+    const safeNodeId = sanitizeIdentifier(nodeId);
+    const safeNodeIdComment = escapeForComment(nodeId);
+    const safeNodeIdString = escapeForString(nodeId);
+
     const maxIterations = budget.maxIterations ?? 100_000;
     const maxTime = budget.maxTime ?? 1000;
 
     return `
-// Budget enforcement for ${nodeId}
-const _budget_${nodeId} = {
+// Budget enforcement for ${safeNodeIdComment}
+const _budget_${safeNodeId} = {
   iterations: 0,
   maxIterations: ${maxIterations},
   startTime: Date.now(),
   maxTime: ${maxTime},
   check() {
     if (++this.iterations > this.maxIterations) {
-      throw new Error('Budget exceeded: iteration limit for ${nodeId}');
+      throw new Error('Budget exceeded: iteration limit for ${safeNodeIdString}');
     }
     if (Date.now() - this.startTime > this.maxTime) {
-      throw new Error('Budget exceeded: time limit for ${nodeId}');
+      throw new Error('Budget exceeded: time limit for ${safeNodeIdString}');
     }
   }
 };
 
 // Instrumented code
-${this.instrumentCode(code, `_budget_${nodeId}`)}
+${this.instrumentCode(code, `_budget_${safeNodeId}`)}
 `;
   }
 
   /**
    * Instrument code to insert budget checks
+   *
+   * TODO: The forEach instrumentation using string replacement is broken.
+   * It produces invalid JavaScript and drops the original callback.
+   * Should use an AST transform (e.g., Babel/ESTree) instead:
+   *   1. Parse code to AST
+   *   2. Find CallExpression nodes with forEach
+   *   3. Wrap callback with budget check
+   *   4. Generate code from modified AST
    */
   private static instrumentCode(code: string, budgetVar: string): string {
     // Insert budget checks in loops
@@ -235,11 +252,13 @@ ${this.instrumentCode(code, `_budget_${nodeId}`)}
       `while ($1) { ${budgetVar}.check();`
     );
 
-    // Insert checks in array operations
-    instrumented = instrumented.replace(
-      /\.forEach\(/g,
-      `.forEach((...args) => { ${budgetVar}.check(); return ((...args) => `
-    );
+    // KNOWN ISSUE: forEach instrumentation is broken - disabled for now
+    // Original code produced invalid JS that dropped callbacks
+    // TODO: Implement proper AST-based transformation
+    // instrumented = instrumented.replace(
+    //   /\.forEach\(/g,
+    //   `.forEach((...args) => { ${budgetVar}.check(); return ((...args) => `
+    // );
 
     return instrumented;
   }

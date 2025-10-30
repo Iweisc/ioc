@@ -63,25 +63,26 @@ export interface Token {
   column: number;
 }
 
-const KEYWORDS: Record<string, TokenType> = {
-  input: TokenType.INPUT,
-  output: TokenType.OUTPUT,
-  filter: TokenType.FILTER,
-  map: TokenType.MAP,
-  reduce: TokenType.REDUCE,
-  where: TokenType.WHERE,
-  with: TokenType.WITH,
-  by: TokenType.BY,
-  if: TokenType.IF,
-  then: TokenType.THEN,
-  else: TokenType.ELSE,
-  let: TokenType.LET,
-  and: TokenType.AND,
-  or: TokenType.OR,
-  not: TokenType.NOT,
-  true: TokenType.BOOLEAN,
-  false: TokenType.BOOLEAN,
-};
+// Use Map instead of plain object to avoid prototype pollution and .then property issues
+const KEYWORDS = new Map<string, TokenType>([
+  ['input', TokenType.INPUT],
+  ['output', TokenType.OUTPUT],
+  ['filter', TokenType.FILTER],
+  ['map', TokenType.MAP],
+  ['reduce', TokenType.REDUCE],
+  ['where', TokenType.WHERE],
+  ['with', TokenType.WITH],
+  ['by', TokenType.BY],
+  ['if', TokenType.IF],
+  ['then', TokenType.THEN],
+  ['else', TokenType.ELSE],
+  ['let', TokenType.LET],
+  ['and', TokenType.AND],
+  ['or', TokenType.OR],
+  ['not', TokenType.NOT],
+  ['true', TokenType.BOOLEAN],
+  ['false', TokenType.BOOLEAN],
+]);
 
 export class Lexer {
   private source: string;
@@ -237,7 +238,7 @@ export class Lexer {
       this.advance();
     }
 
-    const type = KEYWORDS[value] || TokenType.IDENTIFIER;
+    const type = KEYWORDS.get(value) ?? TokenType.IDENTIFIER;
 
     return {
       type,

@@ -1,15 +1,19 @@
-# User Analytics Pipeline
-# Processes user events and counts active users
+# Event Counter Pipeline
+# Processes user events and counts total events from active users
+#
+# NOTE: This implementation counts all user_id occurrences (including duplicates).
+# To count unique users, you would need a deduplication step (e.g., converting
+# the user_ids array to a set before counting, which is not yet supported in IOC).
 
 input events: object[]
 
 # Filter events from last 30 days
 recent = filter events where x.days_ago < 30
 
-# Get unique user IDs
+# Get user IDs from recent events (may include duplicates)
 user_ids = map recent with x.user_id
 
-# Count unique users (simplified - just count all for now)
+# Count total occurrences (not unique users)
 count = reduce user_ids by count
 
 output count

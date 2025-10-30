@@ -58,6 +58,20 @@ export class ASTToGraphConverter {
       case 'output':
         this.processOutput(node);
         break;
+      case 'if':
+        // TODO: Implement if/else statements
+        // Parser accepts them but they're not yet part of the .ioc language spec
+        throw new Error(
+          `'if' statements are not yet supported. ` +
+            `Use conditional transforms in map operations instead.`
+        );
+      case 'let':
+        // TODO: Implement let bindings
+        // Parser accepts them but they're not yet part of the .ioc language spec
+        throw new Error(
+          `'let' statements are not yet supported. ` +
+            `All variables must be created through input, filter, map, or reduce operations.`
+        );
       default:
         throw new Error(`Unsupported statement type: ${(node as any).type}`);
     }

@@ -25,13 +25,70 @@ import {
   PropertyTransform,
 } from './ast';
 
+/**
+ * Parser configuration limits for DoS prevention
+ */
+export interface ParserLimits {
+  maxInputSize: number; // Maximum input string size in bytes
+  maxTokens: number; // Maximum number of tokens
+  maxDepth: number; // Maximum nesting depth
+  maxNodes: number; // Maximum number of AST nodes
+}
+
+/**
+ * Default parser limits (configurable for testing/production)
+ */
+export const DEFAULT_PARSER_LIMITS: ParserLimits = {
+  maxInputSize: 1024 * 1024, // 1 MB
+  maxTokens: 10000, // 10k tokens
+  maxDepth: 100, // 100 levels deep
+  maxNodes: 5000, // 5k AST nodes
+};
+
 export class Parser {
   private tokens: Token[];
   private position: number = 0;
+  private depth: number = 0;
+  private nodeCount: number = 0;
+  private limits: ParserLimits;
 
-  constructor(tokens: Token[]) {
+  constructor(tokens: Token[], limits: ParserLimits = DEFAULT_PARSER_LIMITS) {
     // Filter out newlines for easier parsing (we don't need them for semantics)
     this.tokens = tokens.filter((t) => t.type !== TokenType.NEWLINE);
+    this.limits = limits;
+
+    // Validate token count
+    if (this.tokens.length > limits.maxTokens) {
+      throw new Error(
+        `Input exceeds maximum token limit: ${this.tokens.length} > ${limits.maxTokens}`
+      );
+    }
+  }
+
+  /**
+   * Track depth for nested expressions (DoS prevention)
+   */
+  private enterDepth(): void {
+    this.depth++;
+    if (this.depth > this.limits.maxDepth) {
+      throw new Error(`Maximum nesting depth exceeded: ${this.depth} > ${this.limits.maxDepth}`);
+    }
+  }
+
+  private exitDepth(): void {
+    this.depth--;
+  }
+
+  /**
+   * Track AST node count (DoS prevention)
+   */
+  private incrementNodeCount(): void {
+    this.nodeCount++;
+    if (this.nodeCount > this.limits.maxNodes) {
+      throw new Error(
+        `Maximum AST node count exceeded: ${this.nodeCount} > ${this.limits.maxNodes}`
+      );
+    }
   }
 
   parse(): Program {
@@ -68,6 +125,7 @@ export class Parser {
 
   // input numbers: number[]
   private parseInput(): InputDeclaration {
+    this.incrementNodeCount();
     this.consume(TokenType.INPUT);
     const name = this.consume(TokenType.IDENTIFIER).value;
 
@@ -86,6 +144,7 @@ export class Parser {
 
   // output result
   private parseOutput(): OutputStatement {
+    this.incrementNodeCount();
     this.consume(TokenType.OUTPUT);
     const source = this.consume(TokenType.IDENTIFIER).value;
 
@@ -116,50 +175,68 @@ export class Parser {
 
   // filtered = filter numbers where x > 10
   private parseFilter(target: string): FilterStatement {
-    this.consume(TokenType.FILTER);
-    const source = this.consume(TokenType.IDENTIFIER).value;
-    this.consume(TokenType.WHERE);
+    this.incrementNodeCount();
+    this.enterDepth();
+    try {
+      this.consume(TokenType.FILTER);
+      const source = this.consume(TokenType.IDENTIFIER).value;
+      this.consume(TokenType.WHERE);
 
-    const predicate = this.parsePredicate();
+      const predicate = this.parsePredicate();
 
-    return {
-      type: 'filter',
-      target,
-      source,
-      predicate,
-    };
+      return {
+        type: 'filter',
+        target,
+        source,
+        predicate,
+      };
+    } finally {
+      this.exitDepth();
+    }
   }
 
   // doubled = map numbers with x * 2
   private parseMap(target: string): MapStatement {
-    this.consume(TokenType.MAP);
-    const source = this.consume(TokenType.IDENTIFIER).value;
-    this.consume(TokenType.WITH);
+    this.incrementNodeCount();
+    this.enterDepth();
+    try {
+      this.consume(TokenType.MAP);
+      const source = this.consume(TokenType.IDENTIFIER).value;
+      this.consume(TokenType.WITH);
 
-    const transform = this.parseTransform();
+      const transform = this.parseTransform();
 
-    return {
-      type: 'map',
-      target,
-      source,
-      transform,
-    };
+      return {
+        type: 'map',
+        target,
+        source,
+        transform,
+      };
+    } finally {
+      this.exitDepth();
+    }
   }
 
   // total = reduce numbers by sum
   private parseReduce(target: string): ReduceStatement {
-    this.consume(TokenType.REDUCE);
-    const source = this.consume(TokenType.IDENTIFIER).value;
-    this.consume(TokenType.BY);
+    this.incrementNodeCount();
+    this.enterDepth();
+    try {
+      this.consume(TokenType.REDUCE);
+      const source = this.consume(TokenType.IDENTIFIER).value;
+      this.consume(TokenType.BY);
 
-    const operation = this.parseReductionOp();
+      const operation = this.parseReductionOp();
 
-    return {
-      type: 'reduce',
-      target,
-      source,
-      operation,
-    };
+      return {
+        type: 'reduce',
+        target,
+        source,
+        operation,
+      };
+    } finally {
+      this.exitDepth();
+    }
   }
 
   // if condition then branch1 else branch2

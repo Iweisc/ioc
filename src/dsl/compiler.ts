@@ -269,6 +269,7 @@ export function compileTransform(transform: SafeTransform, inputVar: string = 'x
 
 /**
  * Compile a reduction operation to JavaScript code
+ * Includes validation for empty arrays where appropriate
  */
 export function compileReduction(reduction: ReductionOp, arrayVar: string = 'arr'): string {
   switch (reduction.type) {
@@ -279,16 +280,19 @@ export function compileReduction(reduction: ReductionOp, arrayVar: string = 'arr
       return `${arrayVar}.reduce((acc, x) => acc * x, 1)`;
 
     case 'min':
-      return `Math.min(...${arrayVar})`;
+      // Empty array validation: throw clear error instead of returning Infinity
+      return `(${arrayVar}.length === 0 ? (() => { throw new Error('Cannot compute min of empty array'); })() : Math.min(...${arrayVar}))`;
 
     case 'max':
-      return `Math.max(...${arrayVar})`;
+      // Empty array validation: throw clear error instead of returning -Infinity
+      return `(${arrayVar}.length === 0 ? (() => { throw new Error('Cannot compute max of empty array'); })() : Math.max(...${arrayVar}))`;
 
     case 'count':
       return `${arrayVar}.length`;
 
     case 'average':
-      return `${arrayVar}.reduce((acc, x) => acc + x, 0) / ${arrayVar}.length`;
+      // Empty array validation: throw clear error instead of returning NaN
+      return `(${arrayVar}.length === 0 ? (() => { throw new Error('Cannot compute average of empty array'); })() : ${arrayVar}.reduce((acc, x) => acc + x, 0) / ${arrayVar}.length)`;
 
     case 'any': {
       const predicate = compilePredicate(reduction.predicate);
@@ -304,10 +308,12 @@ export function compileReduction(reduction: ReductionOp, arrayVar: string = 'arr
       return `${arrayVar}.join(${JSON.stringify(reduction.separator)})`;
 
     case 'first':
-      return `${arrayVar}[0]`;
+      // Empty array validation: throw clear error instead of returning undefined
+      return `(${arrayVar}.length === 0 ? (() => { throw new Error('Cannot get first element of empty array'); })() : ${arrayVar}[0])`;
 
     case 'last':
-      return `${arrayVar}[${arrayVar}.length - 1]`;
+      // Empty array validation: throw clear error instead of returning undefined
+      return `(${arrayVar}.length === 0 ? (() => { throw new Error('Cannot get last element of empty array'); })() : ${arrayVar}[${arrayVar}.length - 1])`;
 
     default: {
       const _exhaustive: never = reduction;

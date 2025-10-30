@@ -32,6 +32,9 @@ new_accounts = filter suspicious_location where x.account_age < 30
 risk_scores = map new_accounts with x.risk_score
 
 # Stage 8: Find maximum risk score
+# NOTE: If no transactions match all filters (empty array), this will throw an error
+# rather than returning -Infinity. Ensure your input data has at least one transaction
+# or add validation before this step.
 max_risk = reduce risk_scores by max
 
 output max_risk

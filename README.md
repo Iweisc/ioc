@@ -8,8 +8,8 @@ Traditional programming requires you to write JavaScript functions with arbitrar
 
 - ✅ **Termination is guaranteed** - No infinite loops, ever
 - ✅ **Fully serializable** - Save programs as JSON `.ioc` files
-- ✅ **Complexity bounds known** - Every operation has O(n) guarantees
-- ✅ **No code execution risks** - Safe for serverless/untrusted environments
+- ✅ **Known complexity bounds** - Every operation has documented complexity (O(n), O(n log n), etc.)
+- ✅ **Reduced code execution risks** - Safer for serverless environments (with proper validation and limits)
 - ✅ **Hardware portable** - Same program, optimized per platform
 - ✅ **Auto-verifiable** - Empirical termination verification
 
@@ -67,9 +67,8 @@ const result = compiled([5, 12, 8, 20]); // 64
 
 - No arbitrary JavaScript functions (fully serializable!)
 - Guaranteed termination
-- Known complexity (O(n))
+- Known complexity bounds (documented for each operation)
 - Can be saved/loaded as `.ioc` files
-- Can be saved to a `.ioc` file and loaded later
 
 ## Installation
 
@@ -140,6 +139,12 @@ ioc run process_users.ioc --input '[{"name":"Alice","age":25},{"name":"Bob","age
 - `sum`, `product`, `average`
 - `max`, `min`, `count`
 - `first`, `last`, `join`
+
+**Note on Empty Arrays:**
+
+- `sum`, `product`, `count`, `join` handle empty arrays gracefully (return 0, 1, 0, "" respectively)
+- `min`, `max`, `average`, `first`, `last` throw clear errors on empty arrays
+- Always validate that arrays are non-empty before using operations that don't handle empty arrays
 
 ### CLI Commands
 

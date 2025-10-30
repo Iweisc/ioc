@@ -193,11 +193,11 @@ Used in `by` clauses for reducing.
 
 ### Numeric Reductions
 
-- `sum` - Sum all elements
-- `product` - Multiply all elements
-- `average` - Calculate average
-- `max` - Find maximum
-- `min` - Find minimum
+- `sum` - Sum all elements (returns 0 for empty arrays)
+- `product` - Multiply all elements (returns 1 for empty arrays)
+- `average` - Calculate average (throws error on empty arrays)
+- `max` - Find maximum (throws error on empty arrays)
+- `min` - Find minimum (throws error on empty arrays)
 
 **Examples:**
 
@@ -207,12 +207,35 @@ reduce scores by average
 reduce prices by max
 ```
 
+**Empty Array Behavior:**
+
+Most reduction operations handle empty arrays gracefully:
+
+- `sum` returns `0` for empty arrays
+- `product` returns `1` for empty arrays
+- `count` returns `0` for empty arrays
+
+However, some operations throw errors on empty arrays to prevent undefined behavior:
+
+- `min`, `max`, `average` - throw clear error messages
+- `first`, `last` - throw clear error messages
+
+When using these operations, ensure your pipeline validates that arrays are non-empty before reduction, or handle the error appropriately.
+
+```ioc
+# Example: Using count to check before max
+filtered = filter items where x.score > 50
+scores = map filtered with x.score
+# If filtered is empty, max will throw an error
+max_score = reduce scores by max
+```
+
 ### Collection Reductions
 
-- `count` - Count elements
-- `first` - Get first element
-- `last` - Get last element
-- `join` - Join into string
+- `count` - Count elements (returns 0 for empty arrays)
+- `first` - Get first element (throws error on empty arrays)
+- `last` - Get last element (throws error on empty arrays)
+- `join` - Join into string (returns empty string for empty arrays)
 
 **Examples:**
 

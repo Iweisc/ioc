@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /**
  * IOC CLI Tool
  *
@@ -51,6 +52,15 @@ function readFile(filePath: string): string {
 
 function parseIOC(source: string) {
   try {
+    // Security: Validate input size before parsing (DoS prevention)
+    const MAX_INPUT_SIZE = 1024 * 1024; // 1 MB
+    const inputSize = Buffer.byteLength(source, 'utf-8');
+    if (inputSize > MAX_INPUT_SIZE) {
+      throw new Error(
+        `Input file too large: ${inputSize} bytes exceeds maximum of ${MAX_INPUT_SIZE} bytes`
+      );
+    }
+
     const lexer = new Lexer(source);
     const tokens = lexer.tokenize();
 

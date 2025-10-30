@@ -226,3 +226,47 @@ function validateGeneratedCode(code: string): void {
     throw new Error('Generated code too long (max 100KB)');
   }
 }
+
+/**
+ * Sanitize a string to be safe for use as a JavaScript identifier
+ * Ensures only alphanumeric and underscore characters
+ */
+export function sanitizeIdentifier(id: string): string {
+  // Replace any non-alphanumeric/underscore characters with underscore
+  // Ensure it starts with a letter or underscore
+  const sanitized = id.replace(/[^a-zA-Z0-9_]/g, '_');
+
+  // Ensure it starts with a letter or underscore
+  if (!/^[a-zA-Z_]/.test(sanitized)) {
+    return `_${sanitized}`;
+  }
+
+  return sanitized;
+}
+
+/**
+ * Escape a string for safe use in a JavaScript comment
+ * Prevents comment injection attacks
+ */
+export function escapeForComment(str: string): string {
+  // Remove or escape characters that could break out of a comment
+  return str
+    .replace(/\*\//g, '* /') // Prevent closing comment block
+    .replace(/\n/g, ' ') // Remove newlines
+    .replace(/\r/g, ' ') // Remove carriage returns
+    .substring(0, 100); // Limit length
+}
+
+/**
+ * Escape a string for safe use in a JavaScript string literal
+ * Prevents breaking out of the string
+ */
+export function escapeForString(str: string): string {
+  return str
+    .replace(/\\/g, '\\\\') // Escape backslashes
+    .replace(/'/g, "\\'") // Escape single quotes
+    .replace(/"/g, '\\"') // Escape double quotes
+    .replace(/\n/g, '\\n') // Escape newlines
+    .replace(/\r/g, '\\r') // Escape carriage returns
+    .replace(/\t/g, '\\t'); // Escape tabs
+}

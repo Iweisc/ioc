@@ -140,7 +140,7 @@ export function getPredicateComplexity(predicate: SafePredicate): ComplexityClas
       return getPredicateComplexity(predicate.predicate);
 
     case 'and':
-    case 'or':
+    case 'or': {
       // Max complexity of all sub-predicates
       const complexities = predicate.predicates.map(getPredicateComplexity);
       return complexities.reduce(
@@ -150,6 +150,7 @@ export function getPredicateComplexity(predicate: SafePredicate): ComplexityClas
             : max,
         ComplexityClass.CONSTANT
       );
+    }
 
     default:
       return ComplexityClass.CONSTANT;
@@ -175,7 +176,7 @@ export function getTransformComplexity(transform: SafeTransform): ComplexityClas
       if (transform.op === 'length') return ComplexityClass.CONSTANT;
       return ComplexityClass.LINEAR;
 
-    case 'conditional':
+    case 'conditional': {
       const condComplexity = getPredicateComplexity(transform.condition);
       const trueComplexity = getTransformComplexity(transform.ifTrue);
       const falseComplexity = getTransformComplexity(transform.ifFalse);
@@ -188,8 +189,9 @@ export function getTransformComplexity(transform: SafeTransform): ComplexityClas
             : max,
         ComplexityClass.CONSTANT
       );
+    }
 
-    case 'compose':
+    case 'compose': {
       // Sum of all transforms (conservative)
       const composeComplexities = transform.transforms.map(getTransformComplexity);
       return composeComplexities.reduce(
@@ -199,8 +201,9 @@ export function getTransformComplexity(transform: SafeTransform): ComplexityClas
             : max,
         ComplexityClass.CONSTANT
       );
+    }
 
-    case 'construct':
+    case 'construct': {
       // Max of all field transforms
       const fieldComplexities = Object.values(transform.fields).map(getTransformComplexity);
       return fieldComplexities.reduce(
@@ -210,6 +213,7 @@ export function getTransformComplexity(transform: SafeTransform): ComplexityClas
             : max,
         ComplexityClass.CONSTANT
       );
+    }
 
     default:
       return ComplexityClass.CONSTANT;
