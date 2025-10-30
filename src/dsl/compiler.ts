@@ -32,12 +32,13 @@ export class CompilationContext {
 }
 
 /**
- * Compile a comparison operator into a JavaScript boolean expression.
+ * Convert a comparison operator and two operand expressions into a JavaScript expression that performs that comparison.
  *
- * @param op - The comparison operator (e.g., 'eq', 'ne', 'gt', 'in', 'contains', 'matches')
+ * @param op - The comparison operator (e.g., `eq`, `ne`, `gt`, `gte`, `lt`, `lte`, `in`, `contains`, `matches`)
  * @param left - JavaScript expression used as the left-hand operand
  * @param right - JavaScript expression used as the right-hand operand
- * @returns A JavaScript boolean expression that evaluates the specified comparison
+ * @returns A string containing a JavaScript expression that yields `true` when the comparison holds and `false` otherwise
+ * @throws Error if `op` is an unknown comparison operator
  */
 function compileComparison(op: ComparisonOp, left: string, right: string): string {
   switch (op) {
@@ -66,11 +67,11 @@ function compileComparison(op: ComparisonOp, left: string, right: string): strin
 }
 
 /**
- * Compile a SafePredicate into a JavaScript expression.
+ * Compiles a SafePredicate into a JavaScript boolean expression string that references the given input identifier.
  *
- * @param inputVar - The identifier to use for the input value within the generated expression (defaults to `'x'`).
- * @returns A JavaScript expression as a string that evaluates the predicate against the input variable.
- * @throws Error if the predicate contains an unknown predicate type or an unknown expectedType for type checks.
+ * @param inputVar - Identifier to use for the input value inside the generated expression (defaults to `'x'`).
+ * @returns A JavaScript expression string that evaluates the predicate against the specified input identifier.
+ * @throws Error if the predicate has an unknown predicate type or an unknown expectedType for a type check.
  */
 export function compilePredicate(predicate: SafePredicate, inputVar: string = 'x'): string {
   switch (predicate.type) {
@@ -299,10 +300,10 @@ export function compileReduction(reduction: ReductionOp, arrayVar: string = 'arr
 }
 
 /**
- * Create a predicate function from a SafePredicate.
+ * Produces a predicate function that evaluates inputs against the given SafePredicate.
  *
- * @param predicate - The SafePredicate to compile into an executable predicate
- * @returns `true` if the compiled predicate matches the input `x`, `false` otherwise
+ * @param predicate - The SafePredicate to compile into an executable predicate.
+ * @returns A function that returns `true` if its input satisfies `predicate`, `false` otherwise.
  */
 export function compilePredicateFunction(predicate: SafePredicate): (x: any) => boolean {
   const code = compilePredicate(predicate, 'x');
@@ -323,10 +324,10 @@ export function compileTransformFunction(transform: SafeTransform): (x: any) => 
 }
 
 /**
- * Produce a function that applies the given reduction operation to an input array.
+ * Create a function that applies the specified reduction operation to a provided array.
  *
- * @param reduction - The reduction operation to compile into executable code
- * @returns A function that accepts an array and returns the reduction result for that array
+ * @param reduction - Reduction operation descriptor that will be compiled into the returned function
+ * @returns A function which, when called with an array, returns the result of applying `reduction` to that array
  */
 export function compileReductionFunction(reduction: ReductionOp): (arr: any[]) => any {
   const code = compileReduction(reduction, 'arr');

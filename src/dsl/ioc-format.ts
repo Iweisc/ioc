@@ -108,9 +108,9 @@ export interface IOCProgram {
 }
 
 /**
- * Convert an IOCProgram into a pretty-printed JSON string.
+ * Converts an IOCProgram to a pretty-printed JSON string.
  *
- * @returns A JSON string representation of `program`, formatted with two-space indentation.
+ * @returns The JSON string representation of `program` formatted with two-space indentation.
  */
 export function serializeIOC(program: IOCProgram): string {
   return JSON.stringify(program, null, 2);
@@ -168,11 +168,11 @@ export async function saveIOCFile(program: IOCProgram, path: string): Promise<vo
 }
 
 /**
- * Determine the execution and resource capability for an IOC node.
+ * Compute the execution and resource capability for a given IOC node.
  *
- * @param node - The IOC node whose capability will be computed.
- * @returns An IntentCapability describing the node's maxComplexity, terminationGuarantee, sideEffects, parallelizable flag, and memoryBound.
- * @throws Error if `node.type` is not a recognized IOCIntentType.
+ * @param node - The IOC node to evaluate
+ * @returns An IntentCapability describing maxComplexity, terminationGuarantee, sideEffects, parallelizable, and optional memoryBound
+ * @throws Error if `node.type` is not a recognized IOCIntentType
  */
 export function calculateNodeCapability(node: IOCNode): IntentCapability {
   switch (node.type) {
@@ -281,12 +281,10 @@ export function calculateNodeCapability(node: IOCNode): IntentCapability {
 }
 
 /**
- * Validate an IOCProgram for structural correctness and capability consistency.
+ * Validate structural correctness and capability consistency of an IOCProgram.
  *
- * Performs these checks: all referenced node IDs in outputs and inputs exist, the graph has no cycles (must be a DAG),
- * and each node's declared `capability.maxComplexity` matches the calculated complexity for its intent.
- *
- * @returns An object with `valid` set to `true` when no errors were found, and `errors` containing descriptive messages for each validation failure.
+ * @param program - The IOCProgram to validate.
+ * @returns An object with `valid` set to `true` if no validation errors were found, and `errors` containing descriptive messages for each failure.
  */
 export function validateIOCProgram(program: IOCProgram): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
@@ -393,12 +391,11 @@ export function getExecutionOrder(program: IOCProgram): string[] {
   const nodeMap = new Map(program.nodes.map((n) => [n.id, n]));
 
   /**
-   * Recursively visits a node and its input dependencies, appending each node id to the
-   * `order` list after its inputs have been processed to produce a topological execution order.
+   * Visit a node and its input dependencies recursively, appending node ids to `order` in topological execution order.
    *
-   * If the node id is unknown or has already been visited, the function does nothing.
+   * Visits each dependency before the node and does nothing for unknown or already-visited nodes.
    *
-   * @param nodeId - The id of the node to visit
+   * @param nodeId - The id of the node to visit within the current program graph
    */
   function visit(nodeId: string) {
     if (visited.has(nodeId)) return;
