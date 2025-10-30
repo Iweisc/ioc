@@ -85,14 +85,19 @@ export class WebAssemblyBackend implements CompilationBackend {
 
   /**
    * Generate WebAssembly Text format from IOC program
+   *
+   * NOT IMPLEMENTED: Emits WAT with unreachable instruction to fail-fast
+   * when executed, preventing silent incorrect results.
    */
   private generateWAT(program: IOCProgram, options: Partial<CompilationOptions>): string {
-    // WARNING: This is a stub implementation
-    // Full WASM code generation for IOC nodes is not yet implemented
+    // Fail-fast approach: emit a trap so execution fails immediately
+    // rather than silently returning incorrect results
+
     if (program.nodes.length > 0) {
-      console.warn(
-        'WARNING: WebAssembly backend is a stub implementation. ' +
-          'IOC node execution is not yet supported. The compiled function will return dummy values.'
+      throw new Error(
+        'WebAssembly backend code generation is not yet implemented. ' +
+          'IOC node compilation to WASM is not supported. ' +
+          'Use the JavaScript backend until WASM codegen is complete.'
       );
     }
 
@@ -110,12 +115,13 @@ export class WebAssemblyBackend implements CompilationBackend {
     gen.emit('(import "js" "log" (func $log (param f64)))', 1);
     gen.emit('', 0);
 
-    // Generate main execution function
+    // Generate main execution function that traps immediately
     gen.emit('(func (export "execute") (param $input i32) (result f64)', 1);
 
-    // TODO: Generate WASM code for each node in the program
-    // For now, return dummy value
-    gen.emit('(f64.const 0)', 2);
+    // Fail-fast: emit unreachable instruction to trap immediately
+    // This prevents silent failures with dummy return values
+    gen.emit(';; WebAssembly backend not implemented - trap on execution', 2);
+    gen.emit('unreachable', 2);
 
     gen.emit(')', 1);
     gen.emit(')', 0);
@@ -126,61 +132,47 @@ export class WebAssemblyBackend implements CompilationBackend {
   /**
    * Compile WAT (text) to WASM (binary)
    *
-   * WARNING: This is a stub implementation that ignores the input WAT
-   * and returns a hardcoded minimal WASM binary.
-   * Full WAT-to-WASM compilation is not yet implemented.
+   * Uses the wabt library to compile WebAssembly Text format to binary.
+   * In Node.js, dynamically imports wabt. In browsers, requires wabt to be available.
+   *
+   * @throws {Error} If wabt is not available or compilation fails
    */
   private async compileWAT(wat: string): Promise<Uint8Array> {
-    // TODO: Implement actual WAT compilation using wabt library
-    // For now, we return a minimal valid WASM module that ignores the input WAT
+    try {
+      // Try to import wabt (Node.js)
+      // Install with: npm install wabt
+      const wabt = await import('wabt').catch(() => null);
 
-    // This is a minimal valid WASM module that exports a function returning 0
-    return new Uint8Array([
-      0x00,
-      0x61,
-      0x73,
-      0x6d, // Magic number: \0asm
-      0x01,
-      0x00,
-      0x00,
-      0x00, // Version: 1
-      0x01,
-      0x07,
-      0x01,
-      0x60,
-      0x01,
-      0x7f,
-      0x01,
-      0x7d, // Type section: (param i32) (result f32)
-      0x03,
-      0x02,
-      0x01,
-      0x00, // Function section: 1 function of type 0
-      0x07,
-      0x0b,
-      0x01,
-      0x07,
-      0x65,
-      0x78,
-      0x65,
-      0x63,
-      0x75,
-      0x74,
-      0x65,
-      0x00,
-      0x00, // Export "execute"
-      0x0a,
-      0x06,
-      0x01,
-      0x04,
-      0x00,
-      0x43,
-      0x00,
-      0x00,
-      0x00,
-      0x00,
-      0x0b, // Code: f32.const 0; end
-    ]);
+      if (wabt) {
+        // Node.js environment with wabt installed
+        const wabtInstance = await wabt.default();
+        const wasmModule = wabtInstance.parseWat('program.wat', wat);
+        const { buffer } = wasmModule.toBinary({});
+        return new Uint8Array(buffer);
+      }
+
+      // Check if wabt is available globally (browser with preloaded wabt)
+      if (typeof (globalThis as any).wabt !== 'undefined') {
+        const wabtInstance = await (globalThis as any).wabt();
+        const wasmModule = wabtInstance.parseWat('program.wat', wat);
+        const { buffer } = wasmModule.toBinary({});
+        return new Uint8Array(buffer);
+      }
+
+      // wabt not available
+      throw new Error(
+        'wabt library is not available. ' +
+          'Install wabt for WAT compilation: npm install wabt. ' +
+          'In browsers, load wabt library before using WebAssembly backend.'
+      );
+    } catch (error: any) {
+      if (error.message.includes('wabt')) {
+        // Re-throw wabt availability errors
+        throw error;
+      }
+      // WAT compilation error
+      throw new Error(`WAT compilation failed: ${error.message}`);
+    }
   }
 
   /**

@@ -70,6 +70,18 @@ const result = await backendSelector.compile(program, {
 - ⚡ **Good performance** - 8/10 score
 - 🏗️ **Moderate compilation** - ~5ms per node
 
+**Requirements:**
+
+- `wabt` package for WAT→WASM compilation
+
+**Installation:**
+
+```bash
+npm install wabt
+```
+
+**Status:** ⚠️ **Not yet implemented** - Code generation for IOC nodes is incomplete. Backend will fail-fast until implementation is complete.
+
 **Best for:**
 
 - Browser execution
@@ -110,6 +122,8 @@ const wasmBinary = result.metadata.wasmBinary;
 ```bash
 npm install llvm-bindings
 ```
+
+**Status:** ⚠️ **Not yet implemented** - LLVM IR compilation is incomplete. Backend will fail-fast until implementation is complete.
 
 **Best for:**
 
@@ -327,6 +341,56 @@ async function benchmarkBackends(program, input) {
 
 - **FPGA Backend** - Hardware synthesis for maximum performance
 - **Quantum Backend** - Quantum circuit compilation (research)
+
+---
+
+## Backend Implementation Status
+
+### JavaScript Backend ✅
+
+**Status:** Fully implemented and production-ready
+
+The JavaScript backend is complete and handles all IOC operations including filters, maps, reductions, and complex transformations.
+
+### WebAssembly Backend ⚠️
+
+**Status:** Not yet implemented - Fails fast
+
+The WebAssembly backend has infrastructure in place but IOC node code generation is not implemented:
+
+- ✅ WAT→WASM compilation using `wabt` library
+- ✅ Module instantiation and JavaScript interop
+- ❌ IOC node code generation (filters, maps, reductions)
+
+**Fail-fast behavior:** When attempting to compile programs with IOC nodes, the backend throws:
+
+```
+Error: WebAssembly backend code generation is not yet implemented.
+IOC node compilation to WASM is not supported.
+Use the JavaScript backend until WASM codegen is complete.
+```
+
+For empty programs, generates WASM with `unreachable` instruction to trap immediately if executed.
+
+### LLVM Backend ⚠️
+
+**Status:** Not yet implemented - Fails fast
+
+The LLVM backend has infrastructure in place but IR compilation is not implemented:
+
+- ✅ LLVM IR generation (placeholder)
+- ✅ `llvm-bindings` detection
+- ❌ Actual LLVM IR compilation and JIT execution
+
+**Fail-fast behavior:** When attempting to compile LLVM IR, the backend throws:
+
+```
+Error: LLVM backend compilation is not yet implemented.
+To implement: install llvm-bindings and add LLVM IR compilation logic.
+Use a different backend (javascript or wasm) until LLVM support is complete.
+```
+
+This prevents accidental use of non-functional backends and ensures users are aware of implementation status.
 
 ---
 
