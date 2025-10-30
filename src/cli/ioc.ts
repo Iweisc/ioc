@@ -39,9 +39,11 @@ Examples:
 }
 
 /**
- * Read a file from disk and return its contents as a UTF-8 string.
+ * Read the file at the given path and return its contents decoded as UTF-8.
  *
- * @returns The file contents as a UTF-8 decoded string. On failure logs an error and exits the process with code 1.
+ * On read failure, logs an error message to stderr and exits the process with code 1.
+ *
+ * @returns The file contents as a UTF-8 decoded string
  */
 function readFile(filePath: string): string {
   try {
@@ -78,11 +80,11 @@ function parseIOC(source: string) {
 }
 
 /**
- * Read, compile, and execute an IOC program from a file, printing the result.
+ * Read, compile, and execute an IOC program from a file and print its result.
  *
- * Reads the IOC source at `filePath`, parses and compiles it to an executable function, optionally parses `inputJson` as input data, and runs the compiled program. When `debug` is true, prints a simple execution plan (node id and type) before running. Prints the program result as pretty-printed JSON to stdout. On parse, input JSON, or execution errors, prints an error message to stderr and exits the process with code 1.
+ * Reads the IOC source at `filePath`, parses and compiles it, optionally parses `inputJson` as input, and executes the compiled program. If `debug` is true, prints a simple execution plan (node id and type) before running. Prints the program result as pretty-printed JSON to stdout. On parse, input JSON, or execution errors, prints an error to stderr and exits the process with code 1.
  *
- * @param inputJson - Optional JSON string to use as the program input; if present it will be parsed and passed to the compiled program.
+ * @param inputJson - Optional JSON string to use as the program input; if provided it will be parsed and passed to the compiled program.
  * @param debug - If true, log the program's execution plan (node ids and types) before executing.
  */
 function runCommand(filePath: string, inputJson?: string, debug = false) {
@@ -195,15 +197,15 @@ function validateCommand(filePath: string) {
 }
 
 /**
- * Parse CLI arguments and dispatch the ioc CLI commands.
+ * Parse command-line arguments and dispatch the IOC CLI commands.
  *
- * Supports the commands:
- * - `run <file> [--input <json>] [--debug]` — compile and execute the IOC program, optionally with input JSON and debug output.
- * - `compile <file> [--output <path>]` — compile the IOC program and write or print generated JavaScript.
- * - `validate <file>` — validate the IOC program and print validation results.
+ * Supports the following commands:
+ * - `run <file> [--input <json>] [--debug]` — compile and execute the IOC program, optionally with input JSON and debug output
+ * - `compile <file> [--output <path>]` — compile the IOC program and write or print generated JavaScript
+ * - `validate <file>` — validate the IOC program and print validation results
  *
- * Prints usage and exits with code 0 when help is requested or no arguments are provided.
- * Prints errors, shows usage, and exits with code 1 for missing file path or unknown commands.
+ * When no arguments or a help flag is provided, prints usage and exits with code 0.
+ * For a missing file path or an unknown command, prints an error, shows usage, and exits with code 1.
  */
 function main() {
   const args = process.argv.slice(2);
