@@ -279,7 +279,11 @@ ${this.instrumentCode(code, `_budget_${nodeId}`)}
 }
 
 /**
- * Compute estimated budget from input size and complexity
+ * Estimate an execution budget from a representative input size and an algorithmic complexity class.
+ *
+ * @param inputSize - Representative size of the input (n) used to scale iteration and time estimates
+ * @param complexity - Expected ComplexityClass of the algorithm
+ * @returns An ExecutionBudget where `maxIterations` is scaled according to `complexity`, `maxTime` is a heuristic millisecond estimate clamped to the range [100, 60000], and `maxStackDepth` is set to 100
  */
 export function estimateBudget(inputSize: number, complexity: ComplexityClass): ExecutionBudget {
   const n = inputSize;

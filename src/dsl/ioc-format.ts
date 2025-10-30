@@ -108,14 +108,20 @@ export interface IOCProgram {
 }
 
 /**
- * Serialize an IOC program to JSON string
+ * Convert an IOCProgram into a pretty-printed JSON string.
+ *
+ * @returns A JSON string representation of `program`, formatted with two-space indentation.
  */
 export function serializeIOC(program: IOCProgram): string {
   return JSON.stringify(program, null, 2);
 }
 
 /**
- * Deserialize an IOC program from JSON string
+ * Parse and validate a JSON string into an IOCProgram.
+ *
+ * @param json - The JSON string containing a serialized .ioc program
+ * @returns The deserialized IOCProgram
+ * @throws Error if the `version` is missing or does not start with `1.`, if the `nodes` field is not an array, or if the `outputs` field is not an array
  */
 export function deserializeIOC(json: string): IOCProgram {
   const parsed = JSON.parse(json);
@@ -138,7 +144,10 @@ export function deserializeIOC(json: string): IOCProgram {
 }
 
 /**
- * Load an IOC program from a file
+ * Load and parse an IOCProgram from a file on disk.
+ *
+ * @param path - Filesystem path to the `.ioc` JSON file to read
+ * @returns The deserialized IOCProgram represented by the file contents
  */
 export async function loadIOCFile(path: string): Promise<IOCProgram> {
   const fs = await import('fs/promises');
@@ -147,7 +156,10 @@ export async function loadIOCFile(path: string): Promise<IOCProgram> {
 }
 
 /**
- * Save an IOC program to a file
+ * Writes an IOCProgram to disk as a pretty-printed .ioc JSON file.
+ *
+ * @param program - The IOC program to serialize and save
+ * @param path - Filesystem path where the JSON will be written
  */
 export async function saveIOCFile(program: IOCProgram, path: string): Promise<void> {
   const fs = await import('fs/promises');
@@ -156,7 +168,11 @@ export async function saveIOCFile(program: IOCProgram, path: string): Promise<vo
 }
 
 /**
- * Calculate capability for a node based on its params
+ * Determine the execution and resource capability for an IOC node.
+ *
+ * @param node - The IOC node whose capability will be computed.
+ * @returns An IntentCapability describing the node's maxComplexity, terminationGuarantee, sideEffects, parallelizable flag, and memoryBound.
+ * @throws Error if `node.type` is not a recognized IOCIntentType.
  */
 export function calculateNodeCapability(node: IOCNode): IntentCapability {
   switch (node.type) {
@@ -265,7 +281,12 @@ export function calculateNodeCapability(node: IOCNode): IntentCapability {
 }
 
 /**
- * Validate an IOC program for correctness
+ * Validate an IOCProgram for structural correctness and capability consistency.
+ *
+ * Performs these checks: all referenced node IDs in outputs and inputs exist, the graph has no cycles (must be a DAG),
+ * and each node's declared `capability.maxComplexity` matches the calculated complexity for its intent.
+ *
+ * @returns An object with `valid` set to `true` when no errors were found, and `errors` containing descriptive messages for each validation failure.
  */
 export function validateIOCProgram(program: IOCProgram): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
@@ -313,7 +334,11 @@ export function validateIOCProgram(program: IOCProgram): { valid: boolean; error
 }
 
 /**
- * Detect cycles in the program graph using DFS
+ * Determines whether the IOCProgram's node graph contains a cycle.
+ *
+ * Missing or unknown referenced input node IDs are ignored when evaluating dependencies.
+ *
+ * @returns `true` if a cycle is present in the program's input dependencies, `false` otherwise.
  */
 function detectCycle(program: IOCProgram): boolean {
   const visited = new Set<string>();
@@ -321,6 +346,14 @@ function detectCycle(program: IOCProgram): boolean {
 
   const nodeMap = new Map(program.nodes.map((n) => [n.id, n]));
 
+  /**
+   * Perform a depth-first search from a node to detect a back-edge that indicates a cycle.
+   *
+   * Marks traversal state in the module-scoped `visited` and `recursionStack` sets while exploring.
+   *
+   * @param nodeId - The identifier of the node to start DFS from
+   * @returns `true` if a cycle is reachable from `nodeId`, `false` otherwise
+   */
   function dfs(nodeId: string): boolean {
     visited.add(nodeId);
     recursionStack.add(nodeId);
@@ -350,13 +383,23 @@ function detectCycle(program: IOCProgram): boolean {
 }
 
 /**
- * Get topological order of nodes
+ * Compute a topological execution order where input dependencies appear before dependent nodes.
+ *
+ * @returns An array of node IDs ordered so each node appears after all of its input dependencies. Nodes referenced by inputs that are not present in `program.nodes` are skipped.
  */
 export function getExecutionOrder(program: IOCProgram): string[] {
   const visited = new Set<string>();
   const order: string[] = [];
   const nodeMap = new Map(program.nodes.map((n) => [n.id, n]));
 
+  /**
+   * Recursively visits a node and its input dependencies, appending each node id to the
+   * `order` list after its inputs have been processed to produce a topological execution order.
+   *
+   * If the node id is unknown or has already been visited, the function does nothing.
+   *
+   * @param nodeId - The id of the node to visit
+   */
   function visit(nodeId: string) {
     if (visited.has(nodeId)) return;
     visited.add(nodeId);
