@@ -299,11 +299,13 @@ export function compileReduction(reduction: ReductionOp, arrayVar: string = 'arr
 
     case 'min':
       // Empty array validation: throw clear error instead of returning Infinity
-      return `(${arrayVar}.length === 0 ? (() => { throw new Error('Cannot compute min of empty array'); })() : Math.min(...${arrayVar}))`;
+      // Use reduce instead of spread to avoid V8 call-argument limits
+      return `(${arrayVar}.length === 0 ? (() => { throw new Error('Cannot compute min of empty array'); })() : ${arrayVar}.reduce((a, b) => a < b ? a : b))`;
 
     case 'max':
       // Empty array validation: throw clear error instead of returning -Infinity
-      return `(${arrayVar}.length === 0 ? (() => { throw new Error('Cannot compute max of empty array'); })() : Math.max(...${arrayVar}))`;
+      // Use reduce instead of spread to avoid V8 call-argument limits
+      return `(${arrayVar}.length === 0 ? (() => { throw new Error('Cannot compute max of empty array'); })() : ${arrayVar}.reduce((a, b) => a > b ? a : b))`;
 
     case 'count':
       return `${arrayVar}.length`;

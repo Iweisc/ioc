@@ -113,8 +113,13 @@ function isSafeValue(value: any): boolean {
 
   // Objects: check all values
   if (type === 'object') {
-    // Don't allow objects with dangerous properties
-    if ('__proto__' in value || 'constructor' in value || 'prototype' in value) {
+    // Don't allow objects with dangerous own properties
+    // Use hasOwnProperty to avoid rejecting ordinary objects with inherited properties
+    if (
+      Object.prototype.hasOwnProperty.call(value, '__proto__') ||
+      Object.prototype.hasOwnProperty.call(value, 'constructor') ||
+      Object.prototype.hasOwnProperty.call(value, 'prototype')
+    ) {
       return false;
     }
 

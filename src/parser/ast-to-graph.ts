@@ -20,6 +20,7 @@ import {
   ArithmeticTransform,
   StringTransform,
   PropertyTransform,
+  ConditionalTransform,
   ReductionOperation,
 } from './ast';
 import type { SafePredicate, SafeTransform, ReductionOp } from '../dsl/safe-types';
@@ -190,6 +191,8 @@ export class ASTToGraphConverter {
         return this.convertStringTransform(expr as StringTransform);
       case 'property':
         return this.convertPropertyTransform(expr as PropertyTransform);
+      case 'conditional':
+        return this.convertConditionalTransform(expr as ConditionalTransform);
       default:
         throw new Error(`Unsupported transform type: ${(expr as any).type}`);
     }
@@ -223,6 +226,15 @@ export class ASTToGraphConverter {
     return {
       type: 'property',
       path: [expr.property],
+    };
+  }
+
+  private convertConditionalTransform(expr: ConditionalTransform): SafeTransform {
+    return {
+      type: 'conditional',
+      condition: this.convertPredicate(expr.condition),
+      ifTrue: this.convertTransform(expr.thenTransform),
+      ifFalse: this.convertTransform(expr.elseTransform),
     };
   }
 
