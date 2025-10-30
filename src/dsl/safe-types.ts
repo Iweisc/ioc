@@ -174,6 +174,7 @@ export function getPredicateComplexity(predicate: SafePredicate): ComplexityClas
  *
  * @param transform - The SafeTransform to analyze
  * @returns The worst-case ComplexityClass for `transform`
+ */
 export function getTransformComplexity(transform: SafeTransform): ComplexityClass {
   switch (transform.type) {
     case 'identity':

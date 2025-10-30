@@ -15,6 +15,8 @@ import * as path from 'path';
 import { Lexer } from '../parser/lexer.js';
 import { Parser } from '../parser/parser.js';
 import { ASTToGraphConverter } from '../parser/ast-to-graph.js';
+import { backendSelector } from '../backends/index.js';
+import { BackendType } from '../backends/types.js';
 
 /**
  * Print the CLI usage banner with command summaries and example invocations to stdout.
@@ -25,21 +27,30 @@ function printUsage() {
 IOC - Intent-Oriented Computing Language
 
 Usage:
-  ioc run <file.ioc> [--input <json>] [--debug] [--unsafe]  Run an .ioc program
-  ioc compile <file.ioc> [--output <js>]                    Compile to JavaScript
-  ioc validate <file.ioc>                                   Validate syntax and safety
-  ioc help                                                  Show this help message
+  ioc run <file.ioc> [--input <json>] [--debug] [--unsafe] [--backend <type>]  Run an .ioc program
+  ioc compile <file.ioc> [--output <js>] [--backend <type>]                    Compile to JavaScript
+  ioc validate <file.ioc>                                                       Validate syntax and safety
+  ioc backends                                                                  List available backends
+  ioc help                                                                      Show this help message
 
 Flags:
-  --debug    Show execution plan before running
-  --unsafe   Skip security validation (use only with trusted .ioc files)
+  --debug      Show execution plan before running
+  --unsafe     Skip security validation (use only with trusted .ioc files)
+  --backend    Compilation backend: javascript, wasm, llvm (default: auto-select)
+
+Backends:
+  javascript   Fast compilation, runs anywhere (default)
+  wasm         Portable binary format, good performance  
+  llvm         Maximum performance via native code (Node.js only)
 
 Examples:
   ioc run pipeline.ioc --input '[1,2,3,4,5]'
   ioc run pipeline.ioc --input '[1,2,3,4,5]' --debug
+  ioc run pipeline.ioc --input '[1,2,3]' --backend llvm
   ioc run untrusted.ioc --input '[1,2,3]'  (validates security by default)
-  ioc compile app.ioc --output app.js
+  ioc compile app.ioc --output app.js --backend wasm
   ioc validate my-program.ioc
+  ioc backends
   `.trim()
   );
 }
@@ -102,8 +113,15 @@ function parseIOC(source: string) {
  * @param inputJson - Optional JSON string to use as the program input; if provided it will be parsed and passed to the compiled program.
  * @param debug - If true, log the program's execution plan (node ids and types) before executing.
  * @param unsafe - If true, skip security validation (use only with trusted .ioc files).
+ * @param backend - Optional backend type (javascript, wasm, llvm) to use for compilation.
  */
-function runCommand(filePath: string, inputJson?: string, debug = false, unsafe = false) {
+async function runCommand(
+  filePath: string,
+  inputJson?: string,
+  debug = false,
+  unsafe = false,
+  backend?: string
+) {
   const source = readFile(filePath);
   const { graph } = parseIOC(source);
 
@@ -122,7 +140,31 @@ function runCommand(filePath: string, inputJson?: string, debug = false, unsafe 
   }
 
   // Compile the graph
-  const compiledFn = graph.compile();
+  let compiledFn: Function;
+
+  if (backend) {
+    // Use specified backend
+    try {
+      const program = graph.toProgram();
+      const result = await backendSelector.compile(program, {
+        backend: backend as BackendType,
+      });
+      compiledFn = result.execute;
+
+      if (debug) {
+        console.log(`Using backend: ${result.backend}`);
+        console.log(`Compilation time: ${result.compilationTime.toFixed(2)}ms`);
+        console.log(`Code size: ${result.codeSize} bytes`);
+        console.log('');
+      }
+    } catch (error: any) {
+      console.error(`Backend compilation error: ${error.message}`);
+      process.exit(1);
+    }
+  } else {
+    // Use default JavaScript compilation
+    compiledFn = graph.compile();
+  }
 
   // Parse input data
   let inputData;
@@ -162,16 +204,38 @@ function runCommand(filePath: string, inputJson?: string, debug = false, unsafe 
  *
  * @param filePath - Path to the input `.ioc` source file
  * @param outputPath - Optional path to write the generated JavaScript file; when omitted the code is printed to stdout
+ * @param backend - Optional backend type (javascript, wasm, llvm) to use for compilation.
  */
-function compileCommand(filePath: string, outputPath?: string) {
+async function compileCommand(filePath: string, outputPath?: string, backend?: string) {
   const source = readFile(filePath);
   const { graph } = parseIOC(source);
 
-  // Serialize to .ioc format
-  const iocJson = graph.toIOC();
+  if (backend) {
+    // Use multi-backend compilation
+    try {
+      const program = graph.toProgram();
+      const result = await backendSelector.compile(program, {
+        backend: backend as BackendType,
+      });
 
-  // Generate JavaScript wrapper
-  const jsCode = `
+      console.log(`Backend: ${result.backend}`);
+      console.log(`Compilation time: ${result.compilationTime.toFixed(2)}ms`);
+      console.log(`Code size: ${result.codeSize} bytes`);
+
+      if (result.metadata.jsCode && outputPath) {
+        fs.writeFileSync(outputPath, result.metadata.jsCode, 'utf-8');
+        console.log(`Output: ${outputPath}`);
+      }
+    } catch (error: any) {
+      console.error(`Backend compilation error: ${error.message}`);
+      process.exit(1);
+    }
+  } else {
+    // Default: Serialize to .ioc format
+    const iocJson = graph.toIOC();
+
+    // Generate JavaScript wrapper
+    const jsCode = `
 // Generated from ${path.basename(filePath)}
 // Date: ${new Date().toISOString()}
 
@@ -184,11 +248,35 @@ export const compiledProgram = loadIOC(program);
 // Usage: compiledProgram(inputData)
 `.trim();
 
-  if (outputPath) {
-    fs.writeFileSync(outputPath, jsCode, 'utf-8');
-    console.log(outputPath);
-  } else {
-    console.log(jsCode);
+    if (outputPath) {
+      fs.writeFileSync(outputPath, jsCode, 'utf-8');
+      console.log(outputPath);
+    } else {
+      console.log(jsCode);
+    }
+  }
+}
+
+/**
+ * List available compilation backends
+ */
+async function backendsCommand() {
+  console.log('Available Compilation Backends:\n');
+
+  const available = await backendSelector.getAvailableBackends();
+
+  for (const type of available) {
+    const backend = backendSelector.getBackendInfo(type);
+    if (backend) {
+      console.log(`  ${type}`);
+      console.log(`    Name: ${backend.name}`);
+      console.log(`    Performance Score: ${backend.estimatePerformanceScore()}/10`);
+      console.log('');
+    }
+  }
+
+  if (available.length === 0) {
+    console.log('  No backends available!');
   }
 }
 
@@ -230,14 +318,15 @@ function validateCommand(filePath: string) {
  * Parse command-line arguments and dispatch the IOC CLI commands.
  *
  * Supports the following commands:
- * - `run <file> [--input <json>] [--debug]` — compile and execute the IOC program, optionally with input JSON and debug output
- * - `compile <file> [--output <path>]` — compile the IOC program and write or print generated JavaScript
+ * - `run <file> [--input <json>] [--debug] [--backend <type>]` — compile and execute the IOC program
+ * - `compile <file> [--output <path>] [--backend <type>]` — compile the IOC program and write or print generated JavaScript
  * - `validate <file>` — validate the IOC program and print validation results
+ * - `backends` — list available compilation backends
  *
  * When no arguments or a help flag is provided, prints usage and exits with code 0.
  * For a missing file path or an unknown command, prints an error, shows usage, and exits with code 1.
  */
-function main() {
+async function main() {
   const args = process.argv.slice(2);
 
   if (args.length === 0 || args[0] === 'help' || args[0] === '--help' || args[0] === '-h') {
@@ -246,6 +335,13 @@ function main() {
   }
 
   const command = args[0];
+
+  // Special case: 'backends' command doesn't require a file path
+  if (command === 'backends') {
+    await backendsCommand();
+    return;
+  }
+
   const filePath = args[1];
 
   if (!filePath) {
@@ -260,14 +356,18 @@ function main() {
       const inputJson = inputIndex !== -1 ? args[inputIndex + 1] : undefined;
       const debug = args.includes('--debug');
       const unsafe = args.includes('--unsafe');
-      runCommand(filePath, inputJson, debug, unsafe);
+      const backendIndex = args.indexOf('--backend');
+      const backend = backendIndex !== -1 ? args[backendIndex + 1] : undefined;
+      await runCommand(filePath, inputJson, debug, unsafe, backend);
       break;
     }
 
     case 'compile': {
       const outputIndex = args.indexOf('--output');
       const outputPath = outputIndex !== -1 ? args[outputIndex + 1] : undefined;
-      compileCommand(filePath, outputPath);
+      const backendIndex = args.indexOf('--backend');
+      const backend = backendIndex !== -1 ? args[backendIndex + 1] : undefined;
+      await compileCommand(filePath, outputPath, backend);
       break;
     }
 
@@ -283,4 +383,7 @@ function main() {
   }
 }
 
-main();
+main().catch((error) => {
+  console.error('Fatal error:', error.message);
+  process.exit(1);
+});
