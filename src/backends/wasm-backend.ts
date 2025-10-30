@@ -6,12 +6,8 @@
  */
 
 import type { IOCProgram, IOCNode } from '../dsl/ioc-format';
-import type {
-  CompilationBackend,
-  CompilationOptions,
-  CompilationResult,
-  BackendType,
-} from './types';
+import type { CompilationBackend, CompilationOptions, CompilationResult } from './types';
+import { BackendType } from './types';
 import type { SafePredicate, SafeTransform, ReductionOp } from '../dsl/safe-types';
 
 /**
@@ -40,7 +36,7 @@ class WATGenerator {
 }
 
 export class WebAssemblyBackend implements CompilationBackend {
-  readonly type: BackendType = 'wasm' as BackendType;
+  readonly type: BackendType = BackendType.WASM;
   readonly name = 'WebAssembly';
 
   async isAvailable(): Promise<boolean> {
@@ -63,7 +59,7 @@ export class WebAssemblyBackend implements CompilationBackend {
 
       // Instantiate WebAssembly module
       const wasmModule = await WebAssembly.instantiate(wasmBinary, this.createImports());
-      const instance = wasmModule.instance;
+      const { instance } = wasmModule;
 
       // Create JavaScript wrapper that calls WASM
       const execute = (input: any) => {
@@ -91,6 +87,15 @@ export class WebAssemblyBackend implements CompilationBackend {
    * Generate WebAssembly Text format from IOC program
    */
   private generateWAT(program: IOCProgram, options: Partial<CompilationOptions>): string {
+    // WARNING: This is a stub implementation
+    // Full WASM code generation for IOC nodes is not yet implemented
+    if (program.nodes.length > 0) {
+      console.warn(
+        'WARNING: WebAssembly backend is a stub implementation. ' +
+          'IOC node execution is not yet supported. The compiled function will return dummy values.'
+      );
+    }
+
     const gen = new WATGenerator();
 
     // Module header
@@ -120,14 +125,17 @@ export class WebAssemblyBackend implements CompilationBackend {
 
   /**
    * Compile WAT (text) to WASM (binary)
+   *
+   * WARNING: This is a stub implementation that ignores the input WAT
+   * and returns a hardcoded minimal WASM binary.
+   * Full WAT-to-WASM compilation is not yet implemented.
    */
   private async compileWAT(wat: string): Promise<Uint8Array> {
-    // In Node.js, we can use wabt library
-    // In browser, we can use online WAT compiler or pre-compiled WASM
-    // For now, we'll create a minimal valid WASM module
+    // TODO: Implement actual WAT compilation using wabt library
+    // For now, we return a minimal valid WASM module that ignores the input WAT
 
     // This is a minimal valid WASM module that exports a function returning 0
-    const minimalWasm = new Uint8Array([
+    return new Uint8Array([
       0x00,
       0x61,
       0x73,
@@ -173,8 +181,6 @@ export class WebAssemblyBackend implements CompilationBackend {
       0x00,
       0x0b, // Code: f32.const 0; end
     ]);
-
-    return minimalWasm;
   }
 
   /**
@@ -197,9 +203,7 @@ export class WebAssemblyBackend implements CompilationBackend {
 
     // For now, just call the execute function
     // TODO: Properly marshal JavaScript data to/from WASM memory
-    const result = exports.execute(0);
-
-    return result;
+    return exports.execute(0);
   }
 
   estimateCompilationTime(program: IOCProgram): number {

@@ -215,12 +215,21 @@ export function compileTransform(transform: SafeTransform, inputVar: string = 'x
           return `${inputVar}.substring(${args.map((a) => safeSerialize(a)).join(', ')})`;
         case 'split':
           // Validate split pattern if it could be a regex
+          if (args[0] === undefined) {
+            throw new Error('split operation requires a separator argument');
+          }
           if (typeof args[0] === 'string') {
             validateStringArg(args[0]);
           }
           return `${inputVar}.split(${safeSerialize(args[0])})`;
         case 'replace':
           // Validate replace pattern if it could be a regex
+          if (args[0] === undefined) {
+            throw new Error('replace operation requires a search pattern argument');
+          }
+          if (args[1] === undefined) {
+            throw new Error('replace operation requires a replacement string argument');
+          }
           if (typeof args[0] === 'string') {
             validateStringArg(args[0]);
           }

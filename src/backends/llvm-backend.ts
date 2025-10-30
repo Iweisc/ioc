@@ -8,12 +8,8 @@
  */
 
 import type { IOCProgram, IOCNode } from '../dsl/ioc-format';
-import type {
-  CompilationBackend,
-  CompilationOptions,
-  CompilationResult,
-  BackendType,
-} from './types';
+import type { CompilationBackend, CompilationOptions, CompilationResult } from './types';
+import { BackendType } from './types';
 
 /**
  * LLVM IR code generator
@@ -41,7 +37,7 @@ class LLVMIRGenerator {
 }
 
 export class LLVMBackend implements CompilationBackend {
-  readonly type: BackendType = 'llvm' as BackendType;
+  readonly type: BackendType = BackendType.LLVM;
   readonly name = 'LLVM';
 
   private llvmAvailable: boolean | null = null;
@@ -101,8 +97,19 @@ export class LLVMBackend implements CompilationBackend {
 
   /**
    * Generate LLVM IR from IOC program
+   *
+   * WARNING: This is a stub implementation that generates minimal LLVM IR.
+   * Full LLVM IR generation for IOC nodes is not yet implemented.
    */
   private generateLLVMIR(program: IOCProgram, options: Partial<CompilationOptions>): string {
+    // WARNING: This is a stub implementation
+    if (program.nodes.length > 0) {
+      console.warn(
+        'WARNING: LLVM backend is a stub implementation. ' +
+          'IOC node execution is not yet supported. The compiled function will return dummy values.'
+      );
+    }
+
     const gen = new LLVMIRGenerator();
 
     // Module header
@@ -133,21 +140,29 @@ export class LLVMBackend implements CompilationBackend {
 
   /**
    * Compile LLVM IR to native machine code
+   *
+   * WARNING: This is a stub implementation that returns a dummy function.
+   * Actual LLVM IR compilation using llvm-bindings is not yet implemented.
    */
   private async compileLLVMIR(
     llvmIR: string,
     options: Partial<CompilationOptions>
   ): Promise<{ execute: Function; codeSize: number }> {
-    // This is a stub implementation
-    // Real implementation would use llvm-bindings to:
+    // TODO: Implement actual LLVM compilation using llvm-bindings
+    // Real implementation would:
     // 1. Parse LLVM IR
     // 2. Run optimization passes
     // 3. Compile to machine code
     // 4. JIT-compile and return executable function
 
-    // For now, return a stub function
+    console.warn(
+      'LLVM backend: Actual IR compilation not yet implemented. ' +
+        'Install llvm-bindings and implement compileLLVMIR for full support.'
+    );
+
+    // Return a stub function
     const execute = (input: any) => {
-      console.warn('LLVM backend stub - actual compilation not yet implemented');
+      console.warn('LLVM backend stub - returning dummy value 0');
       return 0;
     };
 

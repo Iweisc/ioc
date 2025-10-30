@@ -6,16 +6,12 @@
  */
 
 import type { IOCProgram } from '../dsl/ioc-format';
-import type {
-  CompilationBackend,
-  CompilationOptions,
-  CompilationResult,
-  BackendType,
-} from './types';
+import type { CompilationBackend, CompilationOptions, CompilationResult } from './types';
+import { BackendType } from './types';
 import { SafeGraph } from '../dsl/safe-graph';
 
 export class JavaScriptBackend implements CompilationBackend {
-  readonly type: BackendType = 'javascript' as BackendType;
+  readonly type: BackendType = BackendType.JAVASCRIPT;
   readonly name = 'JavaScript';
 
   async isAvailable(): Promise<boolean> {
@@ -38,7 +34,19 @@ export class JavaScriptBackend implements CompilationBackend {
 
       // Get generated code for size calculation (estimate)
       const jsCode = execute.toString();
-      const codeSize = new Blob([jsCode]).size;
+
+      // Calculate code size in a cross-platform way
+      let codeSize: number;
+      if (typeof Buffer !== 'undefined' && typeof Buffer.byteLength === 'function') {
+        // Node.js environment
+        codeSize = Buffer.byteLength(jsCode, 'utf8');
+      } else if (typeof TextEncoder !== 'undefined') {
+        // Modern browsers
+        codeSize = new TextEncoder().encode(jsCode).length;
+      } else {
+        // Fallback: count UTF-16 code units (may overestimate for non-ASCII)
+        codeSize = jsCode.length * 2;
+      }
 
       const compilationTime = performance.now() - startTime;
 

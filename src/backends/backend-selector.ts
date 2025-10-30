@@ -10,12 +10,11 @@
 import type { IOCProgram } from '../dsl/ioc-format';
 import type {
   CompilationBackend,
-  BackendType,
-  BackendStrategy,
   BackendSelectorConfig,
   CompilationOptions,
   CompilationResult,
 } from './types';
+import { BackendType, BackendStrategy } from './types';
 import { JavaScriptBackend } from './javascript-backend';
 import { WebAssemblyBackend } from './wasm-backend';
 import { LLVMBackend } from './llvm-backend';
@@ -30,9 +29,9 @@ export class BackendSelector {
 
   constructor() {
     // Register all backends
-    this.backends.set('javascript' as BackendType, new JavaScriptBackend());
-    this.backends.set('wasm' as BackendType, new WebAssemblyBackend());
-    this.backends.set('llvm' as BackendType, new LLVMBackend());
+    this.backends.set(BackendType.JAVASCRIPT, new JavaScriptBackend());
+    this.backends.set(BackendType.WASM, new WebAssemblyBackend());
+    this.backends.set(BackendType.LLVM, new LLVMBackend());
   }
 
   /**
@@ -70,7 +69,7 @@ export class BackendSelector {
     await this.initialize();
 
     // Handle explicit backend selection
-    if (config.strategy === ('explicit' as BackendStrategy) && config.explicitBackend) {
+    if (config.strategy === BackendStrategy.EXPLICIT && config.explicitBackend) {
       const backend = this.backends.get(config.explicitBackend);
       if (!backend) {
         throw new Error(`Unknown backend: ${config.explicitBackend}`);
@@ -92,16 +91,16 @@ export class BackendSelector {
 
     // Select based on strategy
     switch (config.strategy) {
-      case 'fastest_compile' as BackendStrategy:
+      case BackendStrategy.FASTEST_COMPILE:
         return this.selectFastestCompile(program, candidates);
 
-      case 'fastest_runtime' as BackendStrategy:
+      case BackendStrategy.FASTEST_RUNTIME:
         return this.selectFastestRuntime(program, candidates);
 
-      case 'most_portable' as BackendStrategy:
+      case BackendStrategy.MOST_PORTABLE:
         return this.selectMostPortable(candidates);
 
-      case 'balanced' as BackendStrategy:
+      case BackendStrategy.BALANCED:
       default:
         return this.selectBalanced(program, candidates);
     }
@@ -114,9 +113,7 @@ export class BackendSelector {
     program: IOCProgram,
     options: Partial<CompilationOptions> = {}
   ): Promise<CompilationResult> {
-    const strategy = options.backend
-      ? ('explicit' as BackendStrategy)
-      : ('balanced' as BackendStrategy);
+    const strategy = options.backend ? BackendStrategy.EXPLICIT : BackendStrategy.BALANCED;
 
     const backend = await this.selectBackend(program, {
       strategy,
@@ -160,9 +157,9 @@ export class BackendSelector {
   private selectMostPortable(candidates: CompilationBackend[]): CompilationBackend {
     // Preference order: WebAssembly > JavaScript > LLVM
     const preferredOrder: BackendType[] = [
-      'wasm' as BackendType,
-      'javascript' as BackendType,
-      'llvm' as BackendType,
+      BackendType.WASM,
+      BackendType.JAVASCRIPT,
+      BackendType.LLVM,
     ];
 
     for (const type of preferredOrder) {
@@ -170,7 +167,8 @@ export class BackendSelector {
       if (backend) return backend;
     }
 
-    return candidates[0];
+    // This should never happen since we check candidates.length > 0 earlier
+    throw new Error('No backends available in candidates list');
   }
 
   /**
