@@ -17,6 +17,7 @@ import {
   ComparisonPredicate,
   PropertyPredicate,
   LogicalPredicate,
+  TypeCheckPredicate,
   ArithmeticTransform,
   StringTransform,
   PropertyTransform,
@@ -24,6 +25,24 @@ import {
   ReductionOperation,
 } from './ast';
 import type { SafePredicate, SafeTransform, ReductionOp } from '../dsl/safe-types';
+
+// Operator mappings at module level to avoid recreation on every call
+const COMPARISON_OP_MAP: Record<string, string> = {
+  gt: 'gt',
+  lt: 'lt',
+  gte: 'gte',
+  lte: 'lte',
+  eq: 'eq',
+  neq: 'ne',
+} as const;
+
+const ARITHMETIC_OP_MAP: Record<string, string> = {
+  multiply: 'multiply',
+  add: 'add',
+  subtract: 'subtract',
+  divide: 'divide',
+  mod: 'modulo',
+} as const;
 
 export class ASTToGraphConverter {
   private graph: SafeGraph;
@@ -127,41 +146,25 @@ export class ASTToGraphConverter {
         return this.convertPropertyPredicate(expr as PropertyPredicate);
       case 'logical':
         return this.convertLogicalPredicate(expr as LogicalPredicate);
+      case 'typecheck':
+        return this.convertTypeCheckPredicate(expr as TypeCheckPredicate);
       default:
         throw new Error(`Unsupported predicate type: ${(expr as any).type}`);
     }
   }
 
   private convertComparisonPredicate(expr: ComparisonPredicate): SafePredicate {
-    const opMap: Record<string, string> = {
-      gt: 'gt',
-      lt: 'lt',
-      gte: 'gte',
-      lte: 'lte',
-      eq: 'eq',
-      neq: 'ne',
-    };
-
     return {
       type: 'compare',
-      op: (opMap[expr.operator] || expr.operator) as any,
+      op: (COMPARISON_OP_MAP[expr.operator] || expr.operator) as any,
       value: expr.value,
     };
   }
 
   private convertPropertyPredicate(expr: PropertyPredicate): SafePredicate {
-    const opMap: Record<string, string> = {
-      gt: 'gt',
-      lt: 'lt',
-      gte: 'gte',
-      lte: 'lte',
-      eq: 'eq',
-      neq: 'ne',
-    };
-
     return {
       type: 'compare_property',
-      op: (opMap[expr.operator] || expr.operator) as any,
+      op: (COMPARISON_OP_MAP[expr.operator] || expr.operator) as any,
       property: expr.property,
       value: expr.value,
     };
@@ -176,13 +179,20 @@ export class ASTToGraphConverter {
       case 'or':
         return { type: 'or', predicates };
       case 'not':
-        if (predicates.length === 0) {
+        if (predicates.length !== 1) {
           throw new Error("Logical 'not' must have exactly one predicate");
         }
         return { type: 'not', predicate: predicates[0]! };
       default:
         throw new Error(`Unknown logical operator: ${expr.operator}`);
     }
+  }
+
+  private convertTypeCheckPredicate(expr: TypeCheckPredicate): SafePredicate {
+    return {
+      type: 'type_check',
+      expectedType: expr.checkType,
+    };
   }
 
   // Convert AST transforms to SafeTransform
@@ -202,17 +212,9 @@ export class ASTToGraphConverter {
   }
 
   private convertArithmeticTransform(expr: ArithmeticTransform): SafeTransform {
-    const opMap: Record<string, string> = {
-      multiply: 'multiply',
-      add: 'add',
-      subtract: 'subtract',
-      divide: 'divide',
-      mod: 'modulo',
-    };
-
     return {
       type: 'arithmetic',
-      op: (opMap[expr.operator] || expr.operator) as any,
+      op: (ARITHMETIC_OP_MAP[expr.operator] || expr.operator) as any,
       operand: expr.value,
     };
   }
@@ -243,6 +245,32 @@ export class ASTToGraphConverter {
 
   // Convert reduction operations
   private convertReductionOp(op: ReductionOperation): ReductionOp {
-    return { type: op as any };
+    switch (op) {
+      case 'sum':
+        return { type: 'sum' };
+      case 'product':
+        return { type: 'product' };
+      case 'min':
+        return { type: 'min' };
+      case 'max':
+        return { type: 'max' };
+      case 'count':
+        return { type: 'count' };
+      case 'average':
+        return { type: 'average' };
+      case 'join':
+        // Default separator is comma for join operations
+        return { type: 'join', separator: ',' };
+      case 'first':
+        return { type: 'first' };
+      case 'last':
+        return { type: 'last' };
+      default:
+        // 'any' and 'all' require predicates which aren't available in ReductionOperation
+        throw new Error(
+          `Reduction operation '${op}' cannot be converted from AST. ` +
+            `Operations 'any' and 'all' require predicates and must be handled differently.`
+        );
+    }
   }
 }
