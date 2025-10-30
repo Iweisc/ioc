@@ -25,21 +25,30 @@ function printUsage() {
 IOC - Intent-Oriented Computing Language
 
 Usage:
-  ioc run <file.ioc> [--input <json>] [--debug] [--unsafe]  Run an .ioc program
-  ioc compile <file.ioc> [--output <js>]                    Compile to JavaScript
-  ioc validate <file.ioc>                                   Validate syntax and safety
-  ioc help                                                  Show this help message
+  ioc run <file.ioc> [--input <json>] [--debug] [--unsafe] [--backend <type>]  Run an .ioc program
+  ioc compile <file.ioc> [--output <js>] [--backend <type>]                    Compile to JavaScript
+  ioc validate <file.ioc>                                                       Validate syntax and safety
+  ioc backends                                                                  List available backends
+  ioc help                                                                      Show this help message
 
 Flags:
-  --debug    Show execution plan before running
-  --unsafe   Skip security validation (use only with trusted .ioc files)
+  --debug      Show execution plan before running
+  --unsafe     Skip security validation (use only with trusted .ioc files)
+  --backend    Compilation backend: javascript, wasm, llvm (default: auto-select)
+
+Backends:
+  javascript   Fast compilation, runs anywhere (default)
+  wasm         Portable binary format, good performance  
+  llvm         Maximum performance via native code (Node.js only)
 
 Examples:
   ioc run pipeline.ioc --input '[1,2,3,4,5]'
   ioc run pipeline.ioc --input '[1,2,3,4,5]' --debug
+  ioc run pipeline.ioc --input '[1,2,3]' --backend llvm
   ioc run untrusted.ioc --input '[1,2,3]'  (validates security by default)
-  ioc compile app.ioc --output app.js
+  ioc compile app.ioc --output app.js --backend wasm
   ioc validate my-program.ioc
+  ioc backends
   `.trim()
   );
 }
