@@ -319,12 +319,19 @@ export class WebAssemblyBackend implements CompilationBackend {
       }
 
       case 'and': {
-        // Evaluate all predicates and AND them
-        emit(`(i32.const 1)`);
-        for (const p of predicate.predicates) {
-          const subCode = this.compilePredicateToWAT(p, valueVar, gen, 0);
-          emit(subCode);
-          emit(`i32.and`);
+        // Evaluate all predicates and AND them using left-fold
+        if (predicate.predicates.length === 0) {
+          // Empty AND list is false (no conditions met)
+          emit(`(i32.const 0)`);
+        } else {
+          // Start with first predicate, then AND with remaining
+          const firstCode = this.compilePredicateToWAT(predicate.predicates[0]!, valueVar, gen, 0);
+          emit(firstCode);
+          for (let i = 1; i < predicate.predicates.length; i++) {
+            const subCode = this.compilePredicateToWAT(predicate.predicates[i]!, valueVar, gen, 0);
+            emit(subCode);
+            emit(`i32.and`);
+          }
         }
         break;
       }
@@ -718,11 +725,25 @@ export class WebAssemblyBackend implements CompilationBackend {
       }
 
       case 'any':
+        throw new Error(
+          `Reduction operation 'any' with predicates is not yet supported in WASM backend. ` +
+            `The 'any' operation requires runtime predicate evaluation which is not implemented. ` +
+            `Consider using a different backend or refactoring your code.`
+        );
+
       case 'all':
+        throw new Error(
+          `Reduction operation 'all' with predicates is not yet supported in WASM backend. ` +
+            `The 'all' operation requires runtime predicate evaluation which is not implemented. ` +
+            `Consider using a different backend or refactoring your code.`
+        );
+
       case 'join':
-        // These need predicate/string handling - fallback to JS helper
-        emit(`local.get ${arrayVar} ;; ${reduction.type} uses JS helper`);
-        break;
+        throw new Error(
+          `Reduction operation 'join' is not yet supported in WASM backend. ` +
+            `The 'join' operation requires string concatenation logic which is not implemented. ` +
+            `Consider using a different backend or refactoring your code.`
+        );
 
       default:
         emit(`local.get ${arrayVar} ;; unknown reduction type`);
@@ -996,12 +1017,18 @@ export class WebAssemblyBackend implements CompilationBackend {
         }
 
         case 'group_by':
+          throw new Error(
+            `Node type 'group_by' (node ID: ${nodeId}) is not supported in WASM backend. ` +
+              `The 'group_by' operation requires complex object manipulation which is not implemented. ` +
+              `Consider using the JavaScript or LLVM backend instead.`
+          );
+
         case 'join':
-          // Complex operations - delegate to JS helpers
-          gen.emit(`;; ${node.type.toUpperCase()}: ${nodeId} (JS helper)`, 2);
-          gen.emit(`local.get ${nodeVars.get(node.inputs[0] || '') || '$input'}`, 2);
-          gen.emit(`local.set ${varName}`, 2);
-          break;
+          throw new Error(
+            `Node type 'join' (node ID: ${nodeId}) is not supported in WASM backend. ` +
+              `The 'join' operation requires complex array merging logic which is not implemented. ` +
+              `Consider using the JavaScript or LLVM backend instead.`
+          );
 
         default:
           gen.emit(`;; UNKNOWN: ${node.type}`, 2);
@@ -1171,14 +1198,28 @@ export class WebAssemblyBackend implements CompilationBackend {
           return 0;
         },
 
-        // Property access
+        // Property access with dotted path support (e.g., "user.name")
         get_property: (objPtr: number, propPtr: number): number => {
           const obj = loadValue(objPtr);
           const prop = loadValue(propPtr);
-          if (obj && typeof obj === 'object' && typeof prop === 'string') {
-            return storeValue(obj[prop]);
+
+          if (typeof prop !== 'string') {
+            return storeValue(undefined);
           }
-          return 0;
+
+          // Split property path on dots and traverse
+          const parts = prop.split('.');
+          let current: any = obj;
+
+          for (const part of parts) {
+            // Check if current value is an object and not null
+            if (current === null || current === undefined || typeof current !== 'object') {
+              return storeValue(undefined);
+            }
+            current = current[part];
+          }
+
+          return storeValue(current);
         },
 
         // String operations
