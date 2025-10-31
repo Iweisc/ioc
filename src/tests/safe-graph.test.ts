@@ -688,4 +688,213 @@ describe('SafeGraph', () => {
       expect(compiledRestored(testData)).toEqual(compiledOriginal(testData));
     });
   });
+
+    it('should serialize graph with arithmetic predicate', () => {
+      const graph = new SafeGraph('arithmetic-test');
+      const inputId = graph.input('numbers');
+      const filterId = graph.filter(inputId, {
+        type: 'compare_arithmetic',
+        arithmeticOp: 'mod',
+        arithmeticValue: 2,
+        comparisonOp: 'eq',
+        comparisonValue: 0,
+      });
+      graph.output(filterId);
+
+      const json = graph.toJSON();
+      expect(json).toBeDefined();
+      expect(json.nodes).toHaveLength(2);
+      expect(json.outputs).toEqual([filterId]);
+    });
+
+    it('should deserialize graph from JSON string', () => {
+      const graph = new SafeGraph('test');
+      const inputId = graph.input('data');
+      const mapId = graph.map(inputId, {
+        type: 'arithmetic',
+        op: 'multiply',
+        operand: 3,
+      });
+      graph.output(mapId);
+
+      const json = graph.toJSON();
+      const jsonString = JSON.stringify(json);
+      const restored = SafeGraph.fromJSON(jsonString);
+
+      expect(restored).toBeDefined();
+      expect(restored.nodes.size).toBe(graph.nodes.size);
+      expect(restored.outputs.size).toBe(graph.outputs.size);
+    });
+
+    it('should deserialize graph from IOCProgram object', () => {
+      const graph = new SafeGraph('test');
+      const inputId = graph.input('values');
+      const filterId = graph.filter(inputId, {
+        type: 'compare',
+        op: 'gt',
+        value: 10,
+      });
+      graph.output(filterId);
+
+      const program = graph.toJSON();
+      const restored = SafeGraph.fromJSON(program);
+
+      expect(restored).toBeDefined();
+      expect(restored.nodes.size).toBe(graph.nodes.size);
+    });
+
+    it('should preserve metadata during serialization', () => {
+      const graph = new SafeGraph('test-with-metadata');
+      graph.metadata = {
+        name: 'test-with-metadata',
+        description: 'A test graph',
+        author: 'Test Author',
+      };
+
+      const inputId = graph.input('data');
+      graph.output(inputId);
+
+      const json = graph.toJSON();
+      const restored = SafeGraph.fromJSON(json);
+
+      expect(restored.metadata).toBeDefined();
+      expect(restored.metadata?.name).toBe('test-with-metadata');
+      expect(restored.metadata?.description).toBe('A test graph');
+      expect(restored.metadata?.author).toBe('Test Author');
+    });
+
+    it('should handle complex graph serialization with multiple node types', () => {
+      const graph = new SafeGraph('complex');
+      const inputId = graph.input('numbers');
+      const filterId = graph.filter(inputId, {
+        type: 'compare',
+        op: 'gt',
+        value: 0,
+      });
+      const mapId = graph.map(filterId, {
+        type: 'arithmetic',
+        op: 'multiply',
+        operand: 2,
+      });
+      const reduceId = graph.reduce(mapId, { type: 'sum' });
+      graph.output(reduceId);
+
+      const json = graph.toJSON();
+      const restored = SafeGraph.fromJSON(json);
+
+      const compiledOriginal = graph.compile();
+      const compiledRestored = restored.compile();
+
+      const testData = [1, -2, 3, -4, 5];
+      expect(compiledRestored(testData)).toEqual(compiledOriginal(testData));
+    });
+
+    it('should handle graph with multiple outputs', () => {
+      const graph = new SafeGraph('multi-output');
+      const inputId = graph.input('data');
+      const map1Id = graph.map(inputId, {
+        type: 'arithmetic',
+        op: 'multiply',
+        operand: 2,
+      });
+      const map2Id = graph.map(inputId, {
+        type: 'arithmetic',
+        op: 'add',
+        operand: 10,
+      });
+      graph.output(map1Id);
+      graph.output(map2Id);
+
+      const json = graph.toJSON();
+      expect(json.outputs).toHaveLength(2);
+
+      const restored = SafeGraph.fromJSON(json);
+      expect(restored.outputs.size).toBe(2);
+    });
+
+    it('should serialize and deserialize graph with property predicates', () => {
+      const graph = new SafeGraph('property-test');
+      const inputId = graph.input('users');
+      const filterId = graph.filter(inputId, {
+        type: 'compare_property',
+        op: 'gte',
+        property: 'age',
+        value: 18,
+      });
+      graph.output(filterId);
+
+      const json = graph.toJSON();
+      const restored = SafeGraph.fromJSON(json);
+
+      const compiledOriginal = graph.compile();
+      const compiledRestored = restored.compile();
+
+      const testData = [
+        { name: 'Alice', age: 25 },
+        { name: 'Bob', age: 15 },
+        { name: 'Charlie', age: 30 },
+      ];
+      expect(compiledRestored(testData)).toEqual(compiledOriginal(testData));
+    });
+
+    it('should handle empty graph serialization', () => {
+      const graph = new SafeGraph('empty');
+      const json = graph.toJSON();
+
+      expect(json.nodes).toEqual([]);
+      expect(json.outputs).toEqual([]);
+
+      const restored = SafeGraph.fromJSON(json);
+      expect(restored.nodes.size).toBe(0);
+      expect(restored.outputs.size).toBe(0);
+    });
+
+    it('should use fromProgram static method', () => {
+      const graph = new SafeGraph('test');
+      const inputId = graph.input('data');
+      graph.output(inputId);
+
+      const program = graph.toProgram();
+      const restored = SafeGraph.fromProgram(program);
+
+      expect(restored).toBeDefined();
+      expect(restored.nodes.size).toBe(graph.nodes.size);
+      expect(restored.outputs.size).toBe(graph.outputs.size);
+    });
+
+    it('should handle graph without explicit metadata name', () => {
+      const program = {
+        version: '1.0',
+        metadata: {},
+        nodes: [],
+        outputs: [],
+      };
+
+      const graph = SafeGraph.fromProgram(program);
+      expect(graph.metadata?.name).toBe('imported');
+    });
+
+    it('should serialize graph with logical predicates', () => {
+      const graph = new SafeGraph('logical-test');
+      const inputId = graph.input('numbers');
+      const filterId = graph.filter(inputId, {
+        type: 'and',
+        predicates: [
+          { type: 'compare', op: 'gt', value: 5 },
+          { type: 'compare', op: 'lt', value: 15 },
+        ],
+      });
+      graph.output(filterId);
+
+      const json = graph.toJSON();
+      const restored = SafeGraph.fromJSON(json);
+
+      const compiledOriginal = graph.compile();
+      const compiledRestored = restored.compile();
+
+      const testData = [1, 7, 10, 20];
+      expect(compiledRestored(testData)).toEqual(compiledOriginal(testData));
+    });
+  });
+});
 });
