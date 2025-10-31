@@ -52,7 +52,7 @@ export class JavaScriptBackend implements CompilationBackend {
 
       return {
         backend: this.type,
-        execute,
+        execute: execute as (input: any) => any,
         codeSize,
         compilationTime,
         metadata: {

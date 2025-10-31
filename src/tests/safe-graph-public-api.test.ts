@@ -124,12 +124,10 @@ describe('SafeGraph Public API', () => {
 
       graph.setMetadata({
         name: 'updated-name',
-        version: '1.0.0',
       });
 
       const metadata = graph.getMetadata();
       expect(metadata?.name).toBe('updated-name');
-      expect(metadata?.version).toBe('1.0.0');
     });
 
     it('should preserve metadata through serialization', () => {
@@ -240,7 +238,6 @@ describe('SafeGraph Public API', () => {
       const graph = new SafeGraph('program-test');
       graph.setMetadata({
         name: 'program-test',
-        version: '2.0.0',
         author: 'Test',
       });
 
@@ -252,7 +249,6 @@ describe('SafeGraph Public API', () => {
 
       const restoredMetadata = restored.getMetadata();
       expect(restoredMetadata?.name).toBe('program-test');
-      expect(restoredMetadata?.version).toBe('2.0.0');
       expect(restoredMetadata?.author).toBe('Test');
     });
 

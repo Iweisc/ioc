@@ -95,7 +95,9 @@ function main() {
     console.log('-'.repeat(70));
     const debuggerInstance = new IOCDebugger(graph);
     const nodeId = graph.getExecutionOrder()[0];
-    console.log(debuggerInstance.explainNode(nodeId));
+    if (nodeId) {
+      console.log(debuggerInstance.explainNode(nodeId));
+    }
     console.log('');
 
     console.log('='.repeat(70));

@@ -5,10 +5,9 @@
  * Ideal for: browsers, edge computing, secure plugin systems.
  */
 
-import type { IOCProgram, IOCNode } from '../dsl/ioc-format';
+import type { IOCProgram } from '../dsl/ioc-format';
 import type { CompilationBackend, CompilationOptions, CompilationResult } from './types';
 import { BackendType } from './types';
-import type { SafePredicate, SafeTransform, ReductionOp } from '../dsl/safe-types';
 
 /**
  * WebAssembly Text Format (WAT) code generator
@@ -41,7 +40,7 @@ export class WebAssemblyBackend implements CompilationBackend {
 
   async isAvailable(): Promise<boolean> {
     // Check if WebAssembly is supported
-    return typeof WebAssembly !== 'undefined';
+    return typeof (globalThis as any).WebAssembly !== 'undefined';
   }
 
   async compile(
@@ -58,6 +57,7 @@ export class WebAssemblyBackend implements CompilationBackend {
       const wasmBinary = await this.compileWAT(wat);
 
       // Instantiate WebAssembly module
+      const WebAssembly = (globalThis as any).WebAssembly;
       const wasmModule = await WebAssembly.instantiate(wasmBinary, this.createImports());
       const { instance } = wasmModule;
 
@@ -89,7 +89,7 @@ export class WebAssemblyBackend implements CompilationBackend {
    * NOT IMPLEMENTED: Emits WAT with unreachable instruction to fail-fast
    * when executed, preventing silent incorrect results.
    */
-  private generateWAT(program: IOCProgram, options: Partial<CompilationOptions>): string {
+  private generateWAT(program: IOCProgram, _options: Partial<CompilationOptions>): string {
     // Fail-fast approach: emit a trap so execution fails immediately
     // rather than silently returning incorrect results
 
@@ -176,9 +176,10 @@ export class WebAssemblyBackend implements CompilationBackend {
   }
 
   /**
-   * Create import object for WebAssembly instantiation
+   * Create import object for WebAssembly instance
    */
-  private createImports(): WebAssembly.Imports {
+  private createImports(): Record<string, any> {
+    const WebAssembly = (globalThis as any).WebAssembly;
     return {
       js: {
         memory: new WebAssembly.Memory({ initial: 1 }),
@@ -190,7 +191,7 @@ export class WebAssemblyBackend implements CompilationBackend {
   /**
    * Execute WASM instance with input data
    */
-  private executeWasm(instance: WebAssembly.Instance, input: any): any {
+  private executeWasm(instance: any, _input: any): any {
     const exports = instance.exports as any;
 
     // For now, just call the execute function

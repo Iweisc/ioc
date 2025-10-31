@@ -8,7 +8,8 @@
 import { describe, it, expect } from 'vitest';
 import { WebAssemblyBackend } from '../backends/wasm-backend';
 import { LLVMBackend } from '../backends/llvm-backend';
-import type { IOCProgram } from '../dsl/ioc-format';
+import { IOCIntentType, type IOCProgram } from '../dsl/ioc-format';
+import { ComplexityClass } from '../dsl/safe-types';
 
 describe('Backend Fail-Fast Behavior', () => {
   describe('WebAssembly Backend', () => {
@@ -18,25 +19,29 @@ describe('Backend Fail-Fast Behavior', () => {
       // Program with an IOC node (filter operation)
       const program: IOCProgram = {
         version: '1.0',
+        metadata: {},
         nodes: [
           {
             id: 'filter1',
-            type: 'filter',
+            type: IOCIntentType.FILTER,
             inputs: ['input'],
-            predicate: {
-              type: 'comparison',
-              left: { type: 'property', path: ['value'] },
-              op: 'gt',
-              right: { type: 'constant', value: 5 },
+            params: {
+              intent: 'filter',
+              predicate: {
+                type: 'compare_property',
+                property: 'value',
+                op: 'gt',
+                value: 5,
+              },
             },
             capability: {
-              maxComplexity: 'O(n)',
-              terminationGuarantee: 'always',
+              maxComplexity: ComplexityClass.LINEAR,
+              terminationGuarantee: 'structural',
+              sideEffects: 'pure',
+              parallelizable: true,
             },
           },
         ],
-        edges: [],
-        inputs: ['input'],
         outputs: ['filter1'],
       };
 
@@ -51,7 +56,7 @@ describe('Backend Fail-Fast Behavior', () => {
       const available = await backend.isAvailable();
 
       // WASM backend is "available" (has infrastructure) but will fail on actual compilation
-      expect(available).toBe(typeof WebAssembly !== 'undefined');
+      expect(available).toBe(typeof (globalThis as any).WebAssembly !== 'undefined');
     });
   });
 
@@ -62,24 +67,28 @@ describe('Backend Fail-Fast Behavior', () => {
       // Program with an IOC node (map operation)
       const program: IOCProgram = {
         version: '1.0',
+        metadata: {},
         nodes: [
           {
             id: 'map1',
-            type: 'map',
+            type: IOCIntentType.MAP,
             inputs: ['input'],
-            transform: {
-              type: 'arithmetic',
-              op: 'multiply',
-              operand: 2,
+            params: {
+              intent: 'map',
+              transform: {
+                type: 'arithmetic',
+                op: 'multiply',
+                operand: 2,
+              },
             },
             capability: {
-              maxComplexity: 'O(n)',
-              terminationGuarantee: 'always',
+              maxComplexity: ComplexityClass.LINEAR,
+              terminationGuarantee: 'structural',
+              sideEffects: 'pure',
+              parallelizable: true,
             },
           },
         ],
-        edges: [],
-        inputs: ['input'],
         outputs: ['map1'],
       };
 
@@ -102,9 +111,8 @@ describe('Backend Fail-Fast Behavior', () => {
 
       const emptyProgram: IOCProgram = {
         version: '1.0',
+        metadata: {},
         nodes: [],
-        edges: [],
-        inputs: [],
         outputs: [],
       };
 
@@ -117,9 +125,8 @@ describe('Backend Fail-Fast Behavior', () => {
 
       const emptyProgram: IOCProgram = {
         version: '1.0',
+        metadata: {},
         nodes: [],
-        edges: [],
-        inputs: [],
         outputs: [],
       };
 

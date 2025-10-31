@@ -47,7 +47,7 @@ output adults
     const filterStmt = ast.statements[1];
     expect(filterStmt!.type).toBe('filter');
     if (filterStmt!.type === 'filter') {
-      expect(filterStmt.predicate.type).toBe('property');
+      expect(filterStmt!.predicate.type).toBe('property');
     }
   });
 
@@ -1037,12 +1037,12 @@ output evens
       const filterStmt = ast.statements[1];
       expect(filterStmt!.type).toBe('filter');
       if (filterStmt!.type === 'filter') {
-        expect(filterStmt.predicate.type).toBe('arithmetic');
+        expect(filterStmt!.predicate.type).toBe('arithmetic');
         if (filterStmt.predicate.type === 'arithmetic') {
-          expect(filterStmt.predicate.arithmeticOp).toBe('mod');
-          expect(filterStmt.predicate.arithmeticValue).toBe(2);
-          expect(filterStmt.predicate.comparisonOp).toBe('eq');
-          expect(filterStmt.predicate.comparisonValue).toBe(0);
+          expect(filterStmt!.predicate.arithmeticOp).toBe('mod');
+          expect(filterStmt!.predicate.arithmeticValue).toBe(2);
+          expect(filterStmt!.predicate.comparisonOp).toBe('eq');
+          expect(filterStmt!.predicate.comparisonValue).toBe(0);
         }
       }
     });
@@ -1077,11 +1077,11 @@ output result
       const ast = parser.parse();
 
       const filterStmt = ast.statements[1];
-      if (filterStmt!.type === 'filter' && filterStmt.predicate.type === 'arithmetic') {
-        expect(filterStmt.predicate.arithmeticOp).toBe('multiply');
-        expect(filterStmt.predicate.arithmeticValue).toBe(3);
-        expect(filterStmt.predicate.comparisonOp).toBe('gt');
-        expect(filterStmt.predicate.comparisonValue).toBe(10);
+      if (filterStmt!.type === 'filter' && filterStmt!.predicate.type === 'arithmetic') {
+        expect(filterStmt!.predicate.arithmeticOp).toBe('multiply');
+        expect(filterStmt!.predicate.arithmeticValue).toBe(3);
+        expect(filterStmt!.predicate.comparisonOp).toBe('gt');
+        expect(filterStmt!.predicate.comparisonValue).toBe(10);
       }
     });
 
@@ -1115,11 +1115,11 @@ output result
       const ast = parser.parse();
 
       const filterStmt = ast.statements[1];
-      if (filterStmt!.type === 'filter' && filterStmt.predicate.type === 'arithmetic') {
-        expect(filterStmt.predicate.arithmeticOp).toBe('add');
-        expect(filterStmt.predicate.arithmeticValue).toBe(5);
-        expect(filterStmt.predicate.comparisonOp).toBe('lt');
-        expect(filterStmt.predicate.comparisonValue).toBe(20);
+      if (filterStmt!.type === 'filter' && filterStmt!.predicate.type === 'arithmetic') {
+        expect(filterStmt!.predicate.arithmeticOp).toBe('add');
+        expect(filterStmt!.predicate.arithmeticValue).toBe(5);
+        expect(filterStmt!.predicate.comparisonOp).toBe('lt');
+        expect(filterStmt!.predicate.comparisonValue).toBe(20);
       }
     });
 
@@ -1135,11 +1135,11 @@ output result
       const ast = parser.parse();
 
       const filterStmt = ast.statements[1];
-      if (filterStmt!.type === 'filter' && filterStmt.predicate.type === 'arithmetic') {
-        expect(filterStmt.predicate.arithmeticOp).toBe('subtract');
-        expect(filterStmt.predicate.arithmeticValue).toBe(10);
-        expect(filterStmt.predicate.comparisonOp).toBe('gte');
-        expect(filterStmt.predicate.comparisonValue).toBe(0);
+      if (filterStmt!.type === 'filter' && filterStmt!.predicate.type === 'arithmetic') {
+        expect(filterStmt!.predicate.arithmeticOp).toBe('subtract');
+        expect(filterStmt!.predicate.arithmeticValue).toBe(10);
+        expect(filterStmt!.predicate.comparisonOp).toBe('gte');
+        expect(filterStmt!.predicate.comparisonValue).toBe(0);
       }
     });
 
@@ -1155,11 +1155,11 @@ output result
       const ast = parser.parse();
 
       const filterStmt = ast.statements[1];
-      if (filterStmt!.type === 'filter' && filterStmt.predicate.type === 'arithmetic') {
-        expect(filterStmt.predicate.arithmeticOp).toBe('divide');
-        expect(filterStmt.predicate.arithmeticValue).toBe(2);
-        expect(filterStmt.predicate.comparisonOp).toBe('lte');
-        expect(filterStmt.predicate.comparisonValue).toBe(5);
+      if (filterStmt!.type === 'filter' && filterStmt!.predicate.type === 'arithmetic') {
+        expect(filterStmt!.predicate.arithmeticOp).toBe('divide');
+        expect(filterStmt!.predicate.arithmeticValue).toBe(2);
+        expect(filterStmt!.predicate.comparisonOp).toBe('lte');
+        expect(filterStmt!.predicate.comparisonValue).toBe(5);
       }
     });
 
@@ -1175,8 +1175,8 @@ output result
       const ast = parser.parse();
 
       const filterStmt = ast.statements[1];
-      if (filterStmt!.type === 'filter' && filterStmt.predicate.type === 'arithmetic') {
-        expect(filterStmt.predicate.comparisonOp).toBe('neq');
+      if (filterStmt!.type === 'filter' && filterStmt!.predicate.type === 'arithmetic') {
+        expect(filterStmt!.predicate.comparisonOp).toBe('neq');
       }
     });
 
