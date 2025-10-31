@@ -45,8 +45,10 @@ describe('Backend Fail-Fast Behavior', () => {
         outputs: ['filter1'],
       };
 
-      // Should throw error (now progresses to wabt compilation which requires wabt library)
-      await expect(backend.compile(program)).rejects.toThrow(/wabt|WebAssembly compilation failed/);
+      // With wabt library installed, should succeed
+      const result = await backend.compile(program);
+      expect(result).toBeDefined();
+      expect(result.backend).toBe('wasm');
     });
 
     it('should be marked as available (WASM support exists)', async () => {
@@ -104,7 +106,7 @@ describe('Backend Fail-Fast Behavior', () => {
   });
 
   describe('Empty Program Handling', () => {
-    it('WASM backend should fail without wabt library', async () => {
+    it('WASM backend should compile empty programs with wabt library', async () => {
       const backend = new WebAssemblyBackend();
 
       const emptyProgram: IOCProgram = {
@@ -114,8 +116,11 @@ describe('Backend Fail-Fast Behavior', () => {
         outputs: [],
       };
 
-      // Without wabt library, compilation should fail
-      await expect(backend.compile(emptyProgram)).rejects.toThrow(/wabt/);
+      // With wabt library installed, compilation should succeed
+      const result = await backend.compile(emptyProgram);
+      expect(result).toBeDefined();
+      expect(result.backend).toBe('wasm');
+      expect(result.execute).toBeDefined();
     });
 
     it('LLVM backend should fail without llvm-bindings', async () => {
