@@ -718,8 +718,10 @@ describe('SafeGraph', () => {
       const restored = SafeGraph.fromJSON(jsonString);
 
       expect(restored).toBeDefined();
-      expect(restored.nodes.size).toBe(graph.nodes.size);
-      expect(restored.outputs.size).toBe(graph.outputs.size);
+      const restoredJson = restored.toJSON();
+      const graphJson = graph.toJSON();
+      expect(restoredJson.nodes.length).toBe(graphJson.nodes.length);
+      expect(restoredJson.outputs.length).toBe(graphJson.outputs.length);
     });
 
     it('should deserialize graph from IOCProgram object', () => {
@@ -736,16 +738,18 @@ describe('SafeGraph', () => {
       const restored = SafeGraph.fromJSON(program);
 
       expect(restored).toBeDefined();
-      expect(restored.nodes.size).toBe(graph.nodes.size);
+      const restoredJson = restored.toJSON();
+      const graphJson = graph.toJSON();
+      expect(restoredJson.nodes.length).toBe(graphJson.nodes.length);
     });
 
     it('should preserve metadata during serialization', () => {
       const graph = new SafeGraph('test-with-metadata');
-      graph.metadata = {
+      graph.setMetadata({
         name: 'test-with-metadata',
         description: 'A test graph',
         author: 'Test Author',
-      };
+      });
 
       const inputId = graph.input('data');
       graph.output(inputId);
@@ -753,10 +757,11 @@ describe('SafeGraph', () => {
       const json = graph.toJSON();
       const restored = SafeGraph.fromJSON(json);
 
-      expect(restored.metadata).toBeDefined();
-      expect(restored.metadata?.name).toBe('test-with-metadata');
-      expect(restored.metadata?.description).toBe('A test graph');
-      expect(restored.metadata?.author).toBe('Test Author');
+      const restoredMetadata = restored.getMetadata();
+      expect(restoredMetadata).toBeDefined();
+      expect(restoredMetadata?.name).toBe('test-with-metadata');
+      expect(restoredMetadata?.description).toBe('A test graph');
+      expect(restoredMetadata?.author).toBe('Test Author');
     });
 
     it('should handle complex graph serialization with multiple node types', () => {
@@ -805,7 +810,8 @@ describe('SafeGraph', () => {
       expect(json.outputs).toHaveLength(2);
 
       const restored = SafeGraph.fromJSON(json);
-      expect(restored.outputs.size).toBe(2);
+      const restoredJson = restored.toJSON();
+      expect(restoredJson.outputs.length).toBe(2);
     });
 
     it('should serialize and deserialize graph with property predicates', () => {
@@ -841,8 +847,9 @@ describe('SafeGraph', () => {
       expect(json.outputs).toEqual([]);
 
       const restored = SafeGraph.fromJSON(json);
-      expect(restored.nodes.size).toBe(0);
-      expect(restored.outputs.size).toBe(0);
+      const restoredJson = restored.toJSON();
+      expect(restoredJson.nodes.length).toBe(0);
+      expect(restoredJson.outputs.length).toBe(0);
     });
 
     it('should use fromProgram static method', () => {
@@ -854,8 +861,10 @@ describe('SafeGraph', () => {
       const restored = SafeGraph.fromProgram(program);
 
       expect(restored).toBeDefined();
-      expect(restored.nodes.size).toBe(graph.nodes.size);
-      expect(restored.outputs.size).toBe(graph.outputs.size);
+      const restoredJson = restored.toJSON();
+      const graphJson = graph.toJSON();
+      expect(restoredJson.nodes.length).toBe(graphJson.nodes.length);
+      expect(restoredJson.outputs.length).toBe(graphJson.outputs.length);
     });
 
     it('should handle graph without explicit metadata name', () => {
@@ -867,7 +876,8 @@ describe('SafeGraph', () => {
       };
 
       const graph = SafeGraph.fromProgram(program);
-      expect(graph.metadata?.name).toBe('imported');
+      const metadata = graph.getMetadata();
+      expect(metadata?.name).toBe('imported');
     });
 
     it('should serialize graph with logical predicates', () => {

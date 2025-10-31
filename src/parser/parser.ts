@@ -335,8 +335,8 @@ export class Parser {
       this.advance(); // skip 'x'
 
       // Check if there's an arithmetic operator
-      if (this.isArithmeticOperator()) {
-        const arithmeticOp = this.parseArithmeticOperatorType();
+      try {
+        const arithmeticOp = this.parseArithmeticOperator(false);
         this.advance(); // consume the arithmetic operator
         const arithmeticValue = this.parseNumericValue();
         const comparisonOp = this.parseComparisonOperator();
@@ -349,6 +349,8 @@ export class Parser {
           comparisonOp,
           comparisonValue,
         } as ArithmeticPredicate;
+      } catch (e) {
+        // Not an arithmetic operator, fall through to simple comparison
       }
 
       // Simple comparison: x comparator value
@@ -429,38 +431,13 @@ export class Parser {
     throw this.error('Expected transform expression');
   }
 
-  private isArithmeticOperator(): boolean {
+  private parseArithmeticOperator(
+    consume: boolean = true
+  ): 'multiply' | 'add' | 'subtract' | 'divide' | 'mod' {
     const token = this.current();
-    return (
-      token.type === TokenType.STAR ||
-      token.type === TokenType.PLUS ||
-      token.type === TokenType.MINUS ||
-      token.type === TokenType.SLASH ||
-      token.type === TokenType.PERCENT
-    );
-  }
-
-  private parseArithmeticOperatorType(): 'multiply' | 'add' | 'subtract' | 'divide' | 'mod' {
-    const token = this.current();
-    switch (token.type) {
-      case TokenType.STAR:
-        return 'multiply';
-      case TokenType.PLUS:
-        return 'add';
-      case TokenType.MINUS:
-        return 'subtract';
-      case TokenType.SLASH:
-        return 'divide';
-      case TokenType.PERCENT:
-        return 'mod';
-      default:
-        throw this.error('Expected arithmetic operator');
+    if (consume) {
+      this.advance();
     }
-  }
-
-  private parseArithmeticOperator(): 'multiply' | 'add' | 'subtract' | 'divide' | 'mod' {
-    const token = this.current();
-    this.advance();
 
     switch (token.type) {
       case TokenType.STAR:

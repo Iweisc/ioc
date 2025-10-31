@@ -67,6 +67,34 @@ export class SafeGraph {
   }
 
   /**
+   * Get the number of nodes in the graph
+   */
+  getNodeCount(): number {
+    return this.nodes.size;
+  }
+
+  /**
+   * Get the number of outputs in the graph
+   */
+  getOutputCount(): number {
+    return this.outputs.size;
+  }
+
+  /**
+   * Get the metadata
+   */
+  getMetadata(): IOCProgram['metadata'] {
+    return this.metadata;
+  }
+
+  /**
+   * Set the metadata
+   */
+  setMetadata(metadata: IOCProgram['metadata']): void {
+    this.metadata = metadata;
+  }
+
+  /**
    * Define an input parameter
    */
   input(name: string, typeHint?: string): string {
