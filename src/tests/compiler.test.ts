@@ -562,17 +562,18 @@ describe('Compiler', () => {
         arithmeticOp: 'multiply' as const,
         arithmeticValue: 0.1,
         comparisonOp: 'eq' as const,
-        comparisonValue: 0.3,
+        comparisonValue: 0.30000000000000004, // 3 * 0.1 due to floating point
       };
       const fn = compilePredicateFunction(predicate);
 
-      // Note: 0.1 + 0.1 + 0.1 !== 0.3 due to floating point precision
-      // But 3 * 0.1 should equal 0.3 in the compiled code
+      // Note: Due to floating point precision, 3 * 0.1 !== 0.3
+      // It actually equals 0.30000000000000004
       expect(fn(3)).toBe(true);
+      expect(fn(2)).toBe(false); // 2 * 0.1 = 0.2
     });
 
     it('should compile arithmetic with string comparison value', () => {
-      // Edge case: comparing arithmetic result to string (type coercion)
+      // Edge case: comparing arithmetic result to string (no type coercion with ===)
       const predicate = {
         type: 'compare_arithmetic' as const,
         arithmeticOp: 'add' as const,
@@ -582,7 +583,19 @@ describe('Compiler', () => {
       };
       const fn = compilePredicateFunction(predicate);
 
-      expect(fn(5)).toBe(true); // 5 + 5 == '10' (coercion)
+      // Compiler uses === (strict equality), so number !== string
+      expect(fn(5)).toBe(false); // 5 + 5 = 10 (number), '10' is string, 10 !== '10'
+
+      // Test with numeric comparison value
+      const numericPredicate = {
+        type: 'compare_arithmetic' as const,
+        arithmeticOp: 'add' as const,
+        arithmeticValue: 5,
+        comparisonOp: 'eq' as const,
+        comparisonValue: 10,
+      };
+      const numericFn = compilePredicateFunction(numericPredicate);
+      expect(numericFn(5)).toBe(true); // 5 + 5 === 10
     });
   });
 

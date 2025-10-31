@@ -410,10 +410,10 @@ output large
       const graph = converter.convert(ast);
       const compiledFn = graph.compile();
 
-      // Multiples of 3: [3, 6, 9, 12]
-      // Doubled: [6, 12, 18, 24]
-      // Large (>10): [12, 18, 24]
-      expect(compiledFn([1, 2, 3, 6, 9, 12, 15])).toEqual([12, 18, 24]);
+      // Multiples of 3: [3, 6, 9, 12, 15]
+      // Doubled: [6, 12, 18, 24, 30]
+      // Large (>10): [12, 18, 24, 30]
+      expect(compiledFn([1, 2, 3, 6, 9, 12, 15])).toEqual([12, 18, 24, 30]);
     });
   });
 });
