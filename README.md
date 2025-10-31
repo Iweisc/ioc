@@ -1,68 +1,65 @@
 # IOC - Intent-Oriented Computing
 
-A **compiled language** for safe data processing with guaranteed termination and known complexity bounds.
+A compiled language for safe data processing with guaranteed termination and known complexity bounds.
 
-## Overview
+## What is IOC?
 
-IOC is a pure compiled language (like C, Rust, or Go) for data transformation pipelines. Write `.ioc` files and compile them to JavaScript or WebAssembly using the IOC compiler.
+IOC is a standalone compiled language designed for data transformation pipelines. Programs are written in `.ioc` files and compiled to JavaScript or WebAssembly executables. The language guarantees termination, enforces resource bounds, and prevents arbitrary code execution.
 
-**Key Philosophy**: IOC is NOT a framework or library embedded in TypeScript. It is a standalone language with its own syntax, parser, and compiler toolchain.
+This is not a JavaScript framework or library. IOC has its own syntax, parser, and compiler toolchain, similar to how Rust or Go work. You write source files in the IOC language and compile them to executable code.
 
-## Quick Example
+## Quick Start
 
-Create a file `pipeline.ioc`:
+Create a file called `pipeline.ioc`:
 
 ```ioc
 input numbers: number[]
 
-filtered = filter numbers where x > 10
-doubled = map filtered with x * 2
+positive = filter numbers where x > 0
+doubled = map positive with x * 2
 total = reduce doubled by sum
 
 output total
 ```
 
-Compile and run:
-
-```bash
-# Run directly (compiles internally)
-ioc run pipeline.ioc --input '[5, 12, 8, 20]'
-# Output: 64
-
-# Or compile to JavaScript first
-ioc compile pipeline.ioc --output pipeline.js --backend javascript
-
-# Or compile to WebAssembly
-ioc compile pipeline.ioc --backend wasm
-```
-
-## Installation
-
-Install the IOC compiler:
+Install the compiler:
 
 ```bash
 npm install -g @ioc/compiler
 ```
 
-Or use it as a dev dependency:
+Compile and run:
 
 ```bash
-npm install --save-dev @ioc/compiler
+ioc run pipeline.ioc --input '[5, -3, 12, -8, 20]'
+# Output: 74
 ```
 
 ## Language Syntax
 
-### Basic Operations
+### Input Declaration
 
-**Filter** - Select elements matching a predicate:
+Every program starts with an input declaration:
 
 ```ioc
-filtered = filter data where x > 10
-adults = filter users where x.age >= 18
-evens = filter numbers where x % 2 == 0
+input data: number[]
+input users: object[]
+input text: string
 ```
 
-**Map** - Transform each element:
+### Filter Operation
+
+Select elements that match a condition:
+
+```ioc
+adults = filter users where x.age >= 18
+evens = filter numbers where x % 2 == 0
+active = filter accounts where x.status == "active"
+```
+
+### Map Operation
+
+Transform each element:
 
 ```ioc
 doubled = map numbers with x * 2
@@ -70,186 +67,320 @@ names = map users with x.name
 upper = map words with uppercase(x)
 ```
 
-**Reduce** - Aggregate to single value:
+### Reduce Operation
+
+Aggregate values to a single result:
 
 ```ioc
 total = reduce numbers by sum
 maximum = reduce numbers by max
-count = reduce items by count
+average = reduce numbers by average
 ```
 
-### Supported Operators
+Available reduction operations: `sum`, `product`, `average`, `max`, `min`, `count`, `first`, `last`
 
-**Comparisons**: `>`, `<`, `>=`, `<=`, `==`, `!=`
+### Output Declaration
+
+Every program ends with an output:
+
+```ioc
+output result
+```
+
+### Operators and Functions
+
+**Comparison**: `>`, `<`, `>=`, `<=`, `==`, `!=`
 
 **Arithmetic**: `+`, `-`, `*`, `/`, `%`
 
-**String functions**: `uppercase(x)`, `lowercase(x)`, `trim(x)`
+**String functions**: `uppercase(x)`, `lowercase(x)`, `trim(x)`, `length(x)`
 
-**Reductions**: `sum`, `product`, `average`, `max`, `min`, `count`, `first`, `last`
+**Logical**: `and`, `or`, `not`
 
 ### Complete Example
 
 ```ioc
-input users: object[]
+input orders: object[]
 
-adults = filter users where x.age >= 18
-names = map adults with x.name
-uppercase_names = map names with uppercase(x)
+# Filter orders from last month
+recent = filter orders where x.timestamp > 1640000000
 
-output uppercase_names
+# Extract order totals
+totals = map recent with x.amount
+
+# Calculate average
+avg = reduce totals by average
+
+output avg
 ```
 
-## Compiler Architecture
+## CLI Usage
 
-IOC programs go through the following pipeline:
+### Run Command
 
+Execute a program with input data:
+
+```bash
+# Inline JSON input
+ioc run program.ioc --input '[1,2,3,4,5]'
+
+# Input from file
+ioc run program.ioc --input-file data.json
+
+# Choose backend
+ioc run program.ioc --input '[1,2,3]' --backend javascript
+ioc run program.ioc --input '[1,2,3]' --backend wasm
+
+# Enable debug output
+ioc run program.ioc --input '[1,2,3]' --debug
 ```
-.ioc source → Lexer → Parser → AST → IOCProgram (IR) → Backend → Executable
-                                                          ↓
-                                               JavaScript / WASM / LLVM
+
+### Compile Command
+
+Compile to an executable:
+
+```bash
+# Compile to JavaScript
+ioc compile program.ioc --output program.js --backend javascript
+
+# Compile to WebAssembly
+ioc compile program.ioc --output program.wasm --backend wasm
+
+# Print to stdout
+ioc compile program.ioc
 ```
 
-### Available Backends
+### Validate Command
 
-- **JavaScript** (default): Fast compilation, runs anywhere
-- **WebAssembly**: Portable binaries, excellent performance
-- **LLVM** (planned): Maximum performance via native code
+Check syntax and safety properties:
 
-### Programmatic Compilation
+```bash
+ioc validate program.ioc
+ioc validate examples/*.ioc
+```
 
-You can use the IOC compiler programmatically in TypeScript/JavaScript:
+### Backends Command
+
+List available compilation backends:
+
+```bash
+ioc backends
+```
+
+## Compilation Backends
+
+IOC programs can be compiled to multiple target formats:
+
+**JavaScript** - The default backend. Fast compilation, runs anywhere Node.js runs. Good for development and most production use cases.
+
+**WebAssembly** - Compiles to portable WebAssembly binary format. Better performance than JavaScript for compute-intensive operations. Works in browsers and Node.js.
+
+**LLVM** - Planned. Will compile to native machine code through LLVM for maximum performance.
+
+## Programmatic Usage
+
+You can use the IOC compiler as a library in TypeScript or JavaScript projects:
 
 ```typescript
 import { Lexer, Parser, ASTToGraphConverter, JavaScriptBackend } from '@ioc/compiler';
 
-// Parse .ioc source
 const source = `
   input numbers: number[]
   doubled = map numbers with x * 2
   output doubled
 `;
 
+// Parse source code
 const lexer = new Lexer(source);
 const parser = new Parser(lexer.tokenize());
 const ast = parser.parse();
 
-// Convert to IOCProgram (internal representation)
+// Convert to internal representation
 const converter = new ASTToGraphConverter();
 const program = converter.convert(ast);
 
-// Compile to executable
+// Compile to JavaScript
 const backend = new JavaScriptBackend();
 const result = await backend.compile(program);
-const execute = result.execute;
 
-// Run
-const output = execute([1, 2, 3]); // [2, 4, 6]
+// Execute
+const output = result.execute([1, 2, 3]);
+console.log(output); // [2, 4, 6]
 ```
 
-## Features
+## Compiler Architecture
 
-### Language Properties
+Programs flow through the following pipeline:
 
-**Guaranteed Termination** - All programs terminate in bounded time. No infinite loops possible.
+```
+Source Code (.ioc file)
+    ↓
+Lexer (tokenization)
+    ↓
+Parser (syntax analysis)
+    ↓
+AST (abstract syntax tree)
+    ↓
+IOCProgram (intermediate representation)
+    ↓
+Backend (code generation)
+    ↓
+Executable (JavaScript / WASM / LLVM)
+```
 
-**Known Complexity** - Every operation declares its time complexity statically:
+Each stage validates the program and can reject invalid code before it ever executes.
 
-- Filter: O(n)
-- Map: O(n)
-- Reduce: O(n)
-- Sort: O(n log n)
-- Distinct: O(n)
+## Language Properties
 
-**Serializable** - Programs are pure data (JSON internally). Can be:
+### Guaranteed Termination
 
-- Saved to disk
-- Sent over network
-- Stored in databases
-- Version controlled
+All IOC programs terminate in bounded time. The language does not support loops, recursion, or any construct that could run indefinitely. Every operation has a known maximum execution time based on input size.
 
-**Safe by Design** - No arbitrary code execution. Only safe, pre-defined operations.
+### Known Complexity
 
-**Multiple Backends** - Compile to JavaScript, WebAssembly, or (planned) LLVM native code.
+Every operation declares its computational complexity:
 
-### Compilation Guarantees
+- `filter`: O(n)
+- `map`: O(n)
+- `reduce`: O(n)
+- `sort`: O(n log n)
+- `distinct`: O(n)
 
-- **Security Validation** - Built-in verification of all operations
-- **Budget Enforcement** - Resource limits enforced at compile time
-- **Type Checking** - Static type inference and validation
-- **Memory Safety** - All operations have bounded memory usage
+This allows you to analyze program performance before execution.
+
+### Safe by Design
+
+IOC programs cannot:
+
+- Access the filesystem
+- Make network requests
+- Execute arbitrary code
+- Create infinite loops
+- Cause stack overflows
+- Allocate unbounded memory
+
+This makes IOC suitable for executing untrusted user-provided code safely.
+
+### Serializable
+
+IOC programs are represented internally as JSON-serializable data structures. This means you can:
+
+- Store programs in databases
+- Send programs over the network
+- Version control programs as data
+- Generate programs programmatically
+- Cache compiled programs
 
 ## Use Cases
 
-IOC is ideal for scenarios requiring **safe execution of untrusted code**:
+IOC is designed for scenarios where you need to safely execute untrusted or user-provided data transformations:
 
-- **User-provided analytics** - Let users write custom data pipelines safely
-- **Serverless functions** - Guaranteed termination and resource bounds
-- **Data processing APIs** - Accept pipeline definitions as data
-- **Educational platforms** - Safe code execution environments
-- **CI/CD pipelines** - Serializable build/test transformations
-- **Low-code platforms** - Visual pipeline builders that compile to IOC
+**User-defined analytics** - Let users write custom metrics and reports without security risks.
 
-## CLI Commands
+**Serverless functions** - Run user code with guaranteed termination and resource bounds.
 
-The IOC compiler provides a full-featured CLI:
+**Data processing APIs** - Accept transformation logic as data instead of exposing direct database access.
 
-### Run Programs
+**Educational platforms** - Provide safe code execution environments for students.
 
-```bash
-# Run with inline input
-ioc run pipeline.ioc --input '[1,2,3,4,5]'
+**Low-code platforms** - Visual pipeline builders can compile to IOC for execution.
 
-# Run with debug output
-ioc run pipeline.ioc --input '[1,2,3]' --debug
-
-# Choose backend explicitly
-ioc run pipeline.ioc --input '[1,2,3]' --backend javascript
-ioc run pipeline.ioc --input '[1,2,3]' --backend wasm
-
-# Skip security validation (use only with trusted code)
-ioc run untrusted.ioc --input '[1,2,3]' --unsafe
-```
-
-### Compile Programs
-
-```bash
-# Compile to JavaScript module
-ioc compile pipeline.ioc --output pipeline.js
-
-# Compile with specific backend
-ioc compile pipeline.ioc --backend wasm --output pipeline.wasm
-
-# Print generated code to stdout
-ioc compile pipeline.ioc
-```
-
-### Validate Programs
-
-```bash
-# Check syntax and safety properties
-ioc validate pipeline.ioc
-```
-
-### List Backends
-
-```bash
-# Show available compilation backends
-ioc backends
-```
+**CI/CD systems** - Serializable build and test transformations.
 
 ## Examples
 
-See `examples/` directory for sample programs:
+The `examples/` directory contains sample programs:
 
-- `pipeline.ioc` - Basic filter/map/reduce
-- `analytics.ioc` - Data analysis pipeline
-- `user-engagement.ioc` - User data processing
+- `pipeline.ioc` - Basic filter, map, reduce operations
+- `grade-calculator.ioc` - Grade processing and statistics
+- `expense-tracker.ioc` - Personal finance calculations
+- `sales-report.ioc` - Business data analysis
+- `user-engagement.ioc` - User activity metrics
+- `fraud-detection-pipeline.ioc` - Transaction filtering
+- `recommendation-engine.ioc` - Recommendation scoring
+- `log-analyzer.ioc` - Log file processing
+- `analytics.ioc` - Web analytics calculations
+
+Run any example:
+
+```bash
+ioc run examples/grade-calculator.ioc --input-file test-grades.json
+```
+
+## Development
+
+### Prerequisites
+
+- Node.js 18 or higher
+- npm or yarn
+
+### Build from Source
+
+```bash
+git clone https://github.com/Iweisc/ioc.git
+cd ioc
+npm install
+npm run build
+```
+
+### Run Tests
+
+```bash
+npm test
+```
+
+### Type Checking
+
+```bash
+npm run typecheck
+```
+
+### Linting
+
+```bash
+npm run lint
+```
+
+### Format Code
+
+```bash
+npm run format
+```
+
+## Project Structure
+
+```
+src/
+  parser/           # Lexer, parser, AST definitions
+  dsl/              # IOC language core types and compiler
+  backends/         # Code generation (JS, WASM, LLVM)
+  core/             # Graph operations, optimizer, verifier
+  solvers/          # Execution strategies and profiling
+  cli/              # Command-line interface
+  tests/            # Test suite
+
+examples/           # Sample .ioc programs
+```
+
+## Current Status
+
+**Stable**: JavaScript and WebAssembly backends are fully functional and tested across Node.js 18, 20, and 22 on Linux, macOS, and Windows.
+
+**In Development**: LLVM backend is planned but not yet implemented.
+
+**Test Coverage**: 256 tests covering parser, compiler, backends, and type system.
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and guidelines.
+Contributions are welcome. Please read CONTRIBUTING.md for guidelines.
+
+When submitting pull requests:
+
+- Add tests for new features
+- Update documentation as needed
+- Follow existing code style
+- Ensure all tests pass
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details.
+MIT License. See LICENSE file for details.
