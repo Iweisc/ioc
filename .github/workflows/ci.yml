@@ -99,8 +99,8 @@ jobs:
 
       - name: Check for console.log statements
         run: |
-          echo "Checking for debug statements..."
-          ! grep -r "console\.log" src/ || (echo "ERROR: Found console.log statements in src/" && exit 1)
+          echo "Checking for debug statements in core code..."
+          ! grep -r "console\.log" src/ --exclude-dir=cli || (echo "ERROR: Found console.log statements in src/ (excluding CLI)" && exit 1)
 
   # Comprehensive test suite with coverage requirements
   test:

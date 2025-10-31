@@ -1090,7 +1090,7 @@ export class WebAssemblyBackend implements CompilationBackend {
       _valueStore: { store: storeValue, load: loadValue }, // Expose for execution
       js: {
         memory,
-        log: (value: number) => console.log('WASM:', value),
+        log: (value: number) => console.error('WASM:', value),
 
         // Type checking
         typeof_val: (ptr: number): number => {

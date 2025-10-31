@@ -311,7 +311,6 @@ export function createTestSuite(
   const results: DifferentialTestResult[] = [];
 
   for (let i = 0; i < testCases.length; i++) {
-    console.log(`Running test case ${i + 1}/${testCases.length}...`);
     const testCase = testCases[i];
     if (testCase) {
       const result = tester.testWithOptimizations(testCase);
