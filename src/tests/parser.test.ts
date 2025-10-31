@@ -568,7 +568,17 @@ describe('Parser - Statement Parsing', () => {
     });
 
     it('should parse all reduction operations', () => {
-      const operations = ['sum', 'product', 'max', 'min', 'average', 'count', 'first', 'last', 'join'];
+      const operations = [
+        'sum',
+        'product',
+        'max',
+        'min',
+        'average',
+        'count',
+        'first',
+        'last',
+        'join',
+      ];
 
       operations.forEach((op) => {
         const source = `result = reduce data by ${op}`;
@@ -1009,6 +1019,243 @@ output result
 
       const converter = new ASTToGraphConverter();
       expect(() => converter.convert(ast)).toThrow('Undefined variable');
+    });
+  });
+
+  describe('Arithmetic Predicates', () => {
+    it('should parse modulo predicate for even numbers', () => {
+      const source = `
+input numbers: number[]
+evens = filter numbers where x % 2 == 0
+output evens
+      `.trim();
+
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      const filterStmt = ast.statements[1];
+      expect(filterStmt!.type).toBe('filter');
+      if (filterStmt!.type === 'filter') {
+        expect(filterStmt.predicate.type).toBe('arithmetic');
+        if (filterStmt.predicate.type === 'arithmetic') {
+          expect(filterStmt.predicate.arithmeticOp).toBe('mod');
+          expect(filterStmt.predicate.arithmeticValue).toBe(2);
+          expect(filterStmt.predicate.comparisonOp).toBe('eq');
+          expect(filterStmt.predicate.comparisonValue).toBe(0);
+        }
+      }
+    });
+
+    it('should compile and execute modulo predicate', () => {
+      const source = `
+input numbers: number[]
+evens = filter numbers where x % 2 == 0
+output evens
+      `.trim();
+
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      const converter = new ASTToGraphConverter();
+      const graph = converter.convert(ast);
+      const compiledFn = graph.compile();
+
+      expect(compiledFn([1, 2, 3, 4, 5, 6])).toEqual([2, 4, 6]);
+    });
+
+    it('should parse multiplication predicate', () => {
+      const source = `
+input numbers: number[]
+result = filter numbers where x * 3 > 10
+output result
+      `.trim();
+
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      const filterStmt = ast.statements[1];
+      if (filterStmt!.type === 'filter' && filterStmt.predicate.type === 'arithmetic') {
+        expect(filterStmt.predicate.arithmeticOp).toBe('multiply');
+        expect(filterStmt.predicate.arithmeticValue).toBe(3);
+        expect(filterStmt.predicate.comparisonOp).toBe('gt');
+        expect(filterStmt.predicate.comparisonValue).toBe(10);
+      }
+    });
+
+    it('should compile and execute multiplication predicate', () => {
+      const source = `
+input numbers: number[]
+result = filter numbers where x * 3 > 10
+output result
+      `.trim();
+
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      const converter = new ASTToGraphConverter();
+      const graph = converter.convert(ast);
+      const compiledFn = graph.compile();
+
+      expect(compiledFn([1, 2, 3, 4, 5])).toEqual([4, 5]);
+    });
+
+    it('should parse addition predicate', () => {
+      const source = `
+input numbers: number[]
+result = filter numbers where x + 5 < 20
+output result
+      `.trim();
+
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      const filterStmt = ast.statements[1];
+      if (filterStmt!.type === 'filter' && filterStmt.predicate.type === 'arithmetic') {
+        expect(filterStmt.predicate.arithmeticOp).toBe('add');
+        expect(filterStmt.predicate.arithmeticValue).toBe(5);
+        expect(filterStmt.predicate.comparisonOp).toBe('lt');
+        expect(filterStmt.predicate.comparisonValue).toBe(20);
+      }
+    });
+
+    it('should parse subtraction predicate', () => {
+      const source = `
+input numbers: number[]
+result = filter numbers where x - 10 >= 0
+output result
+      `.trim();
+
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      const filterStmt = ast.statements[1];
+      if (filterStmt!.type === 'filter' && filterStmt.predicate.type === 'arithmetic') {
+        expect(filterStmt.predicate.arithmeticOp).toBe('subtract');
+        expect(filterStmt.predicate.arithmeticValue).toBe(10);
+        expect(filterStmt.predicate.comparisonOp).toBe('gte');
+        expect(filterStmt.predicate.comparisonValue).toBe(0);
+      }
+    });
+
+    it('should parse division predicate', () => {
+      const source = `
+input numbers: number[]
+result = filter numbers where x / 2 <= 5
+output result
+      `.trim();
+
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      const filterStmt = ast.statements[1];
+      if (filterStmt!.type === 'filter' && filterStmt.predicate.type === 'arithmetic') {
+        expect(filterStmt.predicate.arithmeticOp).toBe('divide');
+        expect(filterStmt.predicate.arithmeticValue).toBe(2);
+        expect(filterStmt.predicate.comparisonOp).toBe('lte');
+        expect(filterStmt.predicate.comparisonValue).toBe(5);
+      }
+    });
+
+    it('should parse not equals arithmetic predicate', () => {
+      const source = `
+input numbers: number[]
+result = filter numbers where x % 3 != 0
+output result
+      `.trim();
+
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      const filterStmt = ast.statements[1];
+      if (filterStmt!.type === 'filter' && filterStmt.predicate.type === 'arithmetic') {
+        expect(filterStmt.predicate.comparisonOp).toBe('neq');
+      }
+    });
+
+    it('should compile and execute not equals arithmetic predicate', () => {
+      const source = `
+input numbers: number[]
+result = filter numbers where x % 3 != 0
+output result
+      `.trim();
+
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      const converter = new ASTToGraphConverter();
+      const graph = converter.convert(ast);
+      const compiledFn = graph.compile();
+
+      expect(compiledFn([1, 2, 3, 4, 5, 6, 7, 8, 9])).toEqual([1, 2, 4, 5, 7, 8]);
+    });
+
+    it('should handle negative arithmetic values', () => {
+      const source = `
+input numbers: number[]
+result = filter numbers where x * -1 < 0
+output result
+      `.trim();
+
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      const converter = new ASTToGraphConverter();
+      const graph = converter.convert(ast);
+      const compiledFn = graph.compile();
+
+      expect(compiledFn([1, -2, 3, -4, 5])).toEqual([1, 3, 5]);
+    });
+
+    it('should handle decimal arithmetic values', () => {
+      const source = `
+input numbers: number[]
+result = filter numbers where x * 0.5 > 1
+output result
+      `.trim();
+
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      const converter = new ASTToGraphConverter();
+      const graph = converter.convert(ast);
+      const compiledFn = graph.compile();
+
+      expect(compiledFn([1, 2, 3, 4, 5])).toEqual([3, 4, 5]);
+    });
+
+    it('should work in complex pipeline with arithmetic predicates', () => {
+      const source = `
+input numbers: number[]
+evens = filter numbers where x % 2 == 0
+doubled = map evens with x * 2
+total = reduce doubled by sum
+output total
+      `.trim();
+
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      const converter = new ASTToGraphConverter();
+      const graph = converter.convert(ast);
+      const compiledFn = graph.compile();
+
+      // Input: [1, 2, 3, 4, 5, 6]
+      // Filter evens: [2, 4, 6]
+      // Double: [4, 8, 12]
+      // Sum: 24
+      expect(compiledFn([1, 2, 3, 4, 5, 6])).toBe(24);
     });
   });
 });

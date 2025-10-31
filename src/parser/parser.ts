@@ -20,6 +20,7 @@ import {
   ReductionOperation,
   ComparisonPredicate,
   PropertyPredicate,
+  ArithmeticPredicate,
   ArithmeticTransform,
   StringTransform,
   PropertyTransform,
@@ -328,9 +329,31 @@ export class Parser {
       } as PropertyPredicate;
     }
 
-    // x comparator value
+    // x arithmetic_op value comparator value (e.g., x % 2 == 0)
+    // or x comparator value
     if (this.check(TokenType.IDENTIFIER)) {
       this.advance(); // skip 'x'
+
+      // Check if there's an arithmetic operator
+      try {
+        const arithmeticOp = this.parseArithmeticOperator(false);
+        this.advance(); // consume the arithmetic operator
+        const arithmeticValue = this.parseNumericValue();
+        const comparisonOp = this.parseComparisonOperator();
+        const comparisonValue = this.parseLiteralValue();
+
+        return {
+          type: 'arithmetic',
+          arithmeticOp,
+          arithmeticValue,
+          comparisonOp,
+          comparisonValue,
+        } as ArithmeticPredicate;
+      } catch (e) {
+        // Not an arithmetic operator, fall through to simple comparison
+      }
+
+      // Simple comparison: x comparator value
       const operator = this.parseComparisonOperator();
       const value = this.parseLiteralValue();
 
@@ -408,9 +431,13 @@ export class Parser {
     throw this.error('Expected transform expression');
   }
 
-  private parseArithmeticOperator(): 'multiply' | 'add' | 'subtract' | 'divide' | 'mod' {
+  private parseArithmeticOperator(
+    consume: boolean = true
+  ): 'multiply' | 'add' | 'subtract' | 'divide' | 'mod' {
     const token = this.current();
-    this.advance();
+    if (consume) {
+      this.advance();
+    }
 
     switch (token.type) {
       case TokenType.STAR:
@@ -480,6 +507,22 @@ export class Parser {
       default:
         throw this.error('Expected literal value');
     }
+  }
+
+  /**
+   * Parse a numeric value that may be negative
+   */
+  private parseNumericValue(): number {
+    let sign = 1;
+
+    // Check for optional minus sign
+    if (this.check(TokenType.MINUS)) {
+      sign = -1;
+      this.advance();
+    }
+
+    const token = this.consume(TokenType.NUMBER);
+    return sign * parseFloat(token.value);
   }
 
   // Utility methods

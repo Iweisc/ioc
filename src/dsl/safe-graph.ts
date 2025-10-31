@@ -20,6 +20,7 @@ import {
   IOCNodeParams,
   calculateNodeCapability,
   serializeIOC,
+  deserializeIOC,
   validateIOCProgram,
 } from './ioc-format.js';
 import {
@@ -63,6 +64,34 @@ export class SafeGraph {
    */
   getNode(id: string): IOCNode | undefined {
     return this.nodes.get(id);
+  }
+
+  /**
+   * Get the number of nodes in the graph
+   */
+  getNodeCount(): number {
+    return this.nodes.size;
+  }
+
+  /**
+   * Get the number of outputs in the graph
+   */
+  getOutputCount(): number {
+    return this.outputs.size;
+  }
+
+  /**
+   * Get the metadata
+   */
+  getMetadata(): IOCProgram['metadata'] {
+    return this.metadata;
+  }
+
+  /**
+   * Set the metadata
+   */
+  setMetadata(metadata: IOCProgram['metadata']): void {
+    this.metadata = metadata;
   }
 
   /**
@@ -527,6 +556,43 @@ export class SafeGraph {
         return program.outputs.map((id) => results.get(id));
       }
     };
+  }
+
+  /**
+   * Serialize graph to JSON-compatible object (IOCProgram)
+   */
+  toJSON(): IOCProgram {
+    return this.toProgram();
+  }
+
+  /**
+   * Create SafeGraph from IOC program
+   */
+  static fromProgram(program: IOCProgram): SafeGraph {
+    const graph = new SafeGraph(program.metadata?.name || 'imported');
+
+    // Set metadata, preserving the default name if not provided
+    if (program.metadata) {
+      graph.metadata = { name: graph.metadata.name, ...program.metadata };
+    }
+
+    // Recreate nodes
+    for (const node of program.nodes) {
+      graph.nodes.set(node.id, node);
+    }
+
+    // Set outputs
+    graph.outputs = new Set(program.outputs);
+
+    return graph;
+  }
+
+  /**
+   * Create SafeGraph from JSON string or IOCProgram object
+   */
+  static fromJSON(json: string | IOCProgram): SafeGraph {
+    const program = typeof json === 'string' ? deserializeIOC(json) : json;
+    return SafeGraph.fromProgram(program);
   }
 
   /**

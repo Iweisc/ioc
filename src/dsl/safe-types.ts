@@ -43,6 +43,13 @@ export type SafePredicate =
   | { type: 'compare'; op: ComparisonOp; value: SafeValue }
   | { type: 'compare_property'; op: ComparisonOp; property: string; value: SafeValue }
   | {
+      type: 'compare_arithmetic';
+      arithmeticOp: ArithmeticOp;
+      arithmeticValue: number;
+      comparisonOp: ComparisonOp;
+      comparisonValue: SafeValue;
+    }
+  | {
       type: 'type_check';
       expectedType: 'number' | 'string' | 'boolean' | 'array' | 'object' | 'null';
     }
@@ -135,6 +142,7 @@ export function getPredicateComplexity(predicate: SafePredicate): ComplexityClas
   switch (predicate.type) {
     case 'compare':
     case 'compare_property':
+    case 'compare_arithmetic':
     case 'type_check':
     case 'always':
       return ComplexityClass.CONSTANT;

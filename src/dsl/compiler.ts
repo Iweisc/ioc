@@ -106,6 +106,27 @@ export function compilePredicate(predicate: SafePredicate, inputVar: string = 'x
       return compileComparison(predicate.op, propAccess, value);
     }
 
+    case 'compare_arithmetic': {
+      // Compile arithmetic operation: (x % 2) == 0
+      const arithmeticOps: Record<string, string> = {
+        multiply: '*',
+        add: '+',
+        subtract: '-',
+        divide: '/',
+        modulo: '%',
+      };
+      const arithmeticOp = arithmeticOps[predicate.arithmeticOp];
+      if (!arithmeticOp) {
+        throw new Error(
+          `Unsupported arithmetic operator: ${predicate.arithmeticOp}. ` +
+            `Supported operators: ${Object.keys(arithmeticOps).join(', ')}`
+        );
+      }
+      const arithmeticExpr = `(${inputVar} ${arithmeticOp} ${predicate.arithmeticValue})`;
+      const value = safeSerialize(predicate.comparisonValue);
+      return compileComparison(predicate.comparisonOp, arithmeticExpr, value);
+    }
+
     case 'type_check': {
       const { expectedType } = predicate;
       switch (expectedType) {

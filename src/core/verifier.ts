@@ -74,9 +74,84 @@ export type VerificationResult =
   | { status: 'unknown'; reason: string };
 
 /**
+ * Result of budget validation
+ */
+export interface BudgetValidationResult {
+  success: boolean;
+  result?: any;
+  error?: string;
+  executionTime?: number;
+}
+
+/**
  * Termination verifier using empirical testing
  */
 export class TerminationVerifier {
+  /**
+   * Validate that a function executes within the given budget
+   *
+   * LIMITATION: This method only supports synchronous functions. Async functions
+   * or functions that return Promises will not be properly validated, as the timing
+   * and error handling will not account for asynchronous execution. If async support
+   * is needed, consider using a separate async validation method.
+   *
+   * @param fn - The synchronous function to validate
+   * @param budget - The execution budget to enforce
+   * @param args - Arguments to pass to the function
+   * @returns Validation result with success status, result, error, and execution time
+   */
+  static validateBudget(
+    fn: Function,
+    budget: ExecutionBudget,
+    args: any[]
+  ): BudgetValidationResult {
+    const maxTime = budget.maxTime ?? 1000;
+    const startTime = performance.now();
+
+    try {
+      // Execute the function with the provided arguments
+      const result = fn(...args);
+
+      // Detect if the result is a Promise (async function was called)
+      if (result && typeof result === 'object' && typeof result.then === 'function') {
+        return {
+          success: false,
+          error:
+            'validateBudget does not support async functions or Promises. Use synchronous functions only.',
+          executionTime: performance.now() - startTime,
+        };
+      }
+
+      const executionTime = performance.now() - startTime;
+
+      // Check if execution exceeded time budget
+      if (executionTime > maxTime) {
+        return {
+          success: false,
+          error: `Budget exceeded: execution took ${executionTime}ms, max allowed ${maxTime}ms`,
+          executionTime,
+        };
+      }
+
+      // Check if iteration budget was exceeded (if applicable)
+      // For now, we track via execution time as a proxy
+      // Future: could instrument loops to count iterations
+
+      return {
+        success: true,
+        result,
+        executionTime,
+      };
+    } catch (error: any) {
+      const executionTime = performance.now() - startTime;
+      return {
+        success: false,
+        error: error?.message || String(error),
+        executionTime,
+      };
+    }
+  }
+
   /**
    * Verify that a function terminates on sample inputs
    * Uses structural analysis + empirical testing

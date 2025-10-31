@@ -543,11 +543,21 @@ This isn't "dumbing down" programming—it's **engineering discipline**.
 
 ## Contributing
 
-This is a research project exploring constrained intent-oriented computing.
+This is a research project exploring constrained intent-oriented computing. We welcome contributions from the community!
+
+Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on:
+
+- Reporting bugs
+- Suggesting features
+- Development setup
+- Code standards
+- Submitting pull requests
 
 ## License
 
-All Rights Reserved - Proprietary License
+MIT License - see [LICENSE](LICENSE) for details.
+
+This project is free and open-source software. You are free to use, modify, and distribute it under the terms of the MIT License.
 
 ---
 

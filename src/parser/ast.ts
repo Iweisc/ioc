@@ -64,12 +64,21 @@ export type PredicateExpression =
   | ComparisonPredicate
   | PropertyPredicate
   | LogicalPredicate
-  | TypeCheckPredicate;
+  | TypeCheckPredicate
+  | ArithmeticPredicate;
 
 export interface ComparisonPredicate {
   type: 'comparison';
   operator: 'gt' | 'lt' | 'gte' | 'lte' | 'eq' | 'neq';
   value: number | string | boolean;
+}
+
+export interface ArithmeticPredicate {
+  type: 'arithmetic';
+  arithmeticOp: 'multiply' | 'add' | 'subtract' | 'divide' | 'mod';
+  arithmeticValue: number;
+  comparisonOp: 'gt' | 'lt' | 'gte' | 'lte' | 'eq' | 'neq';
+  comparisonValue: number | string | boolean;
 }
 
 export interface PropertyPredicate {
