@@ -230,7 +230,7 @@ jobs:
         run: npm run build
 
       - name: Test CLI - Version
-        run: node dist/cli/ioc.js --version || echo "WARNING: Version command failed"
+        run: node dist/cli/ioc.js --version || echo "WARNING - Version command failed"
 
       - name: Test CLI - Help
         run: node dist/cli/ioc.js --help
