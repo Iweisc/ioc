@@ -1,43 +1,154 @@
 IOC FRAMEWORK LICENSE
 
-Copyright (c) 2024 IOC Framework. All Rights Reserved.
+Copyright (c) 2024-present IOC Framework. All Rights Reserved.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to use,
-study, and contribute to the Software, subject to the following conditions:
+Version 1.0 - Effective Date: January 1, 2024
+
+DEFINITIONS:
+"Software" means the IOC Framework source code, documentation, and related materials.
+"You" means the individual or legal entity exercising permissions under this License.
+"Derivative Work" means any work based on or derived from the Software, including
+modifications, translations, adaptations, or works that incorporate substantial
+portions of the Software's architecture, algorithms, or core functionality.
+"Competing Product" means any software, framework, library, or service that provides
+substantially similar functionality to the Software, regardless of implementation
+language, platform, or architecture.
+"Fork" means creating a copy of the Software repository with the intent to develop
+it as a separate or independent project.
+"Redistribute" means to distribute, sublicense, sell, lease, or otherwise transfer
+copies of the Software or Derivative Works to third parties.
 
 PERMITTED USES:
-1. You MAY use the Software for personal, educational, or commercial purposes.
-2. You MAY study the source code and learn from it.
-3. You MAY contribute modifications, improvements, and bug fixes back to the
-   original project via pull requests.
-4. You MAY use the Software as a dependency in your own projects.
+1. Personal Use: You MAY use the Software for personal, educational, or internal
+   business purposes.
+2. Commercial Use: You MAY use the Software in commercial applications, provided
+   such use does not violate the restrictions below.
+3. Study: You MAY study the source code and learn from its implementation.
+4. Contribution: You MAY contribute modifications, improvements, and bug fixes
+   directly to the official repository via pull requests.
+5. Integration: You MAY integrate the Software as an unmodified dependency in
+   your own distinct projects, provided your project is not a Competing Product.
 
 RESTRICTIONS:
-1. You may NOT copy, fork, or rebrand this Software as a competing product.
-2. You may NOT create derivative works that are substantially similar to this
-   Software without explicit written permission.
-3. You may NOT remove or modify this license or copyright notices.
-4. You may NOT use the name "IOC Framework" or related trademarks to endorse
-   or promote derivative products without permission.
-5. All contributions to this project must be submitted under this same license.
+1. NO FORKING: You may NOT fork, copy, or create alternate versions of this
+   Software for distribution or development outside the official repository.
 
-ATTRIBUTION:
-- You MUST retain all copyright notices and give appropriate credit.
-- You MUST clearly state if you made modifications when redistributing.
-- You MUST link back to the original project repository.
+2. NO COMPETING PRODUCTS: You may NOT create, distribute, or operate any
+   Competing Product, whether as:
+   a) A standalone product or service
+   b) A hosted/SaaS offering
+   c) An embedded component in another product
+   d) A rebranded or white-labeled version
+   e) A reimplementation in another programming language
+   f) Any work that substitutes for or competes with the Software
+
+3. NO DERIVATIVE WORKS: You may NOT create or distribute Derivative Works except:
+   a) Contributions submitted directly to the official repository, or
+   b) Internal modifications for your own use that are never distributed
+
+4. NO REDISTRIBUTION: You may NOT Redistribute the Software or any modified
+   versions, except:
+   a) As an unmodified dependency declared in package managers (npm, pip, etc.)
+   b) When required by the normal operation of dependency management tools
+   c) You MUST NOT bundle, vendor, or include copies in your distributions
+
+5. NO LICENSE MODIFICATION: You may NOT remove, modify, obscure, or circumvent
+   this License or any copyright notices.
+
+6. NO TRADEMARK USE: You may NOT use "IOC Framework" or related trademarks to
+   endorse, promote, or name your own products without explicit written permission.
+
+7. NO PATENT CIRCUMVENTION: If you initiate patent litigation against any entity
+   alleging that the Software infringes a patent, your license automatically
+   terminates as of the date such litigation is filed.
+
+8. NO SUBLICENSING: You may NOT grant sublicenses or attempt to transfer your
+   rights under this License to any third party.
+
+ATTRIBUTION REQUIREMENTS:
+When using the Software, You MUST:
+- Retain all copyright, patent, trademark, and attribution notices
+- Provide clear attribution to "IOC Framework" in your documentation
+- Include a link to the official repository: https://github.com/Iweisc/ioc
+- Clearly indicate if you made any internal modifications (if applicable)
+- Display a notice: "Powered by IOC Framework" in your application's about/credits
 
 CONTRIBUTIONS:
-By submitting a contribution (pull request, issue, patch, etc.), you agree to
-license your contribution under this same license and certify that you have
-the right to do so.
+By submitting any contribution (code, documentation, issues, pull requests, etc.),
+You:
+- Grant the copyright holder a perpetual, worldwide, non-exclusive, royalty-free,
+  irrevocable license to use, modify, and distribute your contribution
+- Certify that you have the legal right to grant this license
+- Agree that your contribution will be licensed under this same License
+- Waive any moral rights or attribution rights to the extent permitted by law
+- Acknowledge that the copyright holder may relicense contributions under different
+  terms in future versions
 
+TERMINATION:
+This License automatically terminates if You:
+- Violate any term of this License
+- Create or distribute a Competing Product
+- Initiate patent litigation as described above
+- Attempt to circumvent any restriction in this License
+- Make false claims about your rights to use the Software
+
+Upon termination:
+- You must immediately cease all use of the Software
+- You must delete all copies in your possession or control
+- Any sublicenses (if improperly granted) are also terminated
+- This does not affect any contributions you already submitted to the official
+  repository
+
+ENFORCEMENT:
+- The copyright holder reserves the right to enforce this License through legal
+  action, including but not limited to injunctive relief and monetary damages
+- Violations may result in immediate termination without notice
+- You agree to indemnify the copyright holder against any claims arising from
+  your violation of this License
+
+JURISDICTION:
+- This License is governed by the laws of the United States and the State of
+  California, without regard to conflict of law principles
+- Any disputes shall be resolved exclusively in the courts of California
+- You consent to the personal jurisdiction of such courts
+
+VERSIONING:
+- This License applies to all versions of the Software unless explicitly stated
+  otherwise
+- The copyright holder may release future versions under different licenses
+- Your use of any version is governed by the license included with that version
+
+WARRANTY DISCLAIMER:
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
-IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF, OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-For licensing inquiries or permission requests, please open an issue at:
-https://github.com/Iweisc/ioc
+LIMITATION OF LIABILITY:
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+SEVERABILITY:
+If any provision of this License is held to be unenforceable or invalid, such
+provision shall be reformed only to the extent necessary to make it enforceable,
+and the remainder of this License shall remain in full effect.
+
+ENTIRE AGREEMENT:
+This License constitutes the entire agreement between You and the copyright
+holder regarding the Software and supersedes all prior agreements and
+understandings.
+
+For licensing inquiries, permission requests, or commercial licensing options,
+please contact:
+- GitHub: https://github.com/Iweisc/ioc
+- Open an issue for licensing discussions
+
+Copyright Holder: Isaac (Iweisc)
+Contact: https://github.com/Iweisc
