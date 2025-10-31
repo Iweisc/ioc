@@ -245,7 +245,7 @@ export class Parser {
     this.consume(TokenType.IF);
 
     // Parse result target (optional syntactic sugar: result = if ...)
-    let target = '_if_result';
+    const target = '_if_result';
 
     const condition = this.parsePredicate();
     this.consume(TokenType.THEN);

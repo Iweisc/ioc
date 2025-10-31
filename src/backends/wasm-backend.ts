@@ -1198,9 +1198,9 @@ export class WebAssemblyBackend implements CompilationBackend {
           const arr = loadValue(arrPtr);
           if (!Array.isArray(arr)) return arrPtr;
 
-          const flatten = (arr: any[], d: number): any[] => {
-            if (d <= 0) return arr;
-            return arr.reduce(
+          const flatten = (items: any[], d: number): any[] => {
+            if (d <= 0) return items;
+            return items.reduce(
               (acc, val) => acc.concat(Array.isArray(val) ? flatten(val, d - 1) : val),
               []
             );
