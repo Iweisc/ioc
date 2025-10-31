@@ -77,3 +77,16 @@ export {
   createSandboxContext,
   compileInRestrictedContext,
 } from './dsl/security';
+
+// Backends
+export { BackendSelector, backendSelector } from './backends/backend-selector';
+export { JavaScriptBackend } from './backends/javascript-backend';
+export { WebAssemblyBackend } from './backends/wasm-backend';
+export { LLVMBackend } from './backends/llvm-backend';
+export { BackendType, BackendStrategy } from './backends/types';
+export type {
+  CompilationBackend,
+  CompilationOptions,
+  CompilationResult,
+  BackendSelectorConfig,
+} from './backends/types';

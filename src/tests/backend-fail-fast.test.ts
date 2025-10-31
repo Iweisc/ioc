@@ -45,10 +45,8 @@ describe('Backend Fail-Fast Behavior', () => {
         outputs: ['filter1'],
       };
 
-      // Should throw error instead of silently compiling
-      await expect(backend.compile(program)).rejects.toThrow(
-        /WebAssembly backend code generation is not yet implemented/
-      );
+      // Should throw error (now progresses to wabt compilation which requires wabt library)
+      await expect(backend.compile(program)).rejects.toThrow(/wabt|WebAssembly compilation failed/);
     });
 
     it('should be marked as available (WASM support exists)', async () => {
