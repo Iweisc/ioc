@@ -219,15 +219,35 @@ async function compileCommand(filePath: string, outputPath?: string, backend?: s
     try {
       const result = await backendSelector.compile(program, {
         backend: backend as BackendType,
+        debug: true, // Always enable debug mode to get source code
       });
 
       console.log(`Backend: ${result.backend}`);
       console.log(`Compilation time: ${result.compilationTime.toFixed(2)}ms`);
       console.log(`Code size: ${result.codeSize} bytes`);
 
-      if (result.metadata.jsCode && outputPath) {
-        fs.writeFileSync(outputPath, result.metadata.jsCode, 'utf-8');
-        console.log(`Output: ${outputPath}`);
+      if (outputPath) {
+        if (result.metadata.jsCode) {
+          // Write JavaScript source code
+          fs.writeFileSync(outputPath, result.metadata.jsCode, 'utf-8');
+          console.log(`Output: ${outputPath}`);
+        } else if (result.metadata.wasmBinary) {
+          // Write WASM binary
+          fs.writeFileSync(outputPath, result.metadata.wasmBinary);
+          console.log(`Output: ${outputPath}`);
+        } else {
+          // Fallback: serialize the function (not ideal but better than nothing)
+          const functionCode = result.execute.toString();
+          fs.writeFileSync(outputPath, functionCode, 'utf-8');
+          console.log(`Output: ${outputPath} (function serialization)`);
+        }
+      } else if (result.metadata.jsCode) {
+        // Print source code to stdout when no output path
+        console.log('');
+        console.log(result.metadata.jsCode);
+      } else {
+        console.error('Error: Cannot output source code for this backend');
+        process.exit(1);
       }
     } catch (error: any) {
       console.error(`Backend compilation error: ${error.message}`);
