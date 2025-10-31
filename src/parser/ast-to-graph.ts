@@ -73,6 +73,11 @@ export class ASTToGraphConverter {
   }
 
   convert(program: Program): IOCProgram {
+    // Reset instance state to prevent leaks between conversions
+    this.nodes = new Map();
+    this.outputs = new Set();
+    this.variables = new Map();
+
     for (const statement of program.statements) {
       this.processStatement(statement);
     }

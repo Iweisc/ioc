@@ -18,6 +18,8 @@ class WATGenerator {
   private code: string[] = [];
   private localVarCount = 0;
   private functionCount = 0;
+  private literalStore = new Map<string, number>(); // literal value (JSON) -> pointer ID
+  private literalCount = 0;
 
   emit(line: string, indent: number = 0): void {
     this.code.push('  '.repeat(indent) + line);
@@ -31,6 +33,37 @@ class WATGenerator {
     return `$func${this.functionCount++}`;
   }
 
+  /**
+   * Allocate a stable pointer ID for a literal value.
+   * Reuses existing pointers for identical literals to save memory.
+   * The actual pointer will be initialized in the value store by the JS runtime.
+   */
+  allocLiteral(value: any): number {
+    const key = JSON.stringify(value);
+    const existing = this.literalStore.get(key);
+    if (existing !== undefined) {
+      return existing;
+    }
+    // Use negative pointer IDs to distinguish literals from runtime values
+    // This prevents collisions with runtime-allocated pointers
+    const pointerId = -(this.literalCount + 1);
+    this.literalCount++;
+    this.literalStore.set(key, pointerId);
+    return pointerId;
+  }
+
+  /**
+   * Get all literal values that need to be pre-stored at initialization.
+   * Returns array of [pointerId, value] pairs.
+   */
+  getLiterals(): Array<{ pointerId: number; value: any }> {
+    const result: Array<{ pointerId: number; value: any }> = [];
+    for (const [jsonValue, pointerId] of this.literalStore.entries()) {
+      result.push({ pointerId, value: JSON.parse(jsonValue) });
+    }
+    return result;
+  }
+
   toString(): string {
     return this.code.join('\n');
   }
@@ -38,6 +71,8 @@ class WATGenerator {
 
 /**
  * Helper to serialize safe values for embedding in WAT
+ * Note: This only handles primitive numeric values.
+ * Strings and objects cannot be serialized at compile-time and will throw an error.
  */
 function serializeValue(value: any): string {
   if (typeof value === 'number') {
@@ -47,11 +82,22 @@ function serializeValue(value: any): string {
   } else if (value === null) {
     return '0';
   } else if (typeof value === 'string') {
-    // Strings need special handling - return a memory offset pointer
-    // For now, we'll use a simple encoding
-    return '0'; // placeholder
+    throw new Error(
+      `Cannot serialize string literals in WAT at compile-time: "${value}". ` +
+        `String literals require runtime value-store allocation. ` +
+        `This is a known limitation of the WASM backend.`
+    );
+  } else if (typeof value === 'object') {
+    throw new Error(
+      `Cannot serialize object literals in WAT at compile-time: ${JSON.stringify(value)}. ` +
+        `Object literals require runtime value-store allocation. ` +
+        `This is a known limitation of the WASM backend.`
+    );
   } else {
-    return '0'; // Complex types handled in memory
+    throw new Error(
+      `Cannot serialize value of type ${typeof value} in WAT at compile-time. ` +
+        `Only numbers, booleans, and null are supported.`
+    );
   }
 }
 
@@ -72,13 +118,13 @@ export class WebAssemblyBackend implements CompilationBackend {
 
     try {
       // Generate WebAssembly Text format
-      const wat = this.generateWAT(program, options);
+      const { wat, literals } = this.generateWAT(program, options);
 
       // Compile WAT to binary WASM
       const wasmBinary = await this.compileWAT(wat);
 
-      // Create import object with helper functions
-      const imports = this.createImports();
+      // Create import object with helper functions and pre-store literals
+      const imports = this.createImports(literals);
 
       // Instantiate WebAssembly module
       const WebAssembly = (globalThis as any).WebAssembly;
@@ -115,8 +161,12 @@ export class WebAssemblyBackend implements CompilationBackend {
    * Generate WebAssembly Text format from IOC program
    *
    * Generates WAT code that implements the IOC program's dataflow.
+   * Returns both the WAT code and the literals that need to be pre-stored.
    */
-  private generateWAT(program: IOCProgram, _options: Partial<CompilationOptions>): string {
+  private generateWAT(
+    program: IOCProgram,
+    _options: Partial<CompilationOptions>
+  ): { wat: string; literals: Array<{ pointerId: number; value: any }> } {
     const gen = new WATGenerator();
 
     // Module header
@@ -155,7 +205,10 @@ export class WebAssemblyBackend implements CompilationBackend {
 
     gen.emit(')', 0);
 
-    return gen.toString();
+    return {
+      wat: gen.toString(),
+      literals: gen.getLiterals(),
+    };
   }
 
   /**
@@ -241,9 +294,12 @@ export class WebAssemblyBackend implements CompilationBackend {
       }
 
       case 'compare_property': {
+        // Allocate a stable pointer for the property path string
+        const propPath = predicate.property;
+        const pointerId = gen.allocLiteral(propPath);
         // Get property value
         emit(`local.get ${valueVar}`);
-        emit(`(i32.const 0) ;; property name ptr - TODO`);
+        emit(`(i32.const ${pointerId}) ;; property name ptr for "${propPath}"`);
         emit(`call $get_property`);
         emit(`call $load_value`);
         // Load comparison value
@@ -324,8 +380,13 @@ export class WebAssemblyBackend implements CompilationBackend {
         break;
 
       case 'property': {
+        // Allocate a stable pointer for the property path string
+        const propPath = Array.isArray(transform.path)
+          ? transform.path.join('.')
+          : String(transform.path);
+        const pointerId = gen.allocLiteral(propPath);
         emit(`local.get ${valueVar}`);
-        emit(`(i32.const 0) ;; property path ptr - TODO`);
+        emit(`(i32.const ${pointerId}) ;; property path ptr for "${propPath}"`);
         emit(`call $get_property`);
         emit(`return`);
         break;
@@ -1068,13 +1129,18 @@ export class WebAssemblyBackend implements CompilationBackend {
   /**
    * Create import object for WebAssembly instance with JavaScript helper functions
    */
-  private createImports(): Record<string, any> {
+  private createImports(literals: Array<{ pointerId: number; value: any }>): Record<string, any> {
     const WebAssembly = (globalThis as any).WebAssembly;
     const memory = new WebAssembly.Memory({ initial: 10, maximum: 100 });
 
     // Value storage: Map memory pointers to JavaScript values
     const valueStore = new Map<number, any>();
     let nextPtr = 1000; // Start pointers at 1000 to avoid low values
+
+    // Pre-store literals with their assigned negative pointer IDs
+    for (const { pointerId, value } of literals) {
+      valueStore.set(pointerId, value);
+    }
 
     const storeValue = (value: any): number => {
       const ptr = nextPtr++;
