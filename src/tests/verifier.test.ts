@@ -383,6 +383,9 @@ describe('TerminationVerifier', () => {
     it('should detect Promise-like objects (thenable)', () => {
       const budget = DEFAULT_BUDGETS[ComplexityClass.CONSTANT];
 
+      // @ts-ignore - intentionally creating thenable object for testing
+      // eslint-disable-next-line no-restricted-syntax
+      // @biome-ignore lint/suspicious/noThenProperty: testing thenable detection
       const thenableFn = () => {
         return {
           then: (resolve: any) => resolve(42),
@@ -399,6 +402,9 @@ describe('TerminationVerifier', () => {
     it('should not reject objects with then property that is not a function', () => {
       const budget = DEFAULT_BUDGETS[ComplexityClass.CONSTANT];
 
+      // @ts-ignore - intentionally creating object with non-function then property
+      // eslint-disable-next-line no-restricted-syntax
+      // @biome-ignore lint/suspicious/noThenProperty: testing non-function then property
       const objFn = () => {
         return { then: 'not a function', value: 42 };
       };
@@ -406,6 +412,7 @@ describe('TerminationVerifier', () => {
       const result = TerminationVerifier.validateBudget(objFn, budget, []);
 
       expect(result.success).toBe(true);
+      // @biome-ignore lint/suspicious/noThenProperty: testing non-function then property
       expect(result.result).toEqual({ then: 'not a function', value: 42 });
     });
 
@@ -496,5 +503,381 @@ describe('TerminationVerifier', () => {
       expect(result.result).toBe(Infinity);
     });
   });
-});
 
+  describe('Budget Validation - Additional Edge Cases', () => {
+    it('should handle functions that return large arrays', () => {
+      const budget = DEFAULT_BUDGETS[ComplexityClass.LINEAR];
+
+      const largeFn = () => {
+        return Array(10000)
+          .fill(0)
+          .map((_, i) => i);
+      };
+
+      const result = TerminationVerifier.validateBudget(largeFn, budget, []);
+
+      expect(result.success).toBe(true);
+      expect(result.result).toHaveLength(10000);
+    });
+
+    it('should handle functions with nested object returns', () => {
+      const budget = DEFAULT_BUDGETS[ComplexityClass.CONSTANT];
+
+      const nestedFn = () => {
+        return {
+          level1: {
+            level2: {
+              level3: {
+                value: 'deep',
+              },
+            },
+          },
+        };
+      };
+
+      const result = TerminationVerifier.validateBudget(nestedFn, budget, []);
+
+      expect(result.success).toBe(true);
+      expect(result.result.level1.level2.level3.value).toBe('deep');
+    });
+
+    it('should handle functions that modify input arguments', () => {
+      const budget = DEFAULT_BUDGETS[ComplexityClass.LINEAR];
+
+      const modifyFn = (arr: number[]) => {
+        arr.push(999); // Mutates input
+        return arr;
+      };
+
+      const testArr = [1, 2, 3];
+      const result = TerminationVerifier.validateBudget(modifyFn, budget, [testArr]);
+
+      expect(result.success).toBe(true);
+      expect(result.result).toContain(999);
+    });
+
+    it('should detect budget exceeded with precise timing', () => {
+      const budget = { maxTime: 50 };
+
+      const slowFn = () => {
+        const start = Date.now();
+        while (Date.now() - start < 100) {
+          // Busy wait for 100ms
+        }
+        return 'done';
+      };
+
+      const result = TerminationVerifier.validateBudget(slowFn, budget, []);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('Budget exceeded');
+      expect(result.executionTime).toBeGreaterThan(50);
+    });
+
+    it('should handle functions that throw custom error classes', () => {
+      const budget = DEFAULT_BUDGETS[ComplexityClass.CONSTANT];
+
+      class CustomError extends Error {
+        constructor(message: string) {
+          super(message);
+          this.name = 'CustomError';
+        }
+      }
+
+      const throwCustomFn = () => {
+        throw new CustomError('Custom error message');
+      };
+
+      const result = TerminationVerifier.validateBudget(throwCustomFn, budget, []);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Custom error message');
+    });
+
+    it('should handle functions with Symbol returns', () => {
+      const budget = DEFAULT_BUDGETS[ComplexityClass.CONSTANT];
+
+      const symbolFn = () => Symbol('test');
+
+      const result = TerminationVerifier.validateBudget(symbolFn, budget, []);
+
+      expect(result.success).toBe(true);
+      expect(typeof result.result).toBe('symbol');
+    });
+
+    it('should handle functions with BigInt returns', () => {
+      const budget = DEFAULT_BUDGETS[ComplexityClass.CONSTANT];
+
+      const bigIntFn = () => BigInt('12345678901234567890');
+
+      const result = TerminationVerifier.validateBudget(bigIntFn, budget, []);
+
+      expect(result.success).toBe(true);
+      expect(typeof result.result).toBe('bigint');
+    });
+
+    it('should handle functions with Date returns', () => {
+      const budget = DEFAULT_BUDGETS[ComplexityClass.CONSTANT];
+
+      const dateFn = () => new Date('2024-01-01');
+
+      const result = TerminationVerifier.validateBudget(dateFn, budget, []);
+
+      expect(result.success).toBe(true);
+      expect(result.result).toBeInstanceOf(Date);
+    });
+
+    it('should handle functions with RegExp returns', () => {
+      const budget = DEFAULT_BUDGETS[ComplexityClass.CONSTANT];
+
+      const regexFn = () => /test/gi;
+
+      const result = TerminationVerifier.validateBudget(regexFn, budget, []);
+
+      expect(result.success).toBe(true);
+      expect(result.result).toBeInstanceOf(RegExp);
+    });
+
+    it('should handle functions with Map returns', () => {
+      const budget = DEFAULT_BUDGETS[ComplexityClass.LINEAR];
+
+      const mapFn = () => {
+        const m = new Map();
+        m.set('key1', 'value1');
+        m.set('key2', 'value2');
+        return m;
+      };
+
+      const result = TerminationVerifier.validateBudget(mapFn, budget, []);
+
+      expect(result.success).toBe(true);
+      expect(result.result).toBeInstanceOf(Map);
+      expect(result.result.size).toBe(2);
+    });
+
+    it('should handle functions with Set returns', () => {
+      const budget = DEFAULT_BUDGETS[ComplexityClass.LINEAR];
+
+      const setFn = () => {
+        const s = new Set([1, 2, 3, 2, 1]);
+        return s;
+      };
+
+      const result = TerminationVerifier.validateBudget(setFn, budget, []);
+
+      expect(result.success).toBe(true);
+      expect(result.result).toBeInstanceOf(Set);
+      expect(result.result.size).toBe(3);
+    });
+
+    it('should handle functions with mixed argument types', () => {
+      const budget = DEFAULT_BUDGETS[ComplexityClass.LINEAR];
+
+      const mixedFn = (num: number, str: string, bool: boolean, arr: any[]) => {
+        return { num, str, bool, arrLen: arr.length };
+      };
+
+      const result = TerminationVerifier.validateBudget(mixedFn, budget, [
+        42,
+        'test',
+        true,
+        [1, 2, 3],
+      ]);
+
+      expect(result.success).toBe(true);
+      expect(result.result).toEqual({
+        num: 42,
+        str: 'test',
+        bool: true,
+        arrLen: 3,
+      });
+    });
+
+    it('should handle functions with spread arguments', () => {
+      const budget = DEFAULT_BUDGETS[ComplexityClass.LINEAR];
+
+      const spreadFn = (...nums: number[]) => nums.reduce((a, b) => a + b, 0);
+
+      const result = TerminationVerifier.validateBudget(spreadFn, budget, [1, 2, 3, 4, 5]);
+
+      expect(result.success).toBe(true);
+      expect(result.result).toBe(15);
+    });
+
+    it('should track execution time for very fast functions', () => {
+      const budget = DEFAULT_BUDGETS[ComplexityClass.CONSTANT];
+
+      const fastFn = () => 1 + 1;
+
+      const result = TerminationVerifier.validateBudget(fastFn, budget, []);
+
+      expect(result.success).toBe(true);
+      expect(result.executionTime).toBeDefined();
+      expect(result.executionTime).toBeGreaterThanOrEqual(0);
+      expect(result.executionTime).toBeLessThan(100); // Should be very fast
+    });
+
+    it('should handle functions that return function references', () => {
+      const budget = DEFAULT_BUDGETS[ComplexityClass.CONSTANT];
+
+      const fnReturningFn = () => {
+        return function innerFn() {
+          return 42;
+        };
+      };
+
+      const result = TerminationVerifier.validateBudget(fnReturningFn, budget, []);
+
+      expect(result.success).toBe(true);
+      expect(typeof result.result).toBe('function');
+    });
+
+    it('should handle functions with default parameters', () => {
+      const budget = DEFAULT_BUDGETS[ComplexityClass.CONSTANT];
+
+      const defaultParamFn = (x: number = 10, y: number = 20) => x + y;
+
+      const result1 = TerminationVerifier.validateBudget(defaultParamFn, budget, []);
+      expect(result1.success).toBe(true);
+      expect(result1.result).toBe(30);
+
+      const result2 = TerminationVerifier.validateBudget(defaultParamFn, budget, [5]);
+      expect(result2.success).toBe(true);
+      expect(result2.result).toBe(25);
+
+      const result3 = TerminationVerifier.validateBudget(defaultParamFn, budget, [5, 15]);
+      expect(result3.success).toBe(true);
+      expect(result3.result).toBe(20);
+    });
+
+    it('should handle errors thrown in deeply nested function calls', () => {
+      const budget = DEFAULT_BUDGETS[ComplexityClass.LINEAR];
+
+      const nestedFn = () => {
+        const level1 = () => {
+          const level2 = () => {
+            const level3 = () => {
+              throw new Error('Deep error');
+            };
+            return level3();
+          };
+          return level2();
+        };
+        return level1();
+      };
+
+      const result = TerminationVerifier.validateBudget(nestedFn, budget, []);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Deep error');
+    });
+
+    it('should handle functions that access closure variables', () => {
+      const budget = DEFAULT_BUDGETS[ComplexityClass.CONSTANT];
+
+      const outerVar = 100;
+      const closureFn = (x: number) => x + outerVar;
+
+      const result = TerminationVerifier.validateBudget(closureFn, budget, [50]);
+
+      expect(result.success).toBe(true);
+      expect(result.result).toBe(150);
+    });
+
+    it('should handle functions with destructured parameters', () => {
+      const budget = DEFAULT_BUDGETS[ComplexityClass.CONSTANT];
+
+      const destructureFn = ({ a, b }: { a: number; b: number }) => a + b;
+
+      const result = TerminationVerifier.validateBudget(destructureFn, budget, [{ a: 5, b: 10 }]);
+
+      expect(result.success).toBe(true);
+      expect(result.result).toBe(15);
+    });
+
+    it('should handle functions that use array destructuring', () => {
+      const budget = DEFAULT_BUDGETS[ComplexityClass.LINEAR];
+
+      const arrayDestructureFn = ([first, second, ...rest]: number[]) => {
+        return { first, second, restLen: rest.length };
+      };
+
+      const result = TerminationVerifier.validateBudget(arrayDestructureFn, budget, [
+        [1, 2, 3, 4, 5],
+      ]);
+
+      expect(result.success).toBe(true);
+      expect(result.result).toEqual({ first: 1, second: 2, restLen: 3 });
+    });
+
+    it('should properly measure execution time for recursive factorial', () => {
+      const budget = DEFAULT_BUDGETS[ComplexityClass.LINEAR];
+
+      const factorial = (n: number): number => {
+        if (n <= 1) return 1;
+        return n * factorial(n - 1);
+      };
+
+      const result = TerminationVerifier.validateBudget(factorial, budget, [10]);
+
+      expect(result.success).toBe(true);
+      expect(result.result).toBe(3628800);
+      expect(result.executionTime).toBeDefined();
+      expect(result.executionTime).toBeGreaterThan(0);
+    });
+  });
+
+  describe('BudgetValidationResult Interface', () => {
+    it('should return all expected fields on success', () => {
+      const budget = DEFAULT_BUDGETS[ComplexityClass.CONSTANT];
+      const fn = (x: number) => x * 2;
+
+      const result = TerminationVerifier.validateBudget(fn, budget, [21]);
+
+      expect(result).toHaveProperty('success');
+      expect(result).toHaveProperty('result');
+      expect(result).toHaveProperty('executionTime');
+      expect(result.success).toBe(true);
+      expect(result.result).toBe(42);
+      expect(typeof result.executionTime).toBe('number');
+    });
+
+    it('should return all expected fields on failure', () => {
+      const budget = DEFAULT_BUDGETS[ComplexityClass.CONSTANT];
+      const fn = () => {
+        throw new Error('Test failure');
+      };
+
+      const result = TerminationVerifier.validateBudget(fn, budget, []);
+
+      expect(result).toHaveProperty('success');
+      expect(result).toHaveProperty('error');
+      expect(result).toHaveProperty('executionTime');
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Test failure');
+      expect(typeof result.executionTime).toBe('number');
+    });
+
+    it('should not have result field on failure', () => {
+      const budget = DEFAULT_BUDGETS[ComplexityClass.CONSTANT];
+      const fn = () => {
+        throw new Error('Failure');
+      };
+
+      const result = TerminationVerifier.validateBudget(fn, budget, []);
+
+      expect(result.success).toBe(false);
+      expect(result.result).toBeUndefined();
+    });
+
+    it('should not have error field on success', () => {
+      const budget = DEFAULT_BUDGETS[ComplexityClass.CONSTANT];
+      const fn = () => 'success';
+
+      const result = TerminationVerifier.validateBudget(fn, budget, []);
+
+      expect(result.success).toBe(true);
+      expect(result.error).toBeUndefined();
+    });
+  });
+});

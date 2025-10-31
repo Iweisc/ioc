@@ -1258,4 +1258,296 @@ output total
       expect(compiledFn([1, 2, 3, 4, 5, 6])).toBe(24);
     });
   });
+
+  describe('Arithmetic Predicate Edge Cases', () => {
+    it('should handle parsing error for invalid arithmetic operator', () => {
+      const source = `
+input numbers: number[]
+result = filter numbers where x @ 2 == 0
+output result
+      `.trim();
+
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+
+      // Should throw error due to invalid operator @
+      expect(() => parser.parse()).toThrow();
+    });
+
+    it('should parse arithmetic with very large numbers', () => {
+      const source = `
+input numbers: number[]
+result = filter numbers where x * 1000000 > 5000000
+output result
+      `.trim();
+
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      const converter = new ASTToGraphConverter();
+      const graph = converter.convert(ast);
+      const compiledFn = graph.compile();
+
+      expect(compiledFn([1, 10, 100])).toEqual([10, 100]);
+    });
+
+    it('should parse arithmetic with very small decimal numbers', () => {
+      const source = `
+input numbers: number[]
+result = filter numbers where x * 0.001 < 1
+output result
+      `.trim();
+
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      const converter = new ASTToGraphConverter();
+      const graph = converter.convert(ast);
+      const compiledFn = graph.compile();
+
+      expect(compiledFn([100, 1000, 10000])).toEqual([100]);
+    });
+
+    it('should handle parseNumericValue with explicit positive sign edge case', () => {
+      // Note: The lexer may not support + prefix, but we test the number parsing
+      const source = `
+input numbers: number[]
+result = filter numbers where x + 5 == 10
+output result
+      `.trim();
+
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      const converter = new ASTToGraphConverter();
+      const graph = converter.convert(ast);
+      const compiledFn = graph.compile();
+
+      expect(compiledFn([5, 10, 15])).toEqual([5]);
+    });
+
+    it('should handle zero in arithmetic operations correctly', () => {
+      const source = `
+input numbers: number[]
+result = filter numbers where x - 0 == 5
+output result
+      `.trim();
+
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      const converter = new ASTToGraphConverter();
+      const graph = converter.convert(ast);
+      const compiledFn = graph.compile();
+
+      expect(compiledFn([5, 0, -5])).toEqual([5]);
+    });
+
+    it('should parse multiple arithmetic predicates in sequence', () => {
+      const source = `
+input numbers: number[]
+evens = filter numbers where x % 2 == 0
+multiples_of_three = filter numbers where x % 3 == 0
+result = filter numbers where x % 6 == 0
+output result
+      `.trim();
+
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      const converter = new ASTToGraphConverter();
+      const graph = converter.convert(ast);
+      const compiledFn = graph.compile();
+
+      expect(compiledFn([6, 12, 15, 18, 20])).toEqual([6, 12, 18]);
+    });
+
+    it('should handle arithmetic predicate with negative comparison value', () => {
+      const source = `
+input numbers: number[]
+result = filter numbers where x + 10 > -5
+output result
+      `.trim();
+
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      const converter = new ASTToGraphConverter();
+      const graph = converter.convert(ast);
+      const compiledFn = graph.compile();
+
+      expect(compiledFn([-20, -15, -10, 0])).toEqual([-15, -10, 0]);
+    });
+
+    it('should parse and execute arithmetic in map operations', () => {
+      const source = `
+input numbers: number[]
+filtered = filter numbers where x % 2 == 0
+mapped = map filtered with x * 3
+output mapped
+      `.trim();
+
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      const converter = new ASTToGraphConverter();
+      const graph = converter.convert(ast);
+      const compiledFn = graph.compile();
+
+      expect(compiledFn([1, 2, 3, 4, 5, 6])).toEqual([6, 12, 18]);
+    });
+
+    it('should handle chained arithmetic operations', () => {
+      const source = `
+input numbers: number[]
+step1 = filter numbers where x % 2 == 0
+step2 = filter step1 where x % 3 == 0
+output step2
+      `.trim();
+
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      const converter = new ASTToGraphConverter();
+      const graph = converter.convert(ast);
+      const compiledFn = graph.compile();
+
+      // Should find numbers divisible by both 2 and 3 (i.e., divisible by 6)
+      expect(compiledFn([2, 3, 6, 9, 12, 15, 18])).toEqual([6, 12, 18]);
+    });
+
+    it('should parse arithmetic with all comparison operators systematically', () => {
+      const operators = ['>', '<', '>=', '<=', '==', '!='];
+
+      operators.forEach(op => {
+        const source = `
+input numbers: number[]
+result = filter numbers where x % 5 ${op} 0
+output result
+        `.trim();
+
+        const lexer = new Lexer(source);
+        const parser = new Parser(lexer.tokenize());
+
+        // Should parse without errors
+        expect(() => parser.parse()).not.toThrow();
+      });
+    });
+
+    it('should handle fractional results in division arithmetic', () => {
+      const source = `
+input numbers: number[]
+result = filter numbers where x / 3 > 2.5
+output result
+      `.trim();
+
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      const converter = new ASTToGraphConverter();
+      const graph = converter.convert(ast);
+      const compiledFn = graph.compile();
+
+      expect(compiledFn([6, 7, 8, 9, 10])).toEqual([8, 9, 10]);
+    });
+
+    it('should preserve precision in modulo with decimals', () => {
+      const source = `
+input numbers: number[]
+result = filter numbers where x % 2.5 == 0
+output result
+      `.trim();
+
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      const converter = new ASTToGraphConverter();
+      const graph = converter.convert(ast);
+      const compiledFn = graph.compile();
+
+      expect(compiledFn([2.5, 5, 7.5, 10])).toEqual([2.5, 5, 7.5, 10]);
+    });
+  });
+
+  describe('Parser Integration with Arithmetic', () => {
+    it('should handle arithmetic predicates in complex nested pipelines', () => {
+      const source = `
+input data: number[]
+positive = filter data where x > 0
+evens = filter positive where x % 2 == 0
+large = filter evens where x > 10
+doubled = map large with x * 2
+total = reduce doubled by sum
+output total
+      `.trim();
+
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      const converter = new ASTToGraphConverter();
+      const graph = converter.convert(ast);
+      const compiledFn = graph.compile();
+
+      // positive: [2,4,12,14,20] -> evens: [2,4,12,14,20] -> large: [12,14,20] -> doubled: [24,28,40] -> sum: 92
+      expect(compiledFn([-5, 2, 4, 12, 14, 20])).toBe(92);
+    });
+
+    it('should work with arithmetic predicates and property access', () => {
+      const source = `
+input items: object[]
+filtered = filter items where age % 10 == 0
+output filtered
+      `.trim();
+
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      const converter = new ASTToGraphConverter();
+      const graph = converter.convert(ast);
+      const compiledFn = graph.compile();
+
+      const testData = [
+        { name: 'Alice', age: 20 },
+        { name: 'Bob', age: 25 },
+        { name: 'Charlie', age: 30 },
+        { name: 'David', age: 35 },
+      ];
+
+      expect(compiledFn(testData)).toEqual([
+        { name: 'Alice', age: 20 },
+        { name: 'Charlie', age: 30 },
+      ]);
+    });
+
+    it('should handle arithmetic predicates with reduction operations', () => {
+      const source = `
+input numbers: number[]
+multiples = filter numbers where x % 3 == 0
+count_result = reduce multiples by count
+output count_result
+      `.trim();
+
+      const lexer = new Lexer(source);
+      const parser = new Parser(lexer.tokenize());
+      const ast = parser.parse();
+
+      const converter = new ASTToGraphConverter();
+      const graph = converter.convert(ast);
+      const compiledFn = graph.compile();
+
+      expect(compiledFn([1, 3, 6, 9, 11, 12, 15])).toBe(5);
+    });
+  });
 });
