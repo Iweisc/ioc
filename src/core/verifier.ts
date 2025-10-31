@@ -100,7 +100,11 @@ export class TerminationVerifier {
    * @param args - Arguments to pass to the function
    * @returns Validation result with success status, result, error, and execution time
    */
-  validateBudget(fn: Function, budget: ExecutionBudget, args: any[]): BudgetValidationResult {
+  static validateBudget(
+    fn: Function,
+    budget: ExecutionBudget,
+    args: any[]
+  ): BudgetValidationResult {
     const maxTime = budget.maxTime ?? 1000;
     const startTime = performance.now();
 
@@ -142,7 +146,7 @@ export class TerminationVerifier {
       const executionTime = performance.now() - startTime;
       return {
         success: false,
-        error: error.message || String(error),
+        error: error?.message || String(error),
         executionTime,
       };
     }

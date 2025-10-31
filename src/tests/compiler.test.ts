@@ -364,13 +364,12 @@ describe('Compiler', () => {
       expect(filtered).toEqual(['hello', 'world']);
     });
   });
-});
 
   describe('Arithmetic Predicate Compilation', () => {
     it('should compile arithmetic predicate - modulo equals', () => {
       const predicate = {
         type: 'compare_arithmetic' as const,
-        arithmeticOp: 'mod' as const,
+        arithmeticOp: 'modulo' as const,
         arithmeticValue: 2,
         comparisonOp: 'eq' as const,
         comparisonValue: 0,
@@ -448,7 +447,7 @@ describe('Compiler', () => {
     it('should compile arithmetic predicate - not equals', () => {
       const predicate = {
         type: 'compare_arithmetic' as const,
-        arithmeticOp: 'mod' as const,
+        arithmeticOp: 'modulo' as const,
         arithmeticValue: 3,
         comparisonOp: 'ne' as const,
         comparisonValue: 0,
@@ -490,12 +489,12 @@ describe('Compiler', () => {
     });
 
     it('should handle all arithmetic operations in filter context', () => {
-      const operations: Array<'multiply' | 'add' | 'subtract' | 'divide' | 'mod'> = [
+      const operations: Array<'multiply' | 'add' | 'subtract' | 'divide' | 'modulo'> = [
         'multiply',
         'add',
         'subtract',
         'divide',
-        'mod',
+        'modulo',
       ];
 
       operations.forEach((op) => {

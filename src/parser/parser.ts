@@ -338,7 +338,7 @@ export class Parser {
       if (this.isArithmeticOperator()) {
         const arithmeticOp = this.parseArithmeticOperatorType();
         this.advance(); // consume the arithmetic operator
-        const arithmeticValue = parseFloat(this.consume(TokenType.NUMBER).value);
+        const arithmeticValue = this.parseNumericValue();
         const comparisonOp = this.parseComparisonOperator();
         const comparisonValue = this.parseLiteralValue();
 
@@ -530,6 +530,22 @@ export class Parser {
       default:
         throw this.error('Expected literal value');
     }
+  }
+
+  /**
+   * Parse a numeric value that may be negative
+   */
+  private parseNumericValue(): number {
+    let sign = 1;
+
+    // Check for optional minus sign
+    if (this.check(TokenType.MINUS)) {
+      sign = -1;
+      this.advance();
+    }
+
+    const token = this.consume(TokenType.NUMBER);
+    return sign * parseFloat(token.value);
   }
 
   // Utility methods

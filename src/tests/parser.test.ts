@@ -568,7 +568,17 @@ describe('Parser - Statement Parsing', () => {
     });
 
     it('should parse all reduction operations', () => {
-      const operations = ['sum', 'product', 'max', 'min', 'average', 'count', 'first', 'last', 'join'];
+      const operations = [
+        'sum',
+        'product',
+        'max',
+        'min',
+        'average',
+        'count',
+        'first',
+        'last',
+        'join',
+      ];
 
       operations.forEach((op) => {
         const source = `result = reduce data by ${op}`;
@@ -1011,7 +1021,6 @@ output result
       expect(() => converter.convert(ast)).toThrow('Undefined variable');
     });
   });
-});
 
   describe('Arithmetic Predicates', () => {
     it('should parse modulo predicate for even numbers', () => {

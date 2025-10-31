@@ -543,9 +543,9 @@ export class SafeGraph {
   static fromProgram(program: IOCProgram): SafeGraph {
     const graph = new SafeGraph(program.metadata?.name || 'imported');
 
-    // Set metadata
+    // Set metadata, preserving the default name if not provided
     if (program.metadata) {
-      graph.metadata = { ...program.metadata };
+      graph.metadata = { name: graph.metadata.name, ...program.metadata };
     }
 
     // Recreate nodes

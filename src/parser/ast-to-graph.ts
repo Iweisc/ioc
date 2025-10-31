@@ -175,9 +175,17 @@ export class ASTToGraphConverter {
 
   private convertArithmeticPredicate(expr: ArithmeticPredicate): SafePredicate {
     // Convert arithmetic predicate like "x % 2 == 0" to compare_arithmetic
+    // Map parser arithmetic tokens to canonical ArithmeticOp values
+    const arithmeticOp = ARITHMETIC_OP_MAP[expr.arithmeticOp];
+    if (!arithmeticOp) {
+      throw new Error(
+        `Unsupported arithmetic operator in AST: ${expr.arithmeticOp}. ` +
+          `Supported operators: ${Object.keys(ARITHMETIC_OP_MAP).join(', ')}`
+      );
+    }
     return {
       type: 'compare_arithmetic',
-      arithmeticOp: expr.arithmeticOp as any,
+      arithmeticOp: arithmeticOp as any,
       arithmeticValue: expr.arithmeticValue,
       comparisonOp: (COMPARISON_OP_MAP[expr.comparisonOp] || expr.comparisonOp) as any,
       comparisonValue: expr.comparisonValue,
@@ -226,9 +234,17 @@ export class ASTToGraphConverter {
   }
 
   private convertArithmeticTransform(expr: ArithmeticTransform): SafeTransform {
+    // Map parser arithmetic tokens to canonical ArithmeticOp values
+    const arithmeticOp = ARITHMETIC_OP_MAP[expr.operator];
+    if (!arithmeticOp) {
+      throw new Error(
+        `Unsupported arithmetic operator in AST: ${expr.operator}. ` +
+          `Supported operators: ${Object.keys(ARITHMETIC_OP_MAP).join(', ')}`
+      );
+    }
     return {
       type: 'arithmetic',
-      op: (ARITHMETIC_OP_MAP[expr.operator] || expr.operator) as any,
+      op: arithmeticOp as any,
       operand: expr.value,
     };
   }

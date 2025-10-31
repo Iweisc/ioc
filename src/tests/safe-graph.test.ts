@@ -280,10 +280,7 @@ describe('SafeGraph', () => {
       graph.output(mapId);
 
       const compiledFn = graph.compile();
-      const data = [
-        { user: { name: 'Alice', age: 25 } },
-        { user: { name: 'Bob', age: 30 } },
-      ];
+      const data = [{ user: { name: 'Alice', age: 25 } }, { user: { name: 'Bob', age: 30 } }];
 
       const result = compiledFn(data);
       expect(result).toEqual(['Alice', 'Bob']);
@@ -687,14 +684,13 @@ describe('SafeGraph', () => {
       const testData = [1, 3, 7, 9];
       expect(compiledRestored(testData)).toEqual(compiledOriginal(testData));
     });
-  });
 
     it('should serialize graph with arithmetic predicate', () => {
       const graph = new SafeGraph('arithmetic-test');
       const inputId = graph.input('numbers');
       const filterId = graph.filter(inputId, {
         type: 'compare_arithmetic',
-        arithmeticOp: 'mod',
+        arithmeticOp: 'modulo',
         arithmeticValue: 2,
         comparisonOp: 'eq',
         comparisonValue: 0,
@@ -896,5 +892,4 @@ describe('SafeGraph', () => {
       expect(compiledRestored(testData)).toEqual(compiledOriginal(testData));
     });
   });
-});
 });

@@ -113,9 +113,15 @@ export function compilePredicate(predicate: SafePredicate, inputVar: string = 'x
         add: '+',
         subtract: '-',
         divide: '/',
-        mod: '%',
+        modulo: '%',
       };
       const arithmeticOp = arithmeticOps[predicate.arithmeticOp];
+      if (!arithmeticOp) {
+        throw new Error(
+          `Unsupported arithmetic operator: ${predicate.arithmeticOp}. ` +
+            `Supported operators: ${Object.keys(arithmeticOps).join(', ')}`
+        );
+      }
       const arithmeticExpr = `(${inputVar} ${arithmeticOp} ${predicate.arithmeticValue})`;
       const value = safeSerialize(predicate.comparisonValue);
       return compileComparison(predicate.comparisonOp, arithmeticExpr, value);
