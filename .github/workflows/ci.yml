@@ -278,8 +278,8 @@ jobs:
           node dist/cli/ioc.js run examples/sales-report.ioc --input-file test-sales.json --backend javascript
 
           # Test simple examples
-          echo '[1,2,3,4,5]' | node dist/cli/ioc.js run examples/pipeline.ioc --backend javascript
-          echo '[1,2,3,4,5]' | node dist/cli/ioc.js run examples/pipeline.ioc --backend wasm
+          node dist/cli/ioc.js run examples/pipeline.ioc --backend javascript --input '[1,2,3,4,5]'
+          node dist/cli/ioc.js run examples/pipeline.ioc --backend wasm --input '[1,2,3,4,5]'
 
           echo "✅ All examples executed successfully"
 

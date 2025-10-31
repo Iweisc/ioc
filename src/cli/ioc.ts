@@ -29,26 +29,37 @@ function printUsage() {
 IOC - Intent-Oriented Computing Language
 
 Usage:
-  ioc run <file.ioc> [--input <json>] [--debug] [--unsafe] [--backend <type>]  Run an .ioc program
-  ioc compile <file.ioc> [--output <js>] [--backend <type>]                    Compile to JavaScript
-  ioc validate <file.ioc>                                                       Validate syntax and safety
-  ioc backends                                                                  List available backends
-  ioc help                                                                      Show this help message
+  ioc run <file.ioc> [--input <json> | --input-file <file>] [--debug] [--unsafe] [--backend <type>]
+  ioc compile <file.ioc> [--output <js>] [--backend <type>]
+  ioc validate <file.ioc>
+  ioc backends
+  ioc help
+
+Commands:
+  run        Compile and execute an .ioc program
+  compile    Compile to JavaScript or other target
+  validate   Validate syntax and safety properties
+  backends   List available compilation backends
+  help       Show this help message
 
 Flags:
-  --debug      Show execution plan before running
-  --unsafe     Skip security validation (use only with trusted .ioc files)
-  --backend    Compilation backend: javascript, wasm, llvm (default: auto-select)
+  --input <json>       Inline JSON input data
+  --input-file <file>  Read input data from a JSON file
+  --output <file>      Write compiled output to file
+  --debug              Show execution plan before running
+  --unsafe             Skip security validation (use only with trusted .ioc files)
+  --backend <type>     Compilation backend: javascript, wasm, llvm (default: auto-select)
 
 Backends:
   javascript   Fast compilation, runs anywhere (default)
   wasm         Portable binary format, good performance  
-  llvm         Maximum performance via native code (Node.js only)
+  llvm         Maximum performance via native code (not yet implemented)
 
 Examples:
   ioc run pipeline.ioc --input '[1,2,3,4,5]'
+  ioc run grades.ioc --input-file data.json
   ioc run pipeline.ioc --input '[1,2,3,4,5]' --debug
-  ioc run pipeline.ioc --input '[1,2,3]' --backend llvm
+  ioc run pipeline.ioc --input '[1,2,3]' --backend wasm
   ioc run untrusted.ioc --input '[1,2,3]'  (validates security by default)
   ioc compile app.ioc --output app.js --backend wasm
   ioc validate my-program.ioc
@@ -346,8 +357,28 @@ async function main() {
 
   switch (command) {
     case 'run': {
+      let inputJson: string | undefined;
+
+      // Check for --input flag (inline JSON)
       const inputIndex = args.indexOf('--input');
-      const inputJson = inputIndex !== -1 ? args[inputIndex + 1] : undefined;
+      if (inputIndex !== -1) {
+        inputJson = args[inputIndex + 1];
+      }
+
+      // Check for --input-file flag (read from file)
+      const inputFileIndex = args.indexOf('--input-file');
+      if (inputFileIndex !== -1) {
+        const inputFilePath = args[inputFileIndex + 1];
+        if (inputFilePath) {
+          try {
+            inputJson = readFile(inputFilePath);
+          } catch (error: any) {
+            console.error(`Error reading input file: ${error.message}`);
+            process.exit(1);
+          }
+        }
+      }
+
       const debug = args.includes('--debug');
       const unsafe = args.includes('--unsafe');
       const backendIndex = args.indexOf('--backend');
