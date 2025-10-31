@@ -44,12 +44,12 @@ abstract class BaseStrategy {
   protected generateFlattenCodeNaive(node: IntentNode): string {
     const inputId = node.inputs[0];
     const depth = getParam(node, 'depth') || 1;
-    
+
     if (depth !== 1) {
       // For depth > 1, generate nested loops
       const loops: string[] = [];
       const pushIndent = '  '.repeat(depth);
-      
+
       // Build nested loops
       for (let i = 0; i < depth; i++) {
         const indent = '  '.repeat(i);
@@ -57,18 +57,18 @@ abstract class BaseStrategy {
         const nextVar = `_item${i + 1}`;
         loops.push(`${indent}for (const ${nextVar} of ${varName}) {`);
       }
-      
+
       loops.push(`${pushIndent}${node.id}.push(_item${depth})`);
-      
+
       // Close loops
       for (let i = depth - 1; i >= 0; i--) {
         const indent = '  '.repeat(i);
         loops.push(`${indent}}`);
       }
-      
+
       return `${node.id} = []\n${loops.join('\n')}`;
     }
-    
+
     // Simple single-level flatten
     return `${node.id} = []
 for (const _sublist of ${inputId}) {
@@ -93,7 +93,7 @@ for (const _sublist of ${inputId}) {
   protected generateDistinctCodeNaive(node: IntentNode, context: ExecutionContext): string {
     const inputId = node.inputs[0];
     const keyFn = getParam(node, 'keyFn');
-    
+
     if (keyFn) {
       const keyName = `key_${node.id}`;
       context.variables[keyName] = keyFn;
@@ -107,7 +107,7 @@ for (const _item of ${inputId}) {
   }
 }`;
     }
-    
+
     return `${node.id} = []
 const _seen = new Set()
 for (const _item of ${inputId}) {
@@ -124,7 +124,7 @@ for (const _item of ${inputId}) {
   protected generateDistinctCodeOptimized(node: IntentNode, context: ExecutionContext): string {
     const inputId = node.inputs[0];
     const keyFn = getParam(node, 'keyFn');
-    
+
     if (keyFn) {
       // When keyFn is provided, we need to track by key but return original items
       const keyName = `key_${node.id}`;
@@ -139,7 +139,7 @@ for (const _item of ${inputId}) {
   }
 }`;
     }
-    
+
     // Simple case: no keyFn, just deduplicate primitives
     return `${node.id} = [...new Set(${inputId})]`;
   }
@@ -314,9 +314,7 @@ for (_left of ${leftId}) {
         return this.generateAssertCode(node, context);
 
       default:
-        throw new Error(
-          `Naive strategy doesn't support ${node.intentType}`
-        );
+        throw new Error(`Naive strategy doesn't support ${node.intentType}`);
     }
   }
 
@@ -449,9 +447,7 @@ export class OptimizedStrategy extends Strategy {
         return this.generateAssertCode(node, context);
 
       default:
-        throw new Error(
-          `Optimized strategy doesn't support ${node.intentType}`
-        );
+        throw new Error(`Optimized strategy doesn't support ${node.intentType}`);
     }
   }
 

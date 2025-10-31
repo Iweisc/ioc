@@ -1,12 +1,7 @@
 // Solver Kernel - translates intent graphs into executable code
 
 import { Graph, IntentNode, IntentType } from '../core/graph';
-import {
-  Strategy,
-  NaiveStrategy,
-  OptimizedStrategy,
-  ExecutionContext,
-} from './strategies';
+import { Strategy, NaiveStrategy, OptimizedStrategy, ExecutionContext } from './strategies';
 import { PerformanceProfiler, getProfiler } from './profiler';
 
 export class SolverKernel {
@@ -19,10 +14,7 @@ export class SolverKernel {
 
   constructor(graph: Graph, profiler?: PerformanceProfiler) {
     this.graph = graph;
-    this.strategies = [
-      new OptimizedStrategy(),
-      new NaiveStrategy(),
-    ];
+    this.strategies = [new OptimizedStrategy(), new NaiveStrategy()];
     this.profiler = profiler || getProfiler();
   }
 
@@ -50,7 +42,7 @@ export class SolverKernel {
     // Trace back through the graph
     const inputNodeId = node.inputs[0];
     if (!inputNodeId) return 1000;
-    
+
     const inputNode = this.graph.nodes.get(inputNodeId);
     if (!inputNode) return 1000;
 
@@ -86,9 +78,7 @@ export class SolverKernel {
     const { intentType } = node;
 
     // Filter strategies that can handle this intent type
-    const capableStrategies = this.strategies.filter(s =>
-      s.canHandle(intentType)
-    );
+    const capableStrategies = this.strategies.filter((s) => s.canHandle(intentType));
 
     if (capableStrategies.length === 0) {
       throw new Error(`No strategy found for intent type: ${intentType}`);
@@ -110,13 +100,9 @@ export class SolverKernel {
 
     if (optimizeFor === 'speed') {
       // Use profiler data to pick the best strategy
-      const strategyCosts = capableStrategies.map(strategy => {
+      const strategyCosts = capableStrategies.map((strategy) => {
         const strategyName = strategy.constructor.name;
-        const cost = this.profiler.getCostEstimate(
-          intentType,
-          strategyName,
-          bucketedSize
-        );
+        const cost = this.profiler.getCostEstimate(intentType, strategyName, bucketedSize);
         return { cost, strategy };
       });
 
@@ -125,7 +111,7 @@ export class SolverKernel {
       ).strategy;
     } else if (optimizeFor === 'memory') {
       // Prefer naive (smaller code)
-      const naive = capableStrategies.find(s => s instanceof NaiveStrategy);
+      const naive = capableStrategies.find((s) => s instanceof NaiveStrategy);
       bestStrategy = naive || capableStrategies[0]!;
     } else {
       // Balanced: use optimized if available
@@ -139,9 +125,10 @@ export class SolverKernel {
   /**
    * Generate JavaScript code from intent graph
    */
-  private generateCode(
-    optimizeFor: 'speed' | 'memory' | 'balanced' = 'speed'
-  ): { code: string; context: ExecutionContext } {
+  private generateCode(optimizeFor: 'speed' | 'memory' | 'balanced' = 'speed'): {
+    code: string;
+    context: ExecutionContext;
+  } {
     const context: ExecutionContext = {
       variables: {},
       nodeResults: {},
@@ -185,26 +172,23 @@ export class SolverKernel {
   /**
    * Compile intent graph into executable function
    */
-  compile(
-    optimizeFor: 'speed' | 'memory' | 'balanced' = 'speed',
-    saveProfile = false
-  ): Function {
+  compile(optimizeFor: 'speed' | 'memory' | 'balanced' = 'speed', saveProfile = false): Function {
     // Generate code
     const { code, context } = this.generateCode(optimizeFor);
 
     // Collect input parameter names
     const inputNodes = Array.from(this.graph.nodes.values()).filter(
-      node => node.intentType === IntentType.INPUT
+      (node) => node.intentType === IntentType.INPUT
     );
     const paramNames = inputNodes
-      .map(node => node.params['name'] as string)
+      .map((node) => node.params['name'] as string)
       .filter((name): name is string => typeof name === 'string');
 
     // Build function
     const funcDef = `function _ioc_compiled_fn(${paramNames.join(', ')}) {`;
     const indentedCode = code
       .split('\n')
-      .map(line => `  ${line}`)
+      .map((line) => `  ${line}`)
       .join('\n');
     const fullCode = `${funcDef}\n${indentedCode}\n}`;
 
@@ -212,11 +196,11 @@ export class SolverKernel {
     this.generatedCode = fullCode;
 
     // Compile the code using Function constructor
-    // 
+    //
     // SECURITY NOTE: We use the Function constructor here to dynamically compile
     // the generated code into an executable function. While this is similar to eval(),
     // it is safe in this context because:
-    // 
+    //
     // 1. The code is generated entirely by our own code generation system, not from
     //    untrusted user input
     // 2. User-provided functions (predicates, transforms) are passed as closed-over
@@ -224,18 +208,17 @@ export class SolverKernel {
     // 3. All string interpolation in code generation uses node IDs and variable names
     //    that we control, never user strings
     // 4. The generated code is available for inspection via getGeneratedCode()
-    // 
+    //
     // Alternative approaches like vm.runInContext or worker threads would add
     // significant complexity and performance overhead for no security benefit in
     // this controlled code generation scenario.
     const execGlobals = { ...context.variables };
-    
+
     // eslint-disable-next-line no-new-func
-    const compiledFn = new Function(
-      ...Object.keys(execGlobals),
-      ...paramNames,
-      code
-    ).bind(null, ...Object.values(execGlobals));
+    const compiledFn = new Function(...Object.keys(execGlobals), ...paramNames, code).bind(
+      null,
+      ...Object.values(execGlobals)
+    );
 
     // Attach metadata for debugging
     (compiledFn as any)._ioc_code = fullCode;
@@ -269,10 +252,7 @@ export class SolverKernel {
       return 'No strategy decisions cached yet';
     }
 
-    const lines: string[] = [
-      'Strategy Selection Report:',
-      '='.repeat(60),
-    ];
+    const lines: string[] = ['Strategy Selection Report:', '='.repeat(60)];
 
     // Group by node
     const byNode = new Map<string, Array<[number, string, Strategy]>>();
@@ -281,10 +261,10 @@ export class SolverKernel {
       const nodeId = parts[0];
       const sizeStr = parts[1];
       const optMode = parts[2];
-      
+
       if (!nodeId || !sizeStr || !optMode) continue;
       const size = parseInt(sizeStr);
-      
+
       if (!byNode.has(nodeId)) {
         byNode.set(nodeId, []);
       }
@@ -300,7 +280,7 @@ export class SolverKernel {
       for (const [size, optMode, strategy] of decisions) {
         lines.push(
           `  size=${String(size).padStart(6)} ` +
-          `opt=${optMode.padEnd(8)} → ${strategy.constructor.name}`
+            `opt=${optMode.padEnd(8)} → ${strategy.constructor.name}`
         );
       }
     }

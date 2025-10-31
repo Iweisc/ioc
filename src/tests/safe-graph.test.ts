@@ -1047,10 +1047,15 @@ describe('SafeGraph', () => {
 
     it('should preserve all comparison operators in serialization', () => {
       const operators: Array<'gt' | 'lt' | 'gte' | 'lte' | 'eq' | 'ne'> = [
-        'gt', 'lt', 'gte', 'lte', 'eq', 'ne'
+        'gt',
+        'lt',
+        'gte',
+        'lte',
+        'eq',
+        'ne',
       ];
 
-      operators.forEach(op => {
+      operators.forEach((op) => {
         const graph = new SafeGraph(`test-${op}`);
         const inputId = graph.input('data');
         const filterId = graph.filter(inputId, {
@@ -1089,10 +1094,14 @@ describe('SafeGraph', () => {
 
     it('should serialize and deserialize graph with all arithmetic operators', () => {
       const operators: Array<'multiply' | 'add' | 'subtract' | 'divide' | 'modulo'> = [
-        'multiply', 'add', 'subtract', 'divide', 'modulo'
+        'multiply',
+        'add',
+        'subtract',
+        'divide',
+        'modulo',
       ];
 
-      operators.forEach(arithmeticOp => {
+      operators.forEach((arithmeticOp) => {
         const graph = new SafeGraph(`test-${arithmeticOp}`);
         const inputId = graph.input('data');
         const filterId = graph.filter(inputId, {

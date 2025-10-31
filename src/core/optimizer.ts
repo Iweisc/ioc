@@ -12,7 +12,7 @@ export class GraphOptimizer {
 
   /**
    * Apply optimization passes to the graph.
-   * 
+   *
    * Available passes:
    * - dead_code_elimination: Remove unused nodes
    * - common_subexpression_elimination: Deduplicate identical computations
@@ -65,7 +65,7 @@ export class GraphOptimizer {
     const markReachable = (nodeId: string) => {
       if (reachable.has(nodeId)) return;
       reachable.add(nodeId);
-      
+
       const node = this.graph.nodes.get(nodeId);
       if (node) {
         for (const inputId of node.inputs) {
@@ -81,15 +81,13 @@ export class GraphOptimizer {
 
     // Remove unreachable nodes
     const allNodes = new Set(this.graph.nodes.keys());
-    const deadNodes = new Set([...allNodes].filter(id => !reachable.has(id)));
+    const deadNodes = new Set([...allNodes].filter((id) => !reachable.has(id)));
 
     if (deadNodes.size > 0) {
       for (const nodeId of deadNodes) {
         this.graph.nodes.delete(nodeId);
       }
-      this.optimizationsApplied.push(
-        `dead_code_elimination: removed ${deadNodes.size} nodes`
-      );
+      this.optimizationsApplied.push(`dead_code_elimination: removed ${deadNodes.size} nodes`);
     }
   }
 
@@ -103,7 +101,7 @@ export class GraphOptimizer {
     // Create a hashable signature for a node
     const getNodeSignature = (node: IntentNode): string => {
       const inputsTuple = JSON.stringify(node.inputs);
-      
+
       // Sort params for consistent signature
       const paramSig: Array<[string, any]> = [];
       for (const key of Object.keys(node.params).sort()) {
@@ -170,9 +168,7 @@ export class GraphOptimizer {
     if (changesMade > 0) {
       // Redirect all references from duplicate nodes to canonical nodes
       for (const [_nodeId, node] of this.graph.nodes.entries()) {
-        node.inputs = node.inputs.map(inputId => 
-          nodeToCanonical.get(inputId) || inputId
-        );
+        node.inputs = node.inputs.map((inputId) => nodeToCanonical.get(inputId) || inputId);
       }
 
       // Update outputs
@@ -209,7 +205,7 @@ export class GraphOptimizer {
 
       const inputId = node.inputs[0];
       if (!inputId) continue;
-      
+
       const inputNode = this.graph.nodes.get(inputId);
       if (!inputNode || inputNode.intentType !== IntentType.FILTER) continue;
       if (fusedNodes.has(inputId)) continue;
@@ -230,9 +226,7 @@ export class GraphOptimizer {
     }
 
     if (changesMade > 0) {
-      this.optimizationsApplied.push(
-        `filter_fusion: fused ${changesMade} filter pairs`
-      );
+      this.optimizationsApplied.push(`filter_fusion: fused ${changesMade} filter pairs`);
       this.deadCodeElimination();
     }
   }
@@ -252,7 +246,7 @@ export class GraphOptimizer {
 
       const inputId = node.inputs[0];
       if (!inputId) continue;
-      
+
       const inputNode = this.graph.nodes.get(inputId);
       if (!inputNode || inputNode.intentType !== IntentType.MAP) continue;
       if (fusedNodes.has(inputId)) continue;
@@ -273,9 +267,7 @@ export class GraphOptimizer {
     }
 
     if (changesMade > 0) {
-      this.optimizationsApplied.push(
-        `map_fusion: fused ${changesMade} map pairs`
-      );
+      this.optimizationsApplied.push(`map_fusion: fused ${changesMade} map pairs`);
       this.deadCodeElimination();
     }
   }
@@ -293,7 +285,7 @@ export class GraphOptimizer {
 
       const mapId = filterNode.inputs[0];
       if (!mapId) continue;
-      
+
       const mapNode = this.graph.nodes.get(mapId);
       if (!mapNode || mapNode.intentType !== IntentType.MAP) continue;
 
@@ -308,51 +300,51 @@ export class GraphOptimizer {
       // Test if predicate is independent of transformation
       if (this.isPredicateIndependent(transform, predicate)) {
         // Reorder: source -> filter(p) -> map(f)
-        
+
         // Update filter to take map's input
         filterNode.inputs = [...mapNode.inputs];
-        
+
         // Update map to take filter's output
         mapNode.inputs = [filterId];
-        
+
         // Update any consumers of filter to consume map instead
         for (const [nId, n] of this.graph.nodes.entries()) {
           if (nId === mapId) continue;
-          n.inputs = n.inputs.map(inp => (inp === filterId ? mapId : inp)).filter((x): x is string => x !== undefined);
+          n.inputs = n.inputs
+            .map((inp) => (inp === filterId ? mapId : inp))
+            .filter((x): x is string => x !== undefined);
         }
-        
+
         // Update outputs
-        this.graph.outputs = this.graph.outputs.map(out => 
-          out === filterId ? mapId : out
-        ).filter((x): x is string => x !== undefined);
-        
+        this.graph.outputs = this.graph.outputs
+          .map((out) => (out === filterId ? mapId : out))
+          .filter((x): x is string => x !== undefined);
+
         changesMade++;
       }
     }
 
     if (changesMade > 0) {
-      this.optimizationsApplied.push(
-        `filter_before_map: reordered ${changesMade} operations`
-      );
+      this.optimizationsApplied.push(`filter_before_map: reordered ${changesMade} operations`);
     }
   }
 
   /**
    * Test if a predicate is independent of a transformation
-   * 
+   *
    * This method uses test cases to determine if a predicate can be safely
    * applied before or after a transformation. It checks if:
    *   map(f).filter(p) === filter(p').map(f)
    * where p' is the predicate applied to the original data.
-   * 
+   *
    * LIMITATIONS:
    * - Test case coverage may not be exhaustive for all input domains
    * - Complex predicates or transforms may not be accurately detected
    * - False positives are possible if test cases don't cover edge cases
-   * 
+   *
    * The optimization is conservative: it only applies when test cases confirm
    * independence. If uncertain, the reordering is skipped.
-   * 
+   *
    * Users can bypass this check by manually reordering operations in their
    * graph construction if they know their predicate is independent.
    */
@@ -366,13 +358,13 @@ export class GraphOptimizer {
     for (const testData of testCases) {
       try {
         // Method 1: map then filter
-        const mapped = testData.map(x => transform(x));
-        const result1 = mapped.filter(m => predicate(m));
+        const mapped = testData.map((x) => transform(x));
+        const result1 = mapped.filter((m) => predicate(m));
 
         // Method 2: filter then map
         try {
-          const filtered = testData.filter(x => predicate(x));
-          const result2 = filtered.map(x => transform(x));
+          const filtered = testData.filter((x) => predicate(x));
+          const result2 = filtered.map((x) => transform(x));
 
           // If both methods give same result, predicate is independent
           if (JSON.stringify(result1) === JSON.stringify(result2)) {
@@ -419,7 +411,7 @@ export class GraphOptimizer {
     if (typeof value === 'function') return false;
     if (value && typeof value === 'object') {
       if (Array.isArray(value)) {
-        return value.every(item => this.isSerializable(item));
+        return value.every((item) => this.isSerializable(item));
       }
       for (const key in value) {
         if (Object.prototype.hasOwnProperty.call(value, key)) {
@@ -435,22 +427,22 @@ export class GraphOptimizer {
    */
   private deepEqual(a: any, b: any): boolean {
     if (typeof a !== typeof b) return false;
-    
+
     if (typeof a === 'object' && a !== null && b !== null) {
       if (Array.isArray(a) && Array.isArray(b)) {
         if (a.length !== b.length) return false;
         return a.every((val, idx) => this.deepEqual(val, b[idx]));
       }
-      
+
       if (Array.isArray(a) !== Array.isArray(b)) return false;
-      
+
       const keysA = Object.keys(a).sort();
       const keysB = Object.keys(b).sort();
       if (JSON.stringify(keysA) !== JSON.stringify(keysB)) return false;
-      
-      return keysA.every(key => this.deepEqual(a[key], b[key]));
+
+      return keysA.every((key) => this.deepEqual(a[key], b[key]));
     }
-    
+
     return a === b;
   }
 
@@ -460,7 +452,7 @@ export class GraphOptimizer {
   private paramsIdentical(params1: Record<string, any>, params2: Record<string, any>): boolean {
     const keys1 = Object.keys(params1).sort();
     const keys2 = Object.keys(params2).sort();
-    
+
     if (JSON.stringify(keys1) !== JSON.stringify(keys2)) return false;
 
     for (const key of keys1) {
@@ -485,9 +477,8 @@ export class GraphOptimizer {
       return 'No optimizations applied';
     }
 
-    return [
-      'Optimization Report:',
-      ...this.optimizationsApplied.map(opt => `  - ${opt}`),
-    ].join('\n');
+    return ['Optimization Report:', ...this.optimizationsApplied.map((opt) => `  - ${opt}`)].join(
+      '\n'
+    );
   }
 }

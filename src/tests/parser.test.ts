@@ -1427,7 +1427,7 @@ output step2
     it('should parse arithmetic with all comparison operators systematically', () => {
       const operators = ['>', '<', '>=', '<=', '==', '!='];
 
-      operators.forEach(op => {
+      operators.forEach((op) => {
         const source = `
 input numbers: number[]
 result = filter numbers where x % 5 ${op} 0

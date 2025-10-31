@@ -166,7 +166,11 @@ export class Graph {
   /**
    * Reduce elements to a single value
    */
-  reduce(inputNode: string, operation: (acc: unknown, x: unknown) => unknown, initial?: unknown): string {
+  reduce(
+    inputNode: string,
+    operation: (acc: unknown, x: unknown) => unknown,
+    initial?: unknown
+  ): string {
     const input = this.getNode(inputNode);
     if (!input) throw new Error(`Node not found: ${inputNode}`);
 
@@ -349,7 +353,7 @@ export class Graph {
    */
   clone(): Graph {
     const cloned = new Graph();
-    
+
     // Clone all nodes
     for (const [id, node] of this.nodes.entries()) {
       const clonedNode: IntentNode = {
@@ -362,22 +366,22 @@ export class Graph {
       };
       cloned.nodes.set(id, clonedNode);
     }
-    
+
     // Clone outputs
     cloned.outputs = [...this.outputs];
-    
+
     return cloned;
   }
 
   /**
    * Apply optimization passes to the graph
-   * 
+   *
    * Note: Uses require() for lazy loading to break circular dependency between
    * Graph and GraphOptimizer. The optimizer imports Graph for type definitions,
    * and Graph needs to instantiate GraphOptimizer. By using require() here instead
    * of a top-level import, we ensure both modules are fully loaded before the
    * optimizer is instantiated.
-   * 
+   *
    * Alternative: Accept optimizer as a parameter or use dependency injection,
    * but that would complicate the API for this common operation.
    */
