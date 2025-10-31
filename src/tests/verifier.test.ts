@@ -384,7 +384,7 @@ describe('TerminationVerifier', () => {
       const budget = DEFAULT_BUDGETS[ComplexityClass.CONSTANT];
 
       // @ts-ignore - intentionally creating thenable object for testing
-      // eslint-disable-next-line no-restricted-syntax
+
       // @biome-ignore lint/suspicious/noThenProperty: testing thenable detection
       const thenableFn = () => {
         return {
@@ -403,7 +403,7 @@ describe('TerminationVerifier', () => {
       const budget = DEFAULT_BUDGETS[ComplexityClass.CONSTANT];
 
       // @ts-ignore - intentionally creating object with non-function then property
-      // eslint-disable-next-line no-restricted-syntax
+
       // @biome-ignore lint/suspicious/noThenProperty: testing non-function then property
       const objFn = () => {
         return { then: 'not a function', value: 42 };

@@ -8,6 +8,15 @@ import { describe, it, expect } from 'vitest';
 import { Lexer } from '../parser/lexer';
 import { Parser } from '../parser/parser';
 import { ASTToGraphConverter } from '../parser/ast-to-graph';
+import { JavaScriptBackend } from '../backends/javascript-backend';
+import type { IOCProgram } from '../dsl/ioc-format';
+
+// Helper to compile IOCProgram to executable function
+async function compileProgram(program: IOCProgram): Promise<Function> {
+  const backend = new JavaScriptBackend();
+  const result = await backend.compile(program);
+  return result.execute;
+}
 
 describe('Parser Refactoring - parseArithmeticOperator', () => {
   describe('Arithmetic Operator Detection (consume: false)', () => {
@@ -248,7 +257,7 @@ output arithmetic
   });
 
   describe('Arithmetic Predicate Execution After Refactoring', () => {
-    it('should correctly execute modulo predicate', () => {
+    it('should correctly execute modulo predicate', async () => {
       const source = `
 input numbers: number[]
 evens = filter numbers where x % 2 == 0
@@ -261,12 +270,12 @@ output evens
 
       const converter = new ASTToGraphConverter();
       const graph = converter.convert(ast);
-      const compiledFn = graph.compile();
+      const compiledFn = await compileProgram(graph);
 
       expect(compiledFn([1, 2, 3, 4, 5, 6])).toEqual([2, 4, 6]);
     });
 
-    it('should correctly execute multiplication predicate', () => {
+    it('should correctly execute multiplication predicate', async () => {
       const source = `
 input numbers: number[]
 result = filter numbers where x * 3 > 10
@@ -279,12 +288,12 @@ output result
 
       const converter = new ASTToGraphConverter();
       const graph = converter.convert(ast);
-      const compiledFn = graph.compile();
+      const compiledFn = await compileProgram(graph);
 
       expect(compiledFn([1, 2, 3, 4, 5])).toEqual([4, 5]);
     });
 
-    it('should correctly execute simple comparison after try-catch fallthrough', () => {
+    it('should correctly execute simple comparison after try-catch fallthrough', async () => {
       const source = `
 input numbers: number[]
 positive = filter numbers where x > 0
@@ -297,12 +306,12 @@ output positive
 
       const converter = new ASTToGraphConverter();
       const graph = converter.convert(ast);
-      const compiledFn = graph.compile();
+      const compiledFn = await compileProgram(graph);
 
       expect(compiledFn([1, -2, 3, -4, 5])).toEqual([1, 3, 5]);
     });
 
-    it('should correctly execute map operations', () => {
+    it('should correctly execute map operations', async () => {
       const source = `
 input numbers: number[]
 doubled = map numbers with x * 2
@@ -315,14 +324,14 @@ output doubled
 
       const converter = new ASTToGraphConverter();
       const graph = converter.convert(ast);
-      const compiledFn = graph.compile();
+      const compiledFn = await compileProgram(graph);
 
       expect(compiledFn([1, 2, 3])).toEqual([2, 4, 6]);
     });
   });
 
   describe('Edge Cases and Error Handling', () => {
-    it('should handle negative values in arithmetic predicates', () => {
+    it('should handle negative values in arithmetic predicates', async () => {
       const source = `
 input numbers: number[]
 result = filter numbers where x + -5 == 0
@@ -335,12 +344,12 @@ output result
 
       const converter = new ASTToGraphConverter();
       const graph = converter.convert(ast);
-      const compiledFn = graph.compile();
+      const compiledFn = await compileProgram(graph);
 
       expect(compiledFn([5, -5, 0, 10])).toEqual([5]);
     });
 
-    it('should handle decimal values in arithmetic operations', () => {
+    it('should handle decimal values in arithmetic operations', async () => {
       const source = `
 input numbers: number[]
 result = filter numbers where x * 0.5 > 2
@@ -353,7 +362,7 @@ output result
 
       const converter = new ASTToGraphConverter();
       const graph = converter.convert(ast);
-      const compiledFn = graph.compile();
+      const compiledFn = await compileProgram(graph);
 
       expect(compiledFn([1, 2, 3, 4, 5, 6])).toEqual([5, 6]);
     });
@@ -373,7 +382,7 @@ output result
   });
 
   describe('Complex Integration Tests', () => {
-    it('should handle mixed arithmetic and simple predicates in pipeline', () => {
+    it('should handle mixed arithmetic and simple predicates in pipeline', async () => {
       const source = `
 input numbers: number[]
 positive = filter numbers where x > 0
@@ -388,12 +397,12 @@ output large
 
       const converter = new ASTToGraphConverter();
       const graph = converter.convert(ast);
-      const compiledFn = graph.compile();
+      const compiledFn = await compileProgram(graph);
 
       expect(compiledFn([1, 2, 4, 8, 12, 15, 20])).toEqual([12, 20]);
     });
 
-    it('should handle arithmetic in both predicates and transforms', () => {
+    it('should handle arithmetic in both predicates and transforms', async () => {
       const source = `
 input numbers: number[]
 multiples_of_three = filter numbers where x % 3 == 0
@@ -408,7 +417,7 @@ output large
 
       const converter = new ASTToGraphConverter();
       const graph = converter.convert(ast);
-      const compiledFn = graph.compile();
+      const compiledFn = await compileProgram(graph);
 
       // Multiples of 3: [3, 6, 9, 12, 15]
       // Doubled: [6, 12, 18, 24, 30]

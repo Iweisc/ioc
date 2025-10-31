@@ -386,7 +386,6 @@ export class Graph {
    * but that would complicate the API for this common operation.
    */
   optimize(passes?: string[]): void {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { GraphOptimizer } = require('./optimizer.js');
     const optimizer = new GraphOptimizer(this);
     optimizer.optimize(passes);

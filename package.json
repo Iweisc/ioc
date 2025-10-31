@@ -13,9 +13,16 @@
     "dev": "tsx watch src/index.ts",
     "test": "vitest",
     "test:watch": "vitest --watch",
+    "test:coverage": "vitest --run --coverage",
     "typecheck": "tsc --noEmit",
+    "typecheck:strict": "tsc --noEmit --strict --noUnusedLocals --noUnusedParameters",
     "lint": "eslint src --ext .ts",
-    "format": "prettier --write \"src/**/*.ts\""
+    "lint:fix": "eslint src --ext .ts --fix",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\"",
+    "audit:security": "npm audit --audit-level=moderate",
+    "validate": "npm run typecheck && npm run lint && npm run format:check && npm test -- --run",
+    "precommit": "npm run validate && npm run build"
   },
   "keywords": [
     "compiler",
@@ -31,6 +38,7 @@
     "@types/node": "^22.10.2",
     "@typescript-eslint/eslint-plugin": "^8.18.2",
     "@typescript-eslint/parser": "^8.18.2",
+    "@vitest/coverage-v8": "^2.1.9",
     "eslint": "^9.17.0",
     "prettier": "^3.4.2",
     "tsup": "^8.3.5",
@@ -38,7 +46,9 @@
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"
   },
-  "dependencies": {},
+  "dependencies": {
+    "wabt": "^1.0.38"
+  },
   "engines": {
     "node": ">=18.0.0"
   }

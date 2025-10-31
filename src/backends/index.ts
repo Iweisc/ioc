@@ -38,7 +38,7 @@
  *
  * // Get available backends
  * const available = await backendSelector.getAvailableBackends();
- * console.log('Available:', available); // ['javascript', 'wasm', 'llvm']
+ * // Returns: ['javascript', 'wasm', 'llvm']
  * ```
  */
 

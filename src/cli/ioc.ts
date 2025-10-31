@@ -17,6 +17,8 @@ import { Parser } from '../parser/parser.js';
 import { ASTToGraphConverter } from '../parser/ast-to-graph.js';
 import { backendSelector } from '../backends/index.js';
 import { BackendType } from '../backends/types.js';
+import { validateIOCProgram, serializeIOC } from '../dsl/ioc-format.js';
+import type { IOCProgram } from '../dsl/ioc-format.js';
 
 /**
  * Print the CLI usage banner with command summaries and example invocations to stdout.
@@ -27,26 +29,37 @@ function printUsage() {
 IOC - Intent-Oriented Computing Language
 
 Usage:
-  ioc run <file.ioc> [--input <json>] [--debug] [--unsafe] [--backend <type>]  Run an .ioc program
-  ioc compile <file.ioc> [--output <js>] [--backend <type>]                    Compile to JavaScript
-  ioc validate <file.ioc>                                                       Validate syntax and safety
-  ioc backends                                                                  List available backends
-  ioc help                                                                      Show this help message
+  ioc run <file.ioc> [--input <json> | --input-file <file>] [--debug] [--unsafe] [--backend <type>]
+  ioc compile <file.ioc> [--output <js>] [--backend <type>]
+  ioc validate <file.ioc>
+  ioc backends
+  ioc help
+
+Commands:
+  run        Compile and execute an .ioc program
+  compile    Compile to JavaScript or other target
+  validate   Validate syntax and safety properties
+  backends   List available compilation backends
+  help       Show this help message
 
 Flags:
-  --debug      Show execution plan before running
-  --unsafe     Skip security validation (use only with trusted .ioc files)
-  --backend    Compilation backend: javascript, wasm, llvm (default: auto-select)
+  --input <json>       Inline JSON input data
+  --input-file <file>  Read input data from a JSON file
+  --output <file>      Write compiled output to file
+  --debug              Show execution plan before running
+  --unsafe             Skip security validation (use only with trusted .ioc files)
+  --backend <type>     Compilation backend: javascript, wasm, llvm (default: auto-select)
 
 Backends:
   javascript   Fast compilation, runs anywhere (default)
   wasm         Portable binary format, good performance  
-  llvm         Maximum performance via native code (Node.js only)
+  llvm         Maximum performance via native code (not yet implemented)
 
 Examples:
   ioc run pipeline.ioc --input '[1,2,3,4,5]'
+  ioc run grades.ioc --input-file data.json
   ioc run pipeline.ioc --input '[1,2,3,4,5]' --debug
-  ioc run pipeline.ioc --input '[1,2,3]' --backend llvm
+  ioc run pipeline.ioc --input '[1,2,3]' --backend wasm
   ioc run untrusted.ioc --input '[1,2,3]'  (validates security by default)
   ioc compile app.ioc --output app.js --backend wasm
   ioc validate my-program.ioc
@@ -72,13 +85,13 @@ function readFile(filePath: string): string {
 }
 
 /**
- * Parses IOC source into an AST and converts it to an internal graph representation.
+ * Parses IOC source into an AST and converts it to an IOCProgram.
  *
  * On parse or conversion errors, prints an error message and exits the process with code 1.
  *
- * @returns An object containing the parsed `ast` and the converted `graph`.
+ * @returns An object containing the parsed `ast` and the converted `program`.
  */
-function parseIOC(source: string) {
+function parseIOC(source: string): { ast: any; program: IOCProgram } {
   try {
     // Security: Validate input size before parsing (DoS prevention)
     const MAX_INPUT_SIZE = 1024 * 1024; // 1 MB
@@ -96,9 +109,9 @@ function parseIOC(source: string) {
     const ast = parser.parse();
 
     const converter = new ASTToGraphConverter();
-    const graph = converter.convert(ast);
+    const program = converter.convert(ast);
 
-    return { ast, graph };
+    return { ast, program };
   } catch (error: any) {
     console.error(`Parse error: ${error.message}`);
     process.exit(1);
@@ -123,11 +136,11 @@ async function runCommand(
   backend?: string
 ) {
   const source = readFile(filePath);
-  const { graph } = parseIOC(source);
+  const { program } = parseIOC(source);
 
   // Validate security unless --unsafe flag is set
   if (!unsafe) {
-    const validation = graph.validate();
+    const validation = validateIOCProgram(program);
     if (!validation.valid) {
       console.error('Security validation failed:');
       for (const error of validation.errors) {
@@ -139,31 +152,24 @@ async function runCommand(
     }
   }
 
-  // Compile the graph
+  // Compile the program
   let compiledFn: Function;
 
-  if (backend) {
-    // Use specified backend
-    try {
-      const program = graph.toProgram();
-      const result = await backendSelector.compile(program, {
-        backend: backend as BackendType,
-      });
-      compiledFn = result.execute;
+  try {
+    const result = await backendSelector.compile(program, {
+      backend: backend as BackendType | undefined,
+    });
+    compiledFn = result.execute;
 
-      if (debug) {
-        console.log(`Using backend: ${result.backend}`);
-        console.log(`Compilation time: ${result.compilationTime.toFixed(2)}ms`);
-        console.log(`Code size: ${result.codeSize} bytes`);
-        console.log('');
-      }
-    } catch (error: any) {
-      console.error(`Backend compilation error: ${error.message}`);
-      process.exit(1);
+    if (debug) {
+      console.log(`Using backend: ${result.backend}`);
+      console.log(`Compilation time: ${result.compilationTime.toFixed(2)}ms`);
+      console.log(`Code size: ${result.codeSize} bytes`);
+      console.log('');
     }
-  } else {
-    // Use default JavaScript compilation
-    compiledFn = graph.compile();
+  } catch (error: any) {
+    console.error(`Backend compilation error: ${error.message}`);
+    process.exit(1);
   }
 
   // Parse input data
@@ -180,8 +186,6 @@ async function runCommand(
   // Execute with optional debugging
   try {
     if (debug) {
-      const program = graph.toProgram();
-
       console.log('Execution plan:');
       for (const node of program.nodes) {
         console.log(`  ${node.id}: ${node.type}`);
@@ -208,23 +212,42 @@ async function runCommand(
  */
 async function compileCommand(filePath: string, outputPath?: string, backend?: string) {
   const source = readFile(filePath);
-  const { graph } = parseIOC(source);
+  const { program } = parseIOC(source);
 
   if (backend) {
     // Use multi-backend compilation
     try {
-      const program = graph.toProgram();
       const result = await backendSelector.compile(program, {
         backend: backend as BackendType,
+        debug: true, // Always enable debug mode to get source code
       });
 
       console.log(`Backend: ${result.backend}`);
       console.log(`Compilation time: ${result.compilationTime.toFixed(2)}ms`);
       console.log(`Code size: ${result.codeSize} bytes`);
 
-      if (result.metadata.jsCode && outputPath) {
-        fs.writeFileSync(outputPath, result.metadata.jsCode, 'utf-8');
-        console.log(`Output: ${outputPath}`);
+      if (outputPath) {
+        if (result.metadata.jsCode) {
+          // Write JavaScript source code
+          fs.writeFileSync(outputPath, result.metadata.jsCode, 'utf-8');
+          console.log(`Output: ${outputPath}`);
+        } else if (result.metadata.wasmBinary) {
+          // Write WASM binary
+          fs.writeFileSync(outputPath, result.metadata.wasmBinary);
+          console.log(`Output: ${outputPath}`);
+        } else {
+          // Fallback: serialize the function (not ideal but better than nothing)
+          const functionCode = result.execute.toString();
+          fs.writeFileSync(outputPath, functionCode, 'utf-8');
+          console.log(`Output: ${outputPath} (function serialization)`);
+        }
+      } else if (result.metadata.jsCode) {
+        // Print source code to stdout when no output path
+        console.log('');
+        console.log(result.metadata.jsCode);
+      } else {
+        console.error('Error: Cannot output source code for this backend');
+        process.exit(1);
       }
     } catch (error: any) {
       console.error(`Backend compilation error: ${error.message}`);
@@ -232,20 +255,23 @@ async function compileCommand(filePath: string, outputPath?: string, backend?: s
     }
   } else {
     // Default: Serialize to .ioc format
-    const iocJson = graph.toIOC();
+    const iocJson = serializeIOC(program);
 
     // Generate JavaScript wrapper
     const jsCode = `
 // Generated from ${path.basename(filePath)}
 // Date: ${new Date().toISOString()}
 
-import { loadIOC } from '@ioc/compiler';
+import { deserializeIOC, backendSelector } from '@ioc/compiler';
 
-const program = ${iocJson};
+const program = deserializeIOC(${JSON.stringify(iocJson)});
 
-export const compiledProgram = loadIOC(program);
+export async function execute(input) {
+  const result = await backendSelector.compile(program);
+  return result.execute(input);
+}
 
-// Usage: compiledProgram(inputData)
+// Usage: execute(inputData)
 `.trim();
 
     if (outputPath) {
@@ -292,13 +318,12 @@ async function backendsCommand() {
  */
 function validateCommand(filePath: string) {
   const source = readFile(filePath);
-  const { graph } = parseIOC(source);
+  const { program } = parseIOC(source);
 
-  const validation = graph.validate();
+  const validation = validateIOCProgram(program);
 
   if (validation.valid) {
     console.log('Valid');
-    const program = graph.toProgram();
     console.log('');
     for (const node of program.nodes) {
       console.log(
@@ -352,8 +377,28 @@ async function main() {
 
   switch (command) {
     case 'run': {
+      let inputJson: string | undefined;
+
+      // Check for --input flag (inline JSON)
       const inputIndex = args.indexOf('--input');
-      const inputJson = inputIndex !== -1 ? args[inputIndex + 1] : undefined;
+      if (inputIndex !== -1) {
+        inputJson = args[inputIndex + 1];
+      }
+
+      // Check for --input-file flag (read from file)
+      const inputFileIndex = args.indexOf('--input-file');
+      if (inputFileIndex !== -1) {
+        const inputFilePath = args[inputFileIndex + 1];
+        if (inputFilePath) {
+          try {
+            inputJson = readFile(inputFilePath);
+          } catch (error: any) {
+            console.error(`Error reading input file: ${error.message}`);
+            process.exit(1);
+          }
+        }
+      }
+
       const debug = args.includes('--debug');
       const unsafe = args.includes('--unsafe');
       const backendIndex = args.indexOf('--backend');

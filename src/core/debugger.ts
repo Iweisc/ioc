@@ -172,7 +172,7 @@ export class IOCDebugger {
   bisect(_data: Record<string, any>, _expectedOutput?: any): string | null {
     const executionOrder = this.graph.getExecutionOrder();
 
-    console.log(`[Debugger.bisect] Would bisect ${executionOrder.length} nodes`);
+    console.warn(`[Debugger.bisect] Would bisect ${executionOrder.length} nodes`);
     console.warn('[Debugger.bisect] Automated bisection not yet implemented');
     console.warn('Use graph.getExecutionOrder() and manual inspection instead');
 
