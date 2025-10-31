@@ -40,7 +40,7 @@ export class DebugMode {
         const status = trace.error ? 'ERROR' : 'OK';
         console.error(
           `[TRACE] [${status}] ${trace.nodeId.substring(0, 8)}... ` +
-          `(${trace.intentType}) - ${trace.executionTime.toFixed(2)}ms`
+            `(${trace.intentType}) - ${trace.executionTime.toFixed(2)}ms`
         );
       }
     }
@@ -66,9 +66,7 @@ export class DebugMode {
       } else if (Array.isArray(output)) {
         for (let i = 0; i < output.length; i++) {
           if (typeof output[i] === 'number' && isNaN(output[i])) {
-            errors.push(
-              `Node ${node.id.substring(0, 8)}... returned NaN at index ${i}`
-            );
+            errors.push(`Node ${node.id.substring(0, 8)}... returned NaN at index ${i}`);
             break;
           }
         }
@@ -93,16 +91,10 @@ export class DebugMode {
       return 'No execution traces recorded';
     }
 
-    const lines: string[] = [
-      'Execution Trace Summary:',
-      '='.repeat(60),
-    ];
+    const lines: string[] = ['Execution Trace Summary:', '='.repeat(60)];
 
-    const totalTime = this.executionTraces.reduce(
-      (sum, t) => sum + t.executionTime,
-      0
-    );
-    const errors = this.executionTraces.filter(t => t.error);
+    const totalTime = this.executionTraces.reduce((sum, t) => sum + t.executionTime, 0);
+    const errors = this.executionTraces.filter((t) => t.error);
 
     lines.push(`Total operations: ${this.executionTraces.length}`);
     lines.push(`Total time: ${totalTime.toFixed(2)}ms`);
@@ -114,7 +106,7 @@ export class DebugMode {
       const status = trace.error ? 'ERROR' : 'OK';
       lines.push(
         `  ${i + 1}. [${status}] ${trace.nodeId.substring(0, 8)}... ` +
-        `(${trace.intentType}) - ${trace.executionTime.toFixed(2)}ms`
+          `(${trace.intentType}) - ${trace.executionTime.toFixed(2)}ms`
       );
       if (trace.error) {
         lines.push(`      Error: ${trace.error.message}`);
@@ -138,15 +130,15 @@ export class IOCDebugger {
 
   /**
    * Trace execution step by step
-   * 
+   *
    * @deprecated STUB: Step-by-step execution tracing not yet implemented
-   * 
+   *
    * Future implementation will:
    * - Compile the graph with instrumentation
    * - Execute step-by-step, recording intermediate values
    * - Track execution time for each node
    * - Capture errors with full stack traces
-   * 
+   *
    * For now, use SolverKernel.getGeneratedCode() to inspect the generated code,
    * then manually debug the compiled function.
    */
@@ -163,24 +155,21 @@ export class IOCDebugger {
 
   /**
    * Binary search for the node that causes incorrect output or error
-   * 
+   *
    * @deprecated STUB: Automated bisection not yet implemented
-   * 
+   *
    * Future implementation will:
    * - Binary search through execution order to find the first failing node
    * - Compile and execute partial graphs
    * - Compare intermediate results with expected values
    * - Return the node ID that introduces the bug
-   * 
+   *
    * For manual bisection:
    * 1. Use graph.getExecutionOrder() to see node sequence
    * 2. Use graph.visualize() to understand dependencies
    * 3. Inspect generated code with SolverKernel.getGeneratedCode()
    */
-  bisect(
-    _data: Record<string, any>,
-    _expectedOutput?: any
-  ): string | null {
+  bisect(_data: Record<string, any>, _expectedOutput?: any): string | null {
     const executionOrder = this.graph.getExecutionOrder();
 
     console.log(`[Debugger.bisect] Would bisect ${executionOrder.length} nodes`);
@@ -192,16 +181,16 @@ export class IOCDebugger {
 
   /**
    * Compare execution with and without optimizations
-   * 
+   *
    * @deprecated STUB: Optimization comparison not yet implemented
-   * 
+   *
    * Future implementation will:
    * - Clone the graph
    * - Apply optimization passes to one copy
    * - Execute both versions with the same data
    * - Compare results and performance
    * - Report any differences
-   * 
+   *
    * For manual comparison:
    * 1. Use DifferentialTester.testWithOptimizations() from differential.ts
    * 2. Compare graph.visualize() output before and after optimize()
@@ -227,12 +216,12 @@ export class IOCDebugger {
 
   /**
    * Format comparison report as human-readable string
-   * 
+   *
    * @deprecated STUB: Report formatting depends on compare() implementation
-   * 
+   *
    * Once compare() is implemented, this will format the comparison results
    * into a readable report showing differences and performance metrics.
-   * 
+   *
    * For now, use DifferentialTester.formatReport() from differential.ts
    */
   formatComparison(_comparison: any): string {
@@ -263,7 +252,7 @@ export class IOCDebugger {
       `Node: ${nodeId}`,
       '='.repeat(60),
       `Type: ${node.intentType}`,
-      `Inputs: ${node.inputs.map(i => i.substring(0, 8) + '...').join(', ')}`,
+      `Inputs: ${node.inputs.map((i) => i.substring(0, 8) + '...').join(', ')}`,
       `Parameters: ${Object.keys(node.params).length}`,
     ];
 
@@ -296,7 +285,7 @@ export class IOCDebugger {
 
       if (prov.parentNodes.length > 0) {
         lines.push(
-          `  Derived from: ${prov.parentNodes.map(p => p.substring(0, 8) + '...').join(', ')}`
+          `  Derived from: ${prov.parentNodes.map((p) => p.substring(0, 8) + '...').join(', ')}`
         );
       }
     }

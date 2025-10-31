@@ -37,9 +37,7 @@ export class Provenance {
    * Get the sequence of transformations that created this node
    */
   getTransformationChain(): string[] {
-    return this.transformations.map(
-      t => `${t.transformation}: ${t.description}`
-    );
+    return this.transformations.map((t) => `${t.transformation}: ${t.description}`);
   }
 
   /**
@@ -78,7 +76,7 @@ export class ProvenanceTracker {
         for (let i = 3; i < lines.length; i++) {
           const line = lines[i];
           if (!line) continue;
-          
+
           // Skip framework files
           if (
             !line.includes('graph.ts') &&
@@ -224,9 +222,7 @@ export class ProvenanceTracker {
       for (const parentId of prov.parentNodes) {
         const parentProv = this.getProvenance(parentId);
         if (parentProv && parentProv.sourceLocation) {
-          lines.push(
-            `  - ${parentId.substring(0, 8)}... from ${parentProv.getOriginalSource()}`
-          );
+          lines.push(`  - ${parentId.substring(0, 8)}... from ${parentProv.getOriginalSource()}`);
         } else {
           lines.push(`  - ${parentId.substring(0, 8)}...`);
         }
@@ -258,8 +254,7 @@ export class ProvenanceTracker {
       if (prov.isOptimized()) optimizedNodes++;
 
       for (const trans of prov.transformations) {
-        transformations[trans.transformation] =
-          (transformations[trans.transformation] || 0) + 1;
+        transformations[trans.transformation] = (transformations[trans.transformation] || 0) + 1;
       }
     }
 

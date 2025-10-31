@@ -93,9 +93,11 @@ function main() {
     // Demonstrate debugging capabilities
     console.log('Debugging Information:');
     console.log('-'.repeat(70));
-    const debugger = new IOCDebugger(graph);
+    const debuggerInstance = new IOCDebugger(graph);
     const nodeId = graph.getExecutionOrder()[0];
-    console.log(debugger.explainNode(nodeId));
+    if (nodeId) {
+      console.log(debuggerInstance.explainNode(nodeId));
+    }
     console.log('');
 
     console.log('='.repeat(70));

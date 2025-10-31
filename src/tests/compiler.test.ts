@@ -512,4 +512,125 @@ describe('Compiler', () => {
       });
     });
   });
+
+  describe('Arithmetic Predicate Error Handling', () => {
+    it('should throw error for invalid arithmetic operator', () => {
+      const predicate = {
+        type: 'compare_arithmetic' as const,
+        arithmeticOp: 'invalid_op' as any,
+        arithmeticValue: 2,
+        comparisonOp: 'eq' as const,
+        comparisonValue: 0,
+      };
+
+      expect(() => compilePredicateFunction(predicate)).toThrow('Unsupported arithmetic operator');
+      expect(() => compilePredicateFunction(predicate)).toThrow('invalid_op');
+    });
+
+    it('should handle division by zero gracefully', () => {
+      const predicate = {
+        type: 'compare_arithmetic' as const,
+        arithmeticOp: 'divide' as const,
+        arithmeticValue: 0,
+        comparisonOp: 'eq' as const,
+        comparisonValue: Infinity,
+      };
+      const fn = compilePredicateFunction(predicate);
+
+      // 5 / 0 = Infinity
+      expect(fn(5)).toBe(true);
+      expect(fn(0)).toBe(false); // 0 / 0 = NaN != Infinity
+    });
+
+    it('should handle very large arithmetic values', () => {
+      const predicate = {
+        type: 'compare_arithmetic' as const,
+        arithmeticOp: 'multiply' as const,
+        arithmeticValue: 1e10,
+        comparisonOp: 'gt' as const,
+        comparisonValue: 1e15,
+      };
+      const fn = compilePredicateFunction(predicate);
+
+      expect(fn(1e6)).toBe(true); // 1e6 * 1e10 = 1e16 > 1e15
+      expect(fn(1e4)).toBe(false); // 1e4 * 1e10 = 1e14 not > 1e15
+    });
+
+    it('should handle floating point precision in arithmetic', () => {
+      const predicate = {
+        type: 'compare_arithmetic' as const,
+        arithmeticOp: 'multiply' as const,
+        arithmeticValue: 0.1,
+        comparisonOp: 'eq' as const,
+        comparisonValue: 0.30000000000000004, // 3 * 0.1 due to floating point
+      };
+      const fn = compilePredicateFunction(predicate);
+
+      // Note: Due to floating point precision, 3 * 0.1 !== 0.3
+      // It actually equals 0.30000000000000004
+      expect(fn(3)).toBe(true);
+      expect(fn(2)).toBe(false); // 2 * 0.1 = 0.2
+    });
+
+    it('should compile arithmetic with string comparison value', () => {
+      // Edge case: comparing arithmetic result to string (no type coercion with ===)
+      const predicate = {
+        type: 'compare_arithmetic' as const,
+        arithmeticOp: 'add' as const,
+        arithmeticValue: 5,
+        comparisonOp: 'eq' as const,
+        comparisonValue: '10' as any,
+      };
+      const fn = compilePredicateFunction(predicate);
+
+      // Compiler uses === (strict equality), so number !== string
+      expect(fn(5)).toBe(false); // 5 + 5 = 10 (number), '10' is string, 10 !== '10'
+
+      // Test with numeric comparison value
+      const numericPredicate = {
+        type: 'compare_arithmetic' as const,
+        arithmeticOp: 'add' as const,
+        arithmeticValue: 5,
+        comparisonOp: 'eq' as const,
+        comparisonValue: 10,
+      };
+      const numericFn = compilePredicateFunction(numericPredicate);
+      expect(numericFn(5)).toBe(true); // 5 + 5 === 10
+    });
+  });
+
+  describe('Arithmetic Predicate Integration', () => {
+    it('should work with complex nested arithmetic', () => {
+      // Test that arithmetic predicates work in real-world scenarios
+      const predicate = {
+        type: 'compare_arithmetic' as const,
+        arithmeticOp: 'modulo' as const,
+        arithmeticValue: 10,
+        comparisonOp: 'lt' as const,
+        comparisonValue: 5,
+      };
+      const fn = compilePredicateFunction(predicate);
+
+      // x % 10 < 5 means last digit is 0-4
+      expect(fn(13)).toBe(true); // 13 % 10 = 3 < 5
+      expect(fn(47)).toBe(false); // 47 % 10 = 7 not < 5
+      expect(fn(20)).toBe(true); // 20 % 10 = 0 < 5
+      expect(fn(155)).toBe(false); // 155 % 10 = 5 not < 5
+    });
+
+    it('should handle arithmetic predicates with boundary values', () => {
+      const predicate = {
+        type: 'compare_arithmetic' as const,
+        arithmeticOp: 'subtract' as const,
+        arithmeticValue: 100,
+        comparisonOp: 'gte' as const,
+        comparisonValue: 0,
+      };
+      const fn = compilePredicateFunction(predicate);
+
+      expect(fn(100)).toBe(true); // 100 - 100 = 0 >= 0
+      expect(fn(150)).toBe(true); // 150 - 100 = 50 >= 0
+      expect(fn(99)).toBe(false); // 99 - 100 = -1 not >= 0
+    });
+  });
 });

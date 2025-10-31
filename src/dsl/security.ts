@@ -79,6 +79,19 @@ export function safeSerialize(value: SafeValue): string {
     throw new Error('Value contains unsafe types');
   }
 
+  // Handle special numeric values that JSON.stringify converts to null
+  if (typeof value === 'number') {
+    if (value === Infinity) {
+      return 'Infinity';
+    }
+    if (value === -Infinity) {
+      return '-Infinity';
+    }
+    if (Number.isNaN(value)) {
+      return 'NaN';
+    }
+  }
+
   try {
     return JSON.stringify(value);
   } catch (error: any) {

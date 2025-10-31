@@ -7,7 +7,7 @@
  * Note: Requires llvm-bindings (Node.js only) or pre-built LLVM toolchain.
  */
 
-import type { IOCProgram, IOCNode } from '../dsl/ioc-format';
+import type { IOCProgram } from '../dsl/ioc-format';
 import type { CompilationBackend, CompilationOptions, CompilationResult } from './types';
 import { BackendType } from './types';
 
@@ -82,7 +82,7 @@ export class LLVMBackend implements CompilationBackend {
 
       return {
         backend: this.type,
-        execute,
+        execute: execute as (input: any) => any,
         codeSize,
         compilationTime,
         metadata: {
@@ -101,7 +101,7 @@ export class LLVMBackend implements CompilationBackend {
    * NOTE: This generates minimal placeholder IR. The compileLLVMIR step
    * will fail-fast, preventing use of incomplete backend.
    */
-  private generateLLVMIR(program: IOCProgram, options: Partial<CompilationOptions>): string {
+  private generateLLVMIR(_program: IOCProgram, _options: Partial<CompilationOptions>): string {
     const gen = new LLVMIRGenerator();
 
     // Module header
@@ -139,8 +139,8 @@ export class LLVMBackend implements CompilationBackend {
    * @throws {Error} Always throws indicating LLVM compilation is not implemented
    */
   private async compileLLVMIR(
-    llvmIR: string,
-    options: Partial<CompilationOptions>
+    _llvmIR: string,
+    _options: Partial<CompilationOptions>
   ): Promise<{ execute: Function; codeSize: number }> {
     // Fail-fast: Do not return a stub executor
     // Real implementation would:

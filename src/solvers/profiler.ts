@@ -30,13 +30,9 @@ export class PerformanceProfiler {
     try {
       const data = fs.readFileSync(this.profileFile, 'utf-8');
       const records: ProfileRecord[] = JSON.parse(data);
-      
+
       for (const record of records) {
-        const key = this.makeKey(
-          record.intentType,
-          record.strategyName,
-          record.inputSize
-        );
+        const key = this.makeKey(record.intentType, record.strategyName, record.inputSize);
         this.profiles.set(key, record);
       }
     } catch (error) {
@@ -51,11 +47,7 @@ export class PerformanceProfiler {
   saveProfiles(): void {
     try {
       const records = Array.from(this.profiles.values());
-      fs.writeFileSync(
-        this.profileFile,
-        JSON.stringify(records, null, 2),
-        'utf-8'
-      );
+      fs.writeFileSync(this.profileFile, JSON.stringify(records, null, 2), 'utf-8');
     } catch (error) {
       // Fail silently if can't save
       console.warn('Failed to save profiles:', error);
@@ -78,8 +70,7 @@ export class PerformanceProfiler {
     if (existing) {
       // Update with exponential moving average
       const alpha = 0.3;
-      existing.executionTimeMs =
-        alpha * executionTimeMs + (1 - alpha) * existing.executionTimeMs;
+      existing.executionTimeMs = alpha * executionTimeMs + (1 - alpha) * existing.executionTimeMs;
       existing.sampleCount++;
     } else {
       this.profiles.set(key, {
@@ -95,11 +86,7 @@ export class PerformanceProfiler {
   /**
    * Get cost estimate based on historical data
    */
-  getCostEstimate(
-    intentType: string,
-    strategyName: string,
-    inputSize: number
-  ): number {
+  getCostEstimate(intentType: string, strategyName: string, inputSize: number): number {
     const sizeBucket = this.bucketSize(inputSize);
     const key = this.makeKey(intentType, strategyName, sizeBucket);
 
@@ -109,11 +96,7 @@ export class PerformanceProfiler {
     }
 
     // Fallback: look for similar sizes
-    const similar = this.findSimilarProfile(
-      intentType,
-      strategyName,
-      sizeBucket
-    );
+    const similar = this.findSimilarProfile(intentType, strategyName, sizeBucket);
     if (similar) {
       // Scale based on size difference
       const scale = inputSize / similar.inputSize;
@@ -143,9 +126,7 @@ export class PerformanceProfiler {
     size: number
   ): ProfileRecord | null {
     const candidates = Array.from(this.profiles.values()).filter(
-      record =>
-        record.intentType === intentType &&
-        record.strategyName === strategyName
+      (record) => record.intentType === intentType && record.strategyName === strategyName
     );
 
     if (candidates.length === 0) return null;
@@ -184,10 +165,7 @@ export class PerformanceProfiler {
       return 'No profiling data available';
     }
 
-    const lines: string[] = [
-      'Performance Profile:',
-      '='.repeat(60),
-    ];
+    const lines: string[] = ['Performance Profile:', '='.repeat(60)];
 
     // Group by intent type
     const byIntent = new Map<string, ProfileRecord[]>();
@@ -200,7 +178,7 @@ export class PerformanceProfiler {
 
     for (const [intentType, records] of Array.from(byIntent.entries()).sort()) {
       lines.push(`\n${intentType}:`);
-      
+
       const sorted = records.sort((a, b) => {
         if (a.inputSize !== b.inputSize) {
           return a.inputSize - b.inputSize;
@@ -211,9 +189,9 @@ export class PerformanceProfiler {
       for (const record of sorted) {
         lines.push(
           `  ${record.strategyName.padEnd(20)} ` +
-          `size=${String(record.inputSize).padStart(6)} ` +
-          `time=${record.executionTimeMs.toFixed(3).padStart(8)}ms ` +
-          `samples=${record.sampleCount}`
+            `size=${String(record.inputSize).padStart(6)} ` +
+            `time=${record.executionTimeMs.toFixed(3).padStart(8)}ms ` +
+            `samples=${record.sampleCount}`
         );
       }
     }
@@ -224,11 +202,7 @@ export class PerformanceProfiler {
   /**
    * Make a cache key for profile lookups
    */
-  private makeKey(
-    intentType: string,
-    strategyName: string,
-    inputSize: number
-  ): string {
+  private makeKey(intentType: string, strategyName: string, inputSize: number): string {
     return `${intentType}:${strategyName}:${inputSize}`;
   }
 }

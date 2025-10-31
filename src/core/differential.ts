@@ -29,10 +29,7 @@ export class DifferentialTester {
   /**
    * Test the graph with multiple execution strategies
    */
-  testAllStrategies(
-    data: Record<string, any>,
-    strategies?: string[]
-  ): DifferentialTestResult {
+  testAllStrategies(data: Record<string, any>, strategies?: string[]): DifferentialTestResult {
     const strategyNames = strategies || ['naive', 'optimized'];
     const executions: ExecutionResult[] = [];
     const baselineName = 'naive';
@@ -44,7 +41,7 @@ export class DifferentialTester {
     }
 
     // Compare results
-    const baseline = executions.find(e => e.strategyName === baselineName);
+    const baseline = executions.find((e) => e.strategyName === baselineName);
     if (!baseline) {
       throw new Error(`Baseline strategy '${baselineName}' not found`);
     }
@@ -97,11 +94,7 @@ export class DifferentialTester {
     const executions: ExecutionResult[] = [];
 
     // Execute without optimization
-    const unoptimized = this.executeGraph(
-      this.graph,
-      data,
-      'unoptimized'
-    );
+    const unoptimized = this.executeGraph(this.graph, data, 'unoptimized');
     executions.push(unoptimized);
 
     // Execute with optimization
@@ -112,11 +105,7 @@ export class DifferentialTester {
       optimizedGraph.optimize();
     }
 
-    const optimized = this.executeGraph(
-      optimizedGraph,
-      data,
-      'optimized'
-    );
+    const optimized = this.executeGraph(optimizedGraph, data, 'optimized');
     executions.push(optimized);
 
     // Compare
@@ -140,7 +129,13 @@ export class DifferentialTester {
 
     // Performance comparison
     const performanceComparison: Record<string, number> = {};
-    if (baseline && opt && baseline.error === undefined && baseline.executionTime > 0 && opt.error === undefined) {
+    if (
+      baseline &&
+      opt &&
+      baseline.error === undefined &&
+      baseline.executionTime > 0 &&
+      opt.error === undefined
+    ) {
       const speedup = baseline.executionTime / opt.executionTime;
       performanceComparison['optimized'] = speedup;
     }
@@ -156,20 +151,17 @@ export class DifferentialTester {
 
   /**
    * Execute graph with a specific strategy
-   * 
+   *
    * @deprecated This method is a placeholder for future strategy-specific execution.
    * Currently returns stub data. To actually execute a graph, use SolverKernel.compile()
    * and call the resulting function.
-   * 
+   *
    * Future implementation will:
    * - Compile the graph with the specified strategy (naive/optimized/vectorized)
    * - Execute with the provided data
    * - Return actual results and timing information
    */
-  private executeWithStrategy(
-    strategyName: string,
-    _data: Record<string, any>
-  ): ExecutionResult {
+  private executeWithStrategy(strategyName: string, _data: Record<string, any>): ExecutionResult {
     const start = performance.now();
     let result: any;
     let error: Error | undefined;
@@ -200,21 +192,17 @@ export class DifferentialTester {
 
   /**
    * Execute a graph and return result
-   * 
+   *
    * @deprecated This method is a placeholder for future graph execution.
    * Currently returns stub data. To actually execute a graph, use SolverKernel.compile()
    * and call the resulting function.
-   * 
+   *
    * Future implementation will:
    * - Compile the graph
    * - Execute with the provided data
    * - Return actual results and timing information
    */
-  private executeGraph(
-    graph: Graph,
-    _data: Record<string, any>,
-    label: string
-  ): ExecutionResult {
+  private executeGraph(graph: Graph, _data: Record<string, any>, label: string): ExecutionResult {
     const start = performance.now();
     let result: any;
     let error: Error | undefined;
@@ -258,10 +246,7 @@ export class DifferentialTester {
    * Format test result as human-readable report
    */
   formatReport(testResult: DifferentialTestResult): string {
-    const lines: string[] = [
-      'Differential Testing Report:',
-      '='.repeat(60),
-    ];
+    const lines: string[] = ['Differential Testing Report:', '='.repeat(60)];
 
     // Overall status
     if (testResult.allMatch) {
@@ -285,9 +270,7 @@ export class DifferentialTester {
         lines.push(`    Error: ${exec.error.message}`);
       } else {
         const resultStr = JSON.stringify(exec.result);
-        const preview = resultStr.length > 100 
-          ? resultStr.substring(0, 97) + '...' 
-          : resultStr;
+        const preview = resultStr.length > 100 ? resultStr.substring(0, 97) + '...' : resultStr;
         lines.push(`    Result: ${preview}`);
       }
     }
@@ -297,24 +280,20 @@ export class DifferentialTester {
     // Performance comparison
     if (Object.keys(testResult.performanceComparison).length > 0) {
       lines.push('Performance Comparison (vs baseline):');
-      const sorted = Object.entries(testResult.performanceComparison).sort(
-        ([, a], [, b]) => b - a
-      );
+      const sorted = Object.entries(testResult.performanceComparison).sort(([, a], [, b]) => b - a);
       for (const [name, speedup] of sorted) {
         lines.push(`  ${name}: ${speedup.toFixed(2)}x`);
       }
     }
 
     // Fastest
-    const successful = testResult.executions.filter(e => e.error === undefined);
+    const successful = testResult.executions.filter((e) => e.error === undefined);
     if (successful.length > 0) {
       const fastest = successful.reduce((best, current) =>
         current.executionTime < best.executionTime ? current : best
       );
       lines.push('');
-      lines.push(
-        `Fastest: ${fastest.strategyName} (${fastest.executionTime.toFixed(2)}ms)`
-      );
+      lines.push(`Fastest: ${fastest.strategyName} (${fastest.executionTime.toFixed(2)}ms)`);
     }
 
     return lines.join('\n');

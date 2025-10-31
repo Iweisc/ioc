@@ -902,4 +902,232 @@ describe('SafeGraph', () => {
       expect(compiledRestored(testData)).toEqual(compiledOriginal(testData));
     });
   });
+
+  describe('Helper Methods', () => {
+    it('should return correct node count', () => {
+      const graph = new SafeGraph('test');
+      expect(graph.getNodeCount()).toBe(0);
+
+      const inputId = graph.input('data');
+      expect(graph.getNodeCount()).toBe(1);
+
+      const mapId = graph.map(inputId, { type: 'arithmetic', op: 'multiply', operand: 2 });
+      expect(graph.getNodeCount()).toBe(2);
+
+      // @ts-expect-error - filterId is used for testing node count
+      const filterId = graph.filter(mapId, { type: 'compare', op: 'gt', value: 5 });
+      expect(graph.getNodeCount()).toBe(3);
+    });
+
+    it('should return correct output count', () => {
+      const graph = new SafeGraph('test');
+      expect(graph.getOutputCount()).toBe(0);
+
+      const inputId = graph.input('data');
+      graph.output(inputId);
+      expect(graph.getOutputCount()).toBe(1);
+
+      const mapId = graph.map(inputId, { type: 'arithmetic', op: 'add', operand: 10 });
+      graph.output(mapId);
+      expect(graph.getOutputCount()).toBe(2);
+    });
+
+    it('should handle getMetadata for empty metadata', () => {
+      const graph = new SafeGraph('test');
+      const metadata = graph.getMetadata();
+      expect(metadata).toBeDefined();
+      expect(metadata?.name).toBe('test');
+    });
+
+    it('should handle setMetadata and getMetadata together', () => {
+      const graph = new SafeGraph('test');
+
+      graph.setMetadata({
+        name: 'updated-name',
+        description: 'A test graph',
+        author: 'Test Suite',
+      });
+
+      const metadata = graph.getMetadata();
+      expect(metadata?.name).toBe('updated-name');
+      expect(metadata?.description).toBe('A test graph');
+      expect(metadata?.author).toBe('Test Suite');
+    });
+
+    it('should update metadata incrementally', () => {
+      const graph = new SafeGraph('original');
+      const originalMeta = graph.getMetadata();
+      expect(originalMeta?.name).toBe('original');
+
+      graph.setMetadata({
+        ...originalMeta,
+        description: 'Added description',
+      });
+
+      const updatedMeta = graph.getMetadata();
+      expect(updatedMeta?.name).toBe('original');
+      expect(updatedMeta?.description).toBe('Added description');
+    });
+
+    it('should track node count correctly after complex operations', () => {
+      const graph = new SafeGraph('complex');
+      const input1 = graph.input('data1');
+      const input2 = graph.input('data2');
+
+      const filter1 = graph.filter(input1, { type: 'compare', op: 'gt', value: 0 });
+      // @ts-expect-error - filter2 is used for testing node count
+      const filter2 = graph.filter(input2, { type: 'compare', op: 'lt', value: 100 });
+
+      const map1 = graph.map(filter1, { type: 'arithmetic', op: 'multiply', operand: 2 });
+      // @ts-expect-error - reduce1 is used for testing node count
+      const reduce1 = graph.reduce(map1, { type: 'sum' });
+
+      expect(graph.getNodeCount()).toBe(6);
+    });
+
+    it('should handle node count with no duplicate counting', () => {
+      const graph = new SafeGraph('test');
+      const inputId = graph.input('data');
+
+      // Use same input multiple times
+      // @ts-expect-error - map1 is used for testing node count
+      const map1 = graph.map(inputId, { type: 'arithmetic', op: 'multiply', operand: 2 });
+      // @ts-expect-error - map2 is used for testing node count
+      const map2 = graph.map(inputId, { type: 'arithmetic', op: 'add', operand: 10 });
+
+      // Should have 3 nodes: 1 input + 2 maps
+      expect(graph.getNodeCount()).toBe(3);
+    });
+  });
+
+  describe('Serialization Edge Cases', () => {
+    it('should handle serialization with empty metadata fields', () => {
+      const graph = new SafeGraph('test');
+      graph.setMetadata({ name: 'test' });
+
+      const inputId = graph.input('data');
+      graph.output(inputId);
+
+      const json = graph.toJSON();
+      expect(json.metadata?.name).toBe('test');
+      expect(json.metadata?.description).toBeUndefined();
+    });
+
+    it('should deserialize and maintain node relationships', () => {
+      const graph = new SafeGraph('relationships');
+      const inputId = graph.input('numbers');
+      const filterId = graph.filter(inputId, { type: 'compare', op: 'gt', value: 5 });
+      const mapId = graph.map(filterId, { type: 'arithmetic', op: 'multiply', operand: 2 });
+      graph.output(mapId);
+
+      const json = graph.toJSON();
+      const restored = SafeGraph.fromJSON(json);
+
+      // Verify the chain is preserved
+      const compiledOriginal = graph.compile();
+      const compiledRestored = restored.compile();
+
+      const testData = [1, 3, 7, 9, 2, 8];
+      const expectedResult = [14, 18, 16]; // Filter > 5: [7,9,8], then * 2
+
+      expect(compiledRestored(testData)).toEqual(compiledOriginal(testData));
+      expect(compiledRestored(testData)).toEqual(expectedResult);
+    });
+
+    it('should handle JSON serialization of graph with no outputs', () => {
+      const graph = new SafeGraph('no-outputs');
+      const inputId = graph.input('data');
+      // @ts-expect-error - mapId is used for testing serialization
+      const mapId = graph.map(inputId, { type: 'arithmetic', op: 'add', operand: 5 });
+      // Intentionally not calling graph.output()
+
+      const json = graph.toJSON();
+      expect(json.outputs).toEqual([]);
+
+      const restored = SafeGraph.fromJSON(json);
+      expect(restored.getOutputCount()).toBe(0);
+      expect(restored.getNodeCount()).toBe(2);
+    });
+
+    it('should preserve all comparison operators in serialization', () => {
+      const operators: Array<'gt' | 'lt' | 'gte' | 'lte' | 'eq' | 'ne'> = [
+        'gt',
+        'lt',
+        'gte',
+        'lte',
+        'eq',
+        'ne',
+      ];
+
+      operators.forEach((op) => {
+        const graph = new SafeGraph(`test-${op}`);
+        const inputId = graph.input('data');
+        const filterId = graph.filter(inputId, {
+          type: 'compare_arithmetic',
+          arithmeticOp: 'add',
+          arithmeticValue: 5,
+          comparisonOp: op,
+          comparisonValue: 10,
+        });
+        graph.output(filterId);
+
+        const json = graph.toJSON();
+        const restored = SafeGraph.fromJSON(json);
+
+        const compiledOriginal = graph.compile();
+        const compiledRestored = restored.compile();
+
+        const testData = [1, 5, 10, 15];
+        expect(compiledRestored(testData)).toEqual(compiledOriginal(testData));
+      });
+    });
+
+    it('should handle fromJSON with malformed but valid JSON structure', () => {
+      const minimalProgram = {
+        version: '1.0',
+        metadata: { name: 'minimal' },
+        nodes: [],
+        outputs: [],
+      };
+
+      const graph = SafeGraph.fromJSON(minimalProgram);
+      expect(graph.getNodeCount()).toBe(0);
+      expect(graph.getOutputCount()).toBe(0);
+      expect(graph.getMetadata()?.name).toBe('minimal');
+    });
+
+    it('should serialize and deserialize graph with all arithmetic operators', () => {
+      const operators: Array<'multiply' | 'add' | 'subtract' | 'divide' | 'modulo'> = [
+        'multiply',
+        'add',
+        'subtract',
+        'divide',
+        'modulo',
+      ];
+
+      operators.forEach((arithmeticOp) => {
+        const graph = new SafeGraph(`test-${arithmeticOp}`);
+        const inputId = graph.input('data');
+        const filterId = graph.filter(inputId, {
+          type: 'compare_arithmetic',
+          arithmeticOp,
+          arithmeticValue: 2,
+          comparisonOp: 'gt',
+          comparisonValue: 0,
+        });
+        graph.output(filterId);
+
+        const json = graph.toJSON();
+        const restored = SafeGraph.fromJSON(json);
+
+        expect(restored.getNodeCount()).toBe(2);
+
+        const compiledOriginal = graph.compile();
+        const compiledRestored = restored.compile();
+
+        const testData = [1, 2, 3, 4, 5];
+        expect(compiledRestored(testData)).toEqual(compiledOriginal(testData));
+      });
+    });
+  });
 });

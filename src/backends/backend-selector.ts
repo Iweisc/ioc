@@ -141,7 +141,7 @@ export class BackendSelector {
    * Select backend with best runtime performance
    */
   private selectFastestRuntime(
-    program: IOCProgram,
+    _program: IOCProgram,
     candidates: CompilationBackend[]
   ): CompilationBackend {
     return candidates.reduce((fastest, backend) => {
@@ -200,7 +200,11 @@ export class BackendSelector {
     // Sort by score descending
     scored.sort((a, b) => b.score - a.score);
 
-    return scored[0].backend;
+    const best = scored[0];
+    if (!best) {
+      throw new Error('No backends available for selection');
+    }
+    return best.backend;
   }
 
   /**
