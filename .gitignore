@@ -31,7 +31,8 @@ dist/
 *.tsbuildinfo
 .npm
 .eslintcache
-package-lock.json
+# Keep package-lock.json for consistent CI builds
+# package-lock.json
 yarn.lock
 pnpm-lock.yaml
 
