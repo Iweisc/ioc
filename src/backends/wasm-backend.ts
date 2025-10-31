@@ -85,12 +85,13 @@ export class WebAssemblyBackend implements CompilationBackend {
       const wasmModule = await WebAssembly.instantiate(wasmBinary, imports);
       const { instance } = wasmModule;
 
-      // Store memory reference for data marshaling
-      const memory = imports['js'].memory;
+      // Store value store reference for data marshaling
+      // We need access to the actual valueStore, not the WASM import wrapper
+      const valueStoreRef = (imports as any)._valueStore;
 
       // Create JavaScript wrapper that calls WASM
       const execute = (input: any) => {
-        return this.executeWasm(instance, memory, input);
+        return this.executeWasm(instance, valueStoreRef, input);
       };
 
       const compilationTime = performance.now() - startTime;
@@ -313,17 +314,20 @@ export class WebAssemblyBackend implements CompilationBackend {
     switch (transform.type) {
       case 'identity':
         emit(`local.get ${valueVar}`);
+        emit(`return`);
         break;
 
       case 'constant':
         emit(`(f64.const ${serializeValue(transform.value)})`);
         emit(`call $store_value`);
+        emit(`return`);
         break;
 
       case 'property': {
         emit(`local.get ${valueVar}`);
         emit(`(i32.const 0) ;; property path ptr - TODO`);
         emit(`call $get_property`);
+        emit(`return`);
         break;
       }
 
@@ -356,14 +360,16 @@ export class WebAssemblyBackend implements CompilationBackend {
           }
         }
         emit(`call $store_value`);
+        emit(`return`);
         break;
       }
 
       case 'string': {
         emit(`local.get ${valueVar}`);
         emit(`(i32.const ${this.getStringOpCode(transform.op)})`);
-        emit(`(i32.const 0) ;; args ptr - TODO`);
+        emit(`(i32.const 0) ;; args ptr`);
         emit(`call $string_op`);
+        emit(`return`);
         break;
       }
 
@@ -373,8 +379,10 @@ export class WebAssemblyBackend implements CompilationBackend {
           emit(`call $array_length`);
           emit(`f64.convert_i32_s`);
           emit(`call $store_value`);
+          emit(`return`);
         } else {
           emit(`local.get ${valueVar} ;; TODO: implement array op ${transform.op}`);
+          emit(`return`);
         }
         break;
       }
@@ -392,6 +400,7 @@ export class WebAssemblyBackend implements CompilationBackend {
         emit(falseCode);
         emit(`)`);
         emit(`)`);
+        emit(`return`);
         break;
       }
 
@@ -406,25 +415,29 @@ export class WebAssemblyBackend implements CompilationBackend {
 
         if (transform.transforms.length === 0) {
           emit(`local.get ${valueVar}`);
+          emit(`return`);
         } else if (transform.transforms.length === 1) {
-          // Single transform - just compile it
+          // Single transform - just compile it (it has its own return)
           const firstTransform = transform.transforms[0];
           if (firstTransform) {
             const code = this.compileTransformToWAT(firstTransform, valueVar, gen, indent);
             emit(code);
           } else {
             emit(`local.get ${valueVar}`);
+            emit(`return`);
           }
         } else {
           // Multiple transforms - fall back to identity for now
           // Full implementation would require pre-generating helper functions
           emit(`local.get ${valueVar} ;; TODO: full compose support`);
+          emit(`return`);
         }
         break;
       }
 
       default:
         emit(`local.get ${valueVar} ;; unknown transform type`);
+        emit(`return`);
     }
 
     return lines.join('\n');
@@ -1078,7 +1091,8 @@ export class WebAssemblyBackend implements CompilationBackend {
       return valueStore.get(ptr);
     };
 
-    return {
+    const imports = {
+      _valueStore: { store: storeValue, load: loadValue }, // Expose for execution
       js: {
         memory,
         log: (value: number) => console.log('WASM:', value),
@@ -1226,36 +1240,28 @@ export class WebAssemblyBackend implements CompilationBackend {
         },
       },
     };
+
+    return imports;
   }
 
   /**
    * Execute WASM instance with input data
    */
-  private executeWasm(instance: any, _memory: any, input: any): any {
+  private executeWasm(
+    instance: any,
+    valueStore: { store: (value: any) => number; load: (ptr: number) => any },
+    input: any
+  ): any {
     const exports = instance.exports as any;
 
-    // Get the import object to access storeValue
-    const valueStore = new Map<number, any>();
-    let nextPtr = 1000;
-
-    const storeValue = (value: any): number => {
-      const ptr = nextPtr++;
-      valueStore.set(ptr, value);
-      return ptr;
-    };
-
-    const loadValue = (ptr: number): any => {
-      return valueStore.get(ptr);
-    };
-
     // Marshal input to WASM memory
-    const inputPtr = storeValue(input);
+    const inputPtr = valueStore.store(input);
 
     // Execute WASM
     const resultPtr = exports.execute(inputPtr);
 
     // Marshal result back to JavaScript
-    return loadValue(resultPtr);
+    return valueStore.load(resultPtr);
   }
 
   estimateCompilationTime(program: IOCProgram): number {

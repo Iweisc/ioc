@@ -17,6 +17,8 @@ import { Parser } from '../parser/parser.js';
 import { ASTToGraphConverter } from '../parser/ast-to-graph.js';
 import { backendSelector } from '../backends/index.js';
 import { BackendType } from '../backends/types.js';
+import { validateIOCProgram, serializeIOC } from '../dsl/ioc-format.js';
+import type { IOCProgram } from '../dsl/ioc-format.js';
 
 /**
  * Print the CLI usage banner with command summaries and example invocations to stdout.
@@ -72,13 +74,13 @@ function readFile(filePath: string): string {
 }
 
 /**
- * Parses IOC source into an AST and converts it to an internal graph representation.
+ * Parses IOC source into an AST and converts it to an IOCProgram.
  *
  * On parse or conversion errors, prints an error message and exits the process with code 1.
  *
- * @returns An object containing the parsed `ast` and the converted `graph`.
+ * @returns An object containing the parsed `ast` and the converted `program`.
  */
-function parseIOC(source: string) {
+function parseIOC(source: string): { ast: any; program: IOCProgram } {
   try {
     // Security: Validate input size before parsing (DoS prevention)
     const MAX_INPUT_SIZE = 1024 * 1024; // 1 MB
@@ -96,9 +98,9 @@ function parseIOC(source: string) {
     const ast = parser.parse();
 
     const converter = new ASTToGraphConverter();
-    const graph = converter.convert(ast);
+    const program = converter.convert(ast);
 
-    return { ast, graph };
+    return { ast, program };
   } catch (error: any) {
     console.error(`Parse error: ${error.message}`);
     process.exit(1);
@@ -123,11 +125,11 @@ async function runCommand(
   backend?: string
 ) {
   const source = readFile(filePath);
-  const { graph } = parseIOC(source);
+  const { program } = parseIOC(source);
 
   // Validate security unless --unsafe flag is set
   if (!unsafe) {
-    const validation = graph.validate();
+    const validation = validateIOCProgram(program);
     if (!validation.valid) {
       console.error('Security validation failed:');
       for (const error of validation.errors) {
@@ -139,31 +141,24 @@ async function runCommand(
     }
   }
 
-  // Compile the graph
+  // Compile the program
   let compiledFn: Function;
 
-  if (backend) {
-    // Use specified backend
-    try {
-      const program = graph.toProgram();
-      const result = await backendSelector.compile(program, {
-        backend: backend as BackendType,
-      });
-      compiledFn = result.execute;
+  try {
+    const result = await backendSelector.compile(program, {
+      backend: backend as BackendType | undefined,
+    });
+    compiledFn = result.execute;
 
-      if (debug) {
-        console.log(`Using backend: ${result.backend}`);
-        console.log(`Compilation time: ${result.compilationTime.toFixed(2)}ms`);
-        console.log(`Code size: ${result.codeSize} bytes`);
-        console.log('');
-      }
-    } catch (error: any) {
-      console.error(`Backend compilation error: ${error.message}`);
-      process.exit(1);
+    if (debug) {
+      console.log(`Using backend: ${result.backend}`);
+      console.log(`Compilation time: ${result.compilationTime.toFixed(2)}ms`);
+      console.log(`Code size: ${result.codeSize} bytes`);
+      console.log('');
     }
-  } else {
-    // Use default JavaScript compilation
-    compiledFn = graph.compile();
+  } catch (error: any) {
+    console.error(`Backend compilation error: ${error.message}`);
+    process.exit(1);
   }
 
   // Parse input data
@@ -180,8 +175,6 @@ async function runCommand(
   // Execute with optional debugging
   try {
     if (debug) {
-      const program = graph.toProgram();
-
       console.log('Execution plan:');
       for (const node of program.nodes) {
         console.log(`  ${node.id}: ${node.type}`);
@@ -208,12 +201,11 @@ async function runCommand(
  */
 async function compileCommand(filePath: string, outputPath?: string, backend?: string) {
   const source = readFile(filePath);
-  const { graph } = parseIOC(source);
+  const { program } = parseIOC(source);
 
   if (backend) {
     // Use multi-backend compilation
     try {
-      const program = graph.toProgram();
       const result = await backendSelector.compile(program, {
         backend: backend as BackendType,
       });
@@ -232,20 +224,23 @@ async function compileCommand(filePath: string, outputPath?: string, backend?: s
     }
   } else {
     // Default: Serialize to .ioc format
-    const iocJson = graph.toIOC();
+    const iocJson = serializeIOC(program);
 
     // Generate JavaScript wrapper
     const jsCode = `
 // Generated from ${path.basename(filePath)}
 // Date: ${new Date().toISOString()}
 
-import { loadIOC } from '@ioc/compiler';
+import { deserializeIOC, backendSelector } from '@ioc/compiler';
 
-const program = ${iocJson};
+const program = deserializeIOC(${JSON.stringify(iocJson)});
 
-export const compiledProgram = loadIOC(program);
+export async function execute(input) {
+  const result = await backendSelector.compile(program);
+  return result.execute(input);
+}
 
-// Usage: compiledProgram(inputData)
+// Usage: execute(inputData)
 `.trim();
 
     if (outputPath) {
@@ -292,13 +287,12 @@ async function backendsCommand() {
  */
 function validateCommand(filePath: string) {
   const source = readFile(filePath);
-  const { graph } = parseIOC(source);
+  const { program } = parseIOC(source);
 
-  const validation = graph.validate();
+  const validation = validateIOCProgram(program);
 
   if (validation.valid) {
     console.log('Valid');
-    const program = graph.toProgram();
     console.log('');
     for (const node of program.nodes) {
       console.log(

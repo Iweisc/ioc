@@ -1,46 +1,18 @@
-// IOC (Intent-Oriented Computing) - Main Export
+// IOC (Intent-Oriented Computing) - Pure Compiled Language
+//
+// IOC is a compiled language for data processing. Write .ioc files and compile them
+// to JavaScript or WebAssembly using the CLI or programmatic compiler API.
+//
+// This module exports ONLY the compiler infrastructure - no framework/embedding APIs.
 
-// Core (Legacy)
-export { Graph, IntentType } from './core/graph';
-export type { IntentNode, IntentMetadata } from './core/graph';
-export type { IOCType } from './core/types';
-export { IntType, FloatType, BoolType, ListType, AnyType, inferType } from './core/types';
-export { GraphOptimizer } from './core/optimizer';
-export { Provenance, ProvenanceTracker } from './core/provenance';
-export type { SourceLocation, TransformationRecord } from './core/provenance';
-export { IOCDebugger, DebugMode } from './core/debugger';
-export type { ExecutionTrace } from './core/debugger';
-export { DifferentialTester, createTestSuite } from './core/differential';
-export type { DifferentialTestResult, ExecutionResult } from './core/differential';
+// Parser - Converts .ioc source code to AST
+export { Lexer, TokenType } from './parser/lexer';
+export type { Token } from './parser/lexer';
+export { Parser } from './parser/parser';
+export { ASTToGraphConverter } from './parser/ast-to-graph';
+export type { Program, ASTNode } from './parser/ast';
 
-// Solvers (Legacy)
-export { SolverKernel } from './solvers/kernel';
-export { NaiveStrategy, OptimizedStrategy, VectorizedStrategy } from './solvers/strategies';
-export type { Strategy, ExecutionContext } from './solvers/strategies';
-export { PerformanceProfiler, getProfiler } from './solvers/profiler';
-export type { ProfileRecord } from './solvers/profiler';
-
-// Safe DSL (New!)
-export { SafeGraph } from './dsl/safe-graph';
-export { Predicate, Transform, Reduce, ComplexityClass, validateSafeValue } from './dsl/safe-types';
-export type {
-  SafePredicate,
-  SafeTransform,
-  SafeValue,
-  ReductionOp,
-  ComparisonOp,
-  ArithmeticOp,
-  StringOp,
-  ArrayOp,
-} from './dsl/safe-types';
-export {
-  compilePredicate,
-  compileTransform,
-  compileReduction,
-  compilePredicateFunction,
-  compileTransformFunction,
-  compileReductionFunction,
-} from './dsl/compiler';
+// IOC Program Format - The internal representation
 export {
   IOCIntentType,
   serializeIOC,
@@ -52,6 +24,31 @@ export {
   calculateNodeCapability,
 } from './dsl/ioc-format';
 export type { IOCProgram, IOCNode, IOCNodeParams, IntentCapability } from './dsl/ioc-format';
+
+// Compiler - Compiles IOC programs to executable code
+export {
+  compilePredicate,
+  compileTransform,
+  compileReduction,
+  compilePredicateFunction,
+  compileTransformFunction,
+  compileReductionFunction,
+} from './dsl/compiler';
+
+// Type System
+export { ComplexityClass, validateSafeValue } from './dsl/safe-types';
+export type {
+  SafePredicate,
+  SafeTransform,
+  SafeValue,
+  ReductionOp,
+  ComparisonOp,
+  ArithmeticOp,
+  StringOp,
+  ArrayOp,
+} from './dsl/safe-types';
+
+// Verification and Safety
 export {
   TerminationVerifier,
   BudgetEnforcer,
@@ -59,13 +56,6 @@ export {
   DEFAULT_BUDGETS,
 } from './core/verifier';
 export type { ExecutionBudget, VerificationResult } from './core/verifier';
-
-// Parser and CLI
-export { Lexer, TokenType } from './parser/lexer';
-export type { Token } from './parser/lexer';
-export { Parser } from './parser/parser';
-export { ASTToGraphConverter } from './parser/ast-to-graph';
-export type { Program, ASTNode } from './parser/ast';
 
 // Security
 export {
@@ -78,7 +68,7 @@ export {
   compileInRestrictedContext,
 } from './dsl/security';
 
-// Backends
+// Backends - Target code generation
 export { BackendSelector, backendSelector } from './backends/backend-selector';
 export { JavaScriptBackend } from './backends/javascript-backend';
 export { WebAssemblyBackend } from './backends/wasm-backend';

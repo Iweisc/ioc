@@ -1,10 +1,13 @@
 /**
- * Converts AST to SafeGraph
+ * Converts AST to IOCProgram
  *
- * Bridges the parsed .ioc language to the executable SafeGraph representation.
+ * Bridges the parsed .ioc language to the IOCProgram internal representation.
  */
 
-import { SafeGraph } from '../dsl/safe-graph';
+import { randomUUID } from 'crypto';
+import type { IOCProgram, IOCNode, IOCNodeParams } from '../dsl/ioc-format';
+import { IOCIntentType, calculateNodeCapability } from '../dsl/ioc-format';
+import { ComplexityClass } from '../dsl/safe-types';
 import {
   Program,
   ASTNode,
@@ -46,20 +49,48 @@ const ARITHMETIC_OP_MAP: Record<string, string> = {
 } as const;
 
 export class ASTToGraphConverter {
-  private graph: SafeGraph;
+  private nodes: Map<string, IOCNode> = new Map();
+  private outputs: Set<string> = new Set();
   private variables: Map<string, string>; // name -> nodeId
 
   constructor() {
-    this.graph = new SafeGraph();
     this.variables = new Map();
   }
 
-  convert(program: Program): SafeGraph {
+  /**
+   * Generate unique node ID
+   */
+  private generateId(prefix: string): string {
+    return `${prefix}_${randomUUID().slice(0, 8)}`;
+  }
+
+  /**
+   * Add a node to the graph
+   */
+  private addNode(node: IOCNode): string {
+    this.nodes.set(node.id, node);
+    return node.id;
+  }
+
+  convert(program: Program): IOCProgram {
     for (const statement of program.statements) {
       this.processStatement(statement);
     }
 
-    return this.graph;
+    return {
+      version: '1.0.0',
+      metadata: {
+        name: 'parsed_program',
+        created: new Date().toISOString(),
+        modified: new Date().toISOString(),
+      },
+      nodes: Array.from(this.nodes.values()),
+      outputs: Array.from(this.outputs),
+      options: {
+        optimizationLevel: 'basic',
+        targetRuntime: 'javascript',
+      },
+    };
   }
 
   private processStatement(node: ASTNode): void {
@@ -100,34 +131,98 @@ export class ASTToGraphConverter {
 
   private processInput(node: ASTNode): void {
     if (node.type !== 'input') return;
-    const nodeId = this.graph.input(node.name);
+
+    const params: IOCNodeParams = { intent: 'input', name: node.name, typeHint: undefined };
+    const iocNode: IOCNode = {
+      id: this.generateId('input'),
+      type: IOCIntentType.INPUT,
+      inputs: [],
+      params,
+      capability: {
+        maxComplexity: ComplexityClass.CONSTANT,
+        terminationGuarantee: 'structural',
+        sideEffects: 'pure',
+        parallelizable: true,
+        memoryBound: 'O(1)',
+      },
+    };
+
+    const nodeId = this.addNode(iocNode);
     this.variables.set(node.name, nodeId);
   }
 
   private processFilter(node: FilterStatement): void {
     const sourceId = this.getVariable(node.source);
     const predicate = this.convertPredicate(node.predicate);
-    const resultId = this.graph.filter(sourceId, predicate);
+
+    const params: IOCNodeParams = { intent: 'filter', predicate };
+    const iocNode: IOCNode = {
+      id: this.generateId('filter'),
+      type: IOCIntentType.FILTER,
+      inputs: [sourceId],
+      params,
+      capability: calculateNodeCapability({
+        id: '',
+        type: IOCIntentType.FILTER,
+        inputs: [sourceId],
+        params,
+        capability: {} as any,
+      }),
+    };
+
+    const resultId = this.addNode(iocNode);
     this.variables.set(node.target, resultId);
   }
 
   private processMap(node: MapStatement): void {
     const sourceId = this.getVariable(node.source);
     const transform = this.convertTransform(node.transform);
-    const resultId = this.graph.map(sourceId, transform);
+
+    const params: IOCNodeParams = { intent: 'map', transform };
+    const iocNode: IOCNode = {
+      id: this.generateId('map'),
+      type: IOCIntentType.MAP,
+      inputs: [sourceId],
+      params,
+      capability: calculateNodeCapability({
+        id: '',
+        type: IOCIntentType.MAP,
+        inputs: [sourceId],
+        params,
+        capability: {} as any,
+      }),
+    };
+
+    const resultId = this.addNode(iocNode);
     this.variables.set(node.target, resultId);
   }
 
   private processReduce(node: ReduceStatement): void {
     const sourceId = this.getVariable(node.source);
     const operation = this.convertReductionOp(node.operation);
-    const resultId = this.graph.reduce(sourceId, operation);
+
+    const params: IOCNodeParams = { intent: 'reduce', operation, initial: undefined };
+    const iocNode: IOCNode = {
+      id: this.generateId('reduce'),
+      type: IOCIntentType.REDUCE,
+      inputs: [sourceId],
+      params,
+      capability: {
+        maxComplexity: ComplexityClass.LINEAR,
+        terminationGuarantee: 'structural',
+        sideEffects: 'pure',
+        parallelizable: false,
+        memoryBound: 'O(1)',
+      },
+    };
+
+    const resultId = this.addNode(iocNode);
     this.variables.set(node.target, resultId);
   }
 
   private processOutput(node: OutputStatement): void {
     const sourceId = this.getVariable(node.source);
-    this.graph.output(sourceId);
+    this.outputs.add(sourceId);
   }
 
   private getVariable(name: string): string {
