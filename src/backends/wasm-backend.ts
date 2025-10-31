@@ -408,8 +408,13 @@ export class WebAssemblyBackend implements CompilationBackend {
           emit(`local.get ${valueVar}`);
         } else if (transform.transforms.length === 1) {
           // Single transform - just compile it
-          const code = this.compileTransformToWAT(transform.transforms[0], valueVar, gen, indent);
-          emit(code);
+          const firstTransform = transform.transforms[0];
+          if (firstTransform) {
+            const code = this.compileTransformToWAT(firstTransform, valueVar, gen, indent);
+            emit(code);
+          } else {
+            emit(`local.get ${valueVar}`);
+          }
         } else {
           // Multiple transforms - fall back to identity for now
           // Full implementation would require pre-generating helper functions
