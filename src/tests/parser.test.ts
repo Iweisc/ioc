@@ -361,8 +361,8 @@ describe('Parser - Statement Parsing', () => {
       expect(ast.statements).toHaveLength(1);
       expect(ast.statements[0]!.type).toBe('input');
       if (ast.statements[0]!.type === 'input') {
-        expect(ast.statements[0].name).toBe('data');
-        expect(ast.statements[0].dataType).toBeUndefined();
+        expect(ast.statements[0]!.name).toBe('data');
+        expect(ast.statements[0]!.dataType).toBeUndefined();
       }
     });
 
@@ -374,8 +374,8 @@ describe('Parser - Statement Parsing', () => {
 
       expect(ast.statements[0]!.type).toBe('input');
       if (ast.statements[0]!.type === 'input') {
-        expect(ast.statements[0].name).toBe('numbers');
-        expect(ast.statements[0].dataType).toBe('number[]');
+        expect(ast.statements[0]!.name).toBe('numbers');
+        expect(ast.statements[0]!.dataType).toBe('number[]');
       }
     });
 
@@ -386,7 +386,7 @@ describe('Parser - Statement Parsing', () => {
       const ast = parser.parse();
 
       if (ast.statements[0]!.type === 'input') {
-        expect(ast.statements[0].dataType).toBe('object[]');
+        expect(ast.statements[0]!.dataType).toBe('object[]');
       }
     });
   });
@@ -400,9 +400,9 @@ describe('Parser - Statement Parsing', () => {
 
       expect(ast.statements[0]!.type).toBe('filter');
       if (ast.statements[0]!.type === 'filter') {
-        expect(ast.statements[0].target).toBe('filtered');
-        expect(ast.statements[0].source).toBe('data');
-        expect(ast.statements[0].predicate.type).toBe('comparison');
+        expect(ast.statements[0]!.target).toBe('filtered');
+        expect(ast.statements[0]!.source).toBe('data');
+        expect(ast.statements[0]!.predicate.type).toBe('comparison');
       }
     });
 
@@ -423,7 +423,7 @@ describe('Parser - Statement Parsing', () => {
         const ast = parser.parse();
 
         if (ast.statements[0]!.type === 'filter') {
-          const predicate = ast.statements[0].predicate;
+          const predicate = ast.statements[0]!.predicate;
           if (predicate.type === 'comparison') {
             expect(predicate.operator).toBe(expectedOp);
           }
@@ -438,7 +438,7 @@ describe('Parser - Statement Parsing', () => {
       const ast = parser.parse();
 
       if (ast.statements[0]!.type === 'filter') {
-        const predicate = ast.statements[0].predicate;
+        const predicate = ast.statements[0]!.predicate;
         expect(predicate.type).toBe('property');
         if (predicate.type === 'property') {
           expect(predicate.property).toBe('age');
@@ -455,7 +455,7 @@ describe('Parser - Statement Parsing', () => {
       const ast = parser.parse();
 
       if (ast.statements[0]!.type === 'filter') {
-        const predicate = ast.statements[0].predicate;
+        const predicate = ast.statements[0]!.predicate;
         if (predicate.type === 'property') {
           expect(predicate.value).toBe('Alice');
         }
@@ -469,7 +469,7 @@ describe('Parser - Statement Parsing', () => {
       const ast = parser.parse();
 
       if (ast.statements[0]!.type === 'filter') {
-        const predicate = ast.statements[0].predicate;
+        const predicate = ast.statements[0]!.predicate;
         if (predicate.type === 'property') {
           expect(predicate.value).toBe(true);
         }
@@ -486,9 +486,9 @@ describe('Parser - Statement Parsing', () => {
 
       expect(ast.statements[0]!.type).toBe('map');
       if (ast.statements[0]!.type === 'map') {
-        expect(ast.statements[0].target).toBe('doubled');
-        expect(ast.statements[0].source).toBe('numbers');
-        expect(ast.statements[0].transform.type).toBe('arithmetic');
+        expect(ast.statements[0]!.target).toBe('doubled');
+        expect(ast.statements[0]!.source).toBe('numbers');
+        expect(ast.statements[0]!.transform.type).toBe('arithmetic');
       }
     });
 
@@ -508,7 +508,7 @@ describe('Parser - Statement Parsing', () => {
         const ast = parser.parse();
 
         if (ast.statements[0]!.type === 'map') {
-          const transform = ast.statements[0].transform;
+          const transform = ast.statements[0]!.transform;
           if (transform.type === 'arithmetic') {
             expect(transform.operator).toBe(expectedOp);
             expect(transform.value).toBe(2);
@@ -524,7 +524,7 @@ describe('Parser - Statement Parsing', () => {
       const ast = parser.parse();
 
       if (ast.statements[0]!.type === 'map') {
-        const transform = ast.statements[0].transform;
+        const transform = ast.statements[0]!.transform;
         expect(transform.type).toBe('property');
         if (transform.type === 'property') {
           expect(transform.property).toBe('name');
@@ -542,7 +542,7 @@ describe('Parser - Statement Parsing', () => {
         const ast = parser.parse();
 
         if (ast.statements[0]!.type === 'map') {
-          const transform = ast.statements[0].transform;
+          const transform = ast.statements[0]!.transform;
           expect(transform.type).toBe('string');
           if (transform.type === 'string') {
             expect(transform.operation).toBe(fn);
@@ -561,9 +561,9 @@ describe('Parser - Statement Parsing', () => {
 
       expect(ast.statements[0]!.type).toBe('reduce');
       if (ast.statements[0]!.type === 'reduce') {
-        expect(ast.statements[0].target).toBe('total');
-        expect(ast.statements[0].source).toBe('numbers');
-        expect(ast.statements[0].operation).toBe('sum');
+        expect(ast.statements[0]!.target).toBe('total');
+        expect(ast.statements[0]!.source).toBe('numbers');
+        expect(ast.statements[0]!.operation).toBe('sum');
       }
     });
 
@@ -587,7 +587,7 @@ describe('Parser - Statement Parsing', () => {
         const ast = parser.parse();
 
         if (ast.statements[0]!.type === 'reduce') {
-          expect(ast.statements[0].operation).toBe(op);
+          expect(ast.statements[0]!.operation).toBe(op);
         }
       });
     });
@@ -610,7 +610,7 @@ describe('Parser - Statement Parsing', () => {
 
       expect(ast.statements[0]!.type).toBe('output');
       if (ast.statements[0]!.type === 'output') {
-        expect(ast.statements[0].source).toBe('result');
+        expect(ast.statements[0]!.source).toBe('result');
       }
     });
   });
@@ -1038,7 +1038,7 @@ output evens
       expect(filterStmt!.type).toBe('filter');
       if (filterStmt!.type === 'filter') {
         expect(filterStmt!.predicate.type).toBe('arithmetic');
-        if (filterStmt.predicate.type === 'arithmetic') {
+        if (filterStmt!.predicate.type === 'arithmetic') {
           expect(filterStmt!.predicate.arithmeticOp).toBe('mod');
           expect(filterStmt!.predicate.arithmeticValue).toBe(2);
           expect(filterStmt!.predicate.comparisonOp).toBe('eq');

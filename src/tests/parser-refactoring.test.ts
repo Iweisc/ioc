@@ -131,7 +131,7 @@ output doubled
       expect(mapStmt!.type).toBe('map');
       if (mapStmt!.type === 'map') {
         expect(mapStmt!.transform.type).toBe('arithmetic');
-        if (mapStmt.transform.type === 'arithmetic') {
+        if (mapStmt!.transform.type === 'arithmetic') {
           expect(mapStmt!.transform.operator).toBe('multiply');
           expect(mapStmt!.transform.value).toBe(2);
         }
@@ -183,7 +183,7 @@ output positive
       expect(filterStmt!.type).toBe('filter');
       if (filterStmt!.type === 'filter') {
         expect(filterStmt!.predicate.type).toBe('comparison');
-        if (filterStmt.predicate.type === 'comparison') {
+        if (filterStmt!.predicate.type === 'comparison') {
           expect(filterStmt!.predicate.operator).toBe('gt');
           expect(filterStmt!.predicate.value).toBe(0);
         }

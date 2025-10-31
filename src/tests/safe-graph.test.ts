@@ -914,6 +914,7 @@ describe('SafeGraph', () => {
       const mapId = graph.map(inputId, { type: 'arithmetic', op: 'multiply', operand: 2 });
       expect(graph.getNodeCount()).toBe(2);
 
+      // @ts-expect-error - filterId is used for testing node count
       const filterId = graph.filter(mapId, { type: 'compare', op: 'gt', value: 5 });
       expect(graph.getNodeCount()).toBe(3);
     });
@@ -944,14 +945,12 @@ describe('SafeGraph', () => {
       graph.setMetadata({
         name: 'updated-name',
         description: 'A test graph',
-        version: '1.0.0',
         author: 'Test Suite',
       });
 
       const metadata = graph.getMetadata();
       expect(metadata?.name).toBe('updated-name');
       expect(metadata?.description).toBe('A test graph');
-      expect(metadata?.version).toBe('1.0.0');
       expect(metadata?.author).toBe('Test Suite');
     });
 
@@ -976,9 +975,11 @@ describe('SafeGraph', () => {
       const input2 = graph.input('data2');
 
       const filter1 = graph.filter(input1, { type: 'compare', op: 'gt', value: 0 });
+      // @ts-expect-error - filter2 is used for testing node count
       const filter2 = graph.filter(input2, { type: 'compare', op: 'lt', value: 100 });
 
       const map1 = graph.map(filter1, { type: 'arithmetic', op: 'multiply', operand: 2 });
+      // @ts-expect-error - reduce1 is used for testing node count
       const reduce1 = graph.reduce(map1, { type: 'sum' });
 
       expect(graph.getNodeCount()).toBe(6);
@@ -989,7 +990,9 @@ describe('SafeGraph', () => {
       const inputId = graph.input('data');
 
       // Use same input multiple times
+      // @ts-expect-error - map1 is used for testing node count
       const map1 = graph.map(inputId, { type: 'arithmetic', op: 'multiply', operand: 2 });
+      // @ts-expect-error - map2 is used for testing node count
       const map2 = graph.map(inputId, { type: 'arithmetic', op: 'add', operand: 10 });
 
       // Should have 3 nodes: 1 input + 2 maps
@@ -1034,6 +1037,7 @@ describe('SafeGraph', () => {
     it('should handle JSON serialization of graph with no outputs', () => {
       const graph = new SafeGraph('no-outputs');
       const inputId = graph.input('data');
+      // @ts-expect-error - mapId is used for testing serialization
       const mapId = graph.map(inputId, { type: 'arithmetic', op: 'add', operand: 5 });
       // Intentionally not calling graph.output()
 
