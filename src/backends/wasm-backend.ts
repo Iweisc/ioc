@@ -321,8 +321,8 @@ export class WebAssemblyBackend implements CompilationBackend {
       case 'and': {
         // Evaluate all predicates and AND them using left-fold
         if (predicate.predicates.length === 0) {
-          // Empty AND list is false (no conditions met)
-          emit(`(i32.const 0)`);
+          // Empty AND is true (identity element for conjunction)
+          emit(`(i32.const 1)`);
         } else {
           // Start with first predicate, then AND with remaining
           const firstCode = this.compilePredicateToWAT(predicate.predicates[0]!, valueVar, gen, 0);
