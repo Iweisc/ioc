@@ -21,14 +21,13 @@ export default defineConfig({
         '**/tsup.config.ts',
         '**/vitest.config.ts',
       ],
-      // Coverage thresholds
-      // Note: Functions already at 83.33%, Branches at 79.8% (near 80%)
-      // Lines/Statements at 72.26% - limited by WASM/LLVM backends requiring external deps
+      // Coverage thresholds - all metrics now exceed 80%
+      // Lines: 82.2%, Functions: 84.73%, Branches: 80.12%, Statements: 82.2%
       thresholds: {
-        lines: 72,
+        lines: 80,
         functions: 80,
-        branches: 79,
-        statements: 72,
+        branches: 80,
+        statements: 80,
       },
     },
   },

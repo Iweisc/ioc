@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { TerminationVerifier, DEFAULT_BUDGETS } from '../core/verifier';
+import { TerminationVerifier, DEFAULT_BUDGETS, estimateBudget } from '../core/verifier';
 import { ComplexityClass } from '../dsl/safe-types';
 
 describe('TerminationVerifier', () => {
@@ -878,6 +878,99 @@ describe('TerminationVerifier', () => {
 
       expect(result.success).toBe(true);
       expect(result.error).toBeUndefined();
+    });
+  });
+
+  describe('estimateBudget', () => {
+    it('should estimate budget for CONSTANT complexity', () => {
+      const budget = estimateBudget(100, ComplexityClass.CONSTANT);
+
+      expect(budget.maxIterations).toBe(10);
+      expect(budget.maxTime).toBeGreaterThanOrEqual(100);
+      expect(budget.maxTime).toBeLessThanOrEqual(60000);
+      expect(budget.maxStackDepth).toBe(100);
+    });
+
+    it('should estimate budget for LOGARITHMIC complexity', () => {
+      const budget = estimateBudget(1000, ComplexityClass.LOGARITHMIC);
+
+      expect(budget.maxIterations).toBeGreaterThan(10);
+      expect(budget.maxTime).toBeGreaterThanOrEqual(100);
+      expect(budget.maxStackDepth).toBe(100);
+    });
+
+    it('should estimate budget for LINEAR complexity', () => {
+      const budget = estimateBudget(100, ComplexityClass.LINEAR);
+
+      expect(budget.maxIterations).toBe(200); // n * 2
+      expect(budget.maxTime).toBeGreaterThanOrEqual(100);
+      expect(budget.maxStackDepth).toBe(100);
+    });
+
+    it('should estimate budget for LINEARITHMIC complexity', () => {
+      const budget = estimateBudget(100, ComplexityClass.LINEARITHMIC);
+
+      // n * log2(n) * 2
+      const expected = Math.ceil(100 * Math.log2(101)) * 2;
+      expect(budget.maxIterations).toBe(expected);
+      expect(budget.maxTime).toBeGreaterThanOrEqual(100);
+    });
+
+    it('should estimate budget for QUADRATIC complexity', () => {
+      const budget = estimateBudget(50, ComplexityClass.QUADRATIC);
+
+      expect(budget.maxIterations).toBe(5000); // 50 * 50 * 2
+      expect(budget.maxTime).toBeGreaterThanOrEqual(100);
+    });
+
+    it('should estimate budget for CUBIC complexity', () => {
+      const budget = estimateBudget(10, ComplexityClass.CUBIC);
+
+      expect(budget.maxIterations).toBe(2000); // 10 * 10 * 10 * 2
+      expect(budget.maxTime).toBeGreaterThanOrEqual(100);
+    });
+
+    it('should default to 1M iterations for unknown complexity', () => {
+      const budget = estimateBudget(100, 'UNKNOWN' as ComplexityClass);
+
+      expect(budget.maxIterations).toBe(1_000_000);
+    });
+
+    it('should clamp maxTime to minimum of 100ms', () => {
+      const budget = estimateBudget(1, ComplexityClass.CONSTANT);
+
+      expect(budget.maxTime).toBeGreaterThanOrEqual(100);
+    });
+
+    it('should clamp maxTime to maximum of 60000ms', () => {
+      const budget = estimateBudget(100000, ComplexityClass.CUBIC);
+
+      expect(budget.maxTime).toBeLessThanOrEqual(60000);
+    });
+
+    it('should scale iterations with input size', () => {
+      const smallBudget = estimateBudget(10, ComplexityClass.LINEAR);
+      const largeBudget = estimateBudget(100, ComplexityClass.LINEAR);
+
+      expect(smallBudget.maxIterations).toBeDefined();
+      expect(largeBudget.maxIterations).toBeDefined();
+
+      const smallIterations = smallBudget.maxIterations as number;
+      const largeIterations = largeBudget.maxIterations as number;
+
+      expect(largeIterations).toBeGreaterThan(smallIterations);
+    });
+
+    it('should always set maxStackDepth to 100', () => {
+      const budgets = [
+        estimateBudget(10, ComplexityClass.CONSTANT),
+        estimateBudget(100, ComplexityClass.LINEAR),
+        estimateBudget(1000, ComplexityClass.QUADRATIC),
+      ];
+
+      budgets.forEach((budget) => {
+        expect(budget.maxStackDepth).toBe(100);
+      });
     });
   });
 });
