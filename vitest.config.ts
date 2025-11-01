@@ -14,13 +14,21 @@ export default defineConfig({
         '**/*.test.ts',
         'src/types/**', // Type definitions
         'src/cli/**', // CLI - tested via smoke tests
+        'src/parser/ast.ts', // Type definitions only
+        '*.config.ts', // Config files
+        '*.config.js', // Config files
+        '**/eslint.config.js',
+        '**/tsup.config.ts',
+        '**/vitest.config.ts',
       ],
-      // Coverage thresholds - set to current baseline to prevent regression
+      // Coverage thresholds
+      // Note: Functions already at 83.33%, Branches at 79.8% (near 80%)
+      // Lines/Statements at 72.26% - limited by WASM/LLVM backends requiring external deps
       thresholds: {
-        lines: 29,
-        functions: 48,
-        branches: 66,
-        statements: 29,
+        lines: 72,
+        functions: 80,
+        branches: 79,
+        statements: 72,
       },
     },
   },
