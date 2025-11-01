@@ -952,7 +952,7 @@ describe('TerminationVerifier', () => {
       const smallBudget = estimateBudget(10, ComplexityClass.LINEAR);
       const largeBudget = estimateBudget(100, ComplexityClass.LINEAR);
 
-      expect(largeBudget.maxIterations).toBeGreaterThan(smallBudget.maxIterations);
+      expect(largeBudget.maxIterations).toBeGreaterThan(smallBudget.maxIterations ?? 0);
     });
 
     it('should always set maxStackDepth to 100', () => {

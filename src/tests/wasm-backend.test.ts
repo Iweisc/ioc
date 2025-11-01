@@ -388,8 +388,8 @@ describe('WebAssemblyBackend', () => {
             inputs: ['input1', 'input2'],
             params: {
               intent: 'join',
-              leftKey: { type: 'property', path: 'id' },
-              rightKey: { type: 'property', path: 'id' },
+              leftKey: { type: 'property', path: ['id'] },
+              rightKey: { type: 'property', path: ['id'] },
               joinType: 'inner',
             },
             capability: {
@@ -757,7 +757,7 @@ describe('WebAssemblyBackend', () => {
             inputs: ['input'],
             params: {
               intent: 'map',
-              transform: { type: 'property', path: 'name' },
+              transform: { type: 'property', path: ['name'] },
             },
             capability: {
               maxComplexity: ComplexityClass.LINEAR,
@@ -779,7 +779,14 @@ describe('WebAssemblyBackend', () => {
     });
 
     it('should generate WAT for arithmetic transform with all operations', async () => {
-      const operations = ['add', 'subtract', 'multiply', 'divide', 'modulo', 'negate'];
+      const operations: Array<'add' | 'subtract' | 'multiply' | 'divide' | 'modulo' | 'negate'> = [
+        'add',
+        'subtract',
+        'multiply',
+        'divide',
+        'modulo',
+        'negate',
+      ];
 
       for (const op of operations) {
         const program: IOCProgram = {
@@ -1010,7 +1017,9 @@ describe('WebAssemblyBackend', () => {
   });
 
   describe('WAT generation - reductions', () => {
-    const reductionOps = ['sum', 'product', 'min', 'max', 'average', 'count', 'first', 'last'];
+    const reductionOps: Array<
+      'sum' | 'product' | 'min' | 'max' | 'average' | 'count' | 'first' | 'last'
+    > = ['sum', 'product', 'min', 'max', 'average', 'count', 'first', 'last'];
 
     reductionOps.forEach((op) => {
       it(`should generate WAT for ${op} reduction`, async () => {
@@ -1263,7 +1272,7 @@ describe('WebAssemblyBackend', () => {
               descending: true,
             },
             capability: {
-              maxComplexity: ComplexityClass.LOGLINEAR,
+              maxComplexity: ComplexityClass.LINEARITHMIC,
               terminationGuarantee: 'structural',
               sideEffects: 'pure',
               parallelizable: false,
