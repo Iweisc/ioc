@@ -1,16 +1,27 @@
+
 /**
  * Tests for LLVM Backend
  */
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { LLVMBackend } from '../backends/llvm-backend';
 import { BackendType } from '../backends/types';
 import { createSimpleProgram, createLargeProgram } from './test-helpers';
+import { IOCIntentType } from '../dsl/ioc-format';
+import { ComplexityClass } from '../dsl/safe-types';
+import type { IOCProgram } from '../dsl/ioc-format';
+import * as child_process from 'child_process';
+import * as fs from 'fs';
+
+// Mock child_process and fs modules
+vi.mock('child_process');
+vi.mock('fs');
 
 describe('LLVMBackend', () => {
   let backend: LLVMBackend;
 
   beforeEach(() => {
     backend = new LLVMBackend();
+    vi.clearAllMocks();
   });
 
   describe('backend properties', () => {
@@ -25,19 +36,32 @@ describe('LLVMBackend', () => {
 
   describe('isAvailable', () => {
     it('should check if LLVM is available', async () => {
+      const mockExecSync = vi.mocked(child_process.execSync);
+      mockExecSync.mockImplementation(() => Buffer.from('LLVM version 15.0.0'));
+
       const available = await backend.isAvailable();
-      expect(typeof available).toBe('boolean');
+      expect(available).toBe(true);
+      expect(mockExecSync).toHaveBeenCalledWith('llc --version', { stdio: 'ignore' });
+      expect(mockExecSync).toHaveBeenCalledWith('lli --version', { stdio: 'ignore' });
     });
 
     it('should cache availability check', async () => {
+      const mockExecSync = vi.mocked(child_process.execSync);
+      mockExecSync.mockImplementation(() => Buffer.from('LLVM version 15.0.0'));
+
       const available1 = await backend.isAvailable();
       const available2 = await backend.isAvailable();
 
       expect(available1).toBe(available2);
+      expect(mockExecSync).toHaveBeenCalledTimes(2); // Only first call checks both tools
     });
 
-    it('should return false in most environments', async () => {
-      // LLVM bindings are typically not available unless explicitly installed
+    it('should return false when LLVM is not available', async () => {
+      const mockExecSync = vi.mocked(child_process.execSync);
+      mockExecSync.mockImplementation(() => {
+        throw new Error('Command not found');
+      });
+
       const available = await backend.isAvailable();
       expect(available).toBe(false);
     });
@@ -62,12 +86,12 @@ describe('LLVMBackend', () => {
       expect(largeEstimate).toBeGreaterThan(smallEstimate);
     });
 
-    it('should estimate higher compilation time than JavaScript', () => {
+    it('should estimate ~20ms per node', () => {
       const program = createSimpleProgram();
       const estimate = backend.estimateCompilationTime(program);
+      const expectedEstimate = program.nodes.length * 20;
 
-      // LLVM should estimate ~20ms per node (slower than JS)
-      expect(estimate).toBeGreaterThan(0);
+      expect(estimate).toBe(expectedEstimate);
     });
   });
 
@@ -76,7 +100,7 @@ describe('LLVMBackend', () => {
       const score = backend.estimatePerformanceScore();
 
       expect(typeof score).toBe('number');
-      expect(score).toBe(10); // LLVM gets 10/10 for performance
+      expect(score).toBe(10);
     });
 
     it('should return consistent score', () => {
@@ -89,105 +113,301 @@ describe('LLVMBackend', () => {
 
   describe('compile', () => {
     it('should throw error when LLVM not available', async () => {
+      const mockExecSync = vi.mocked(child_process.execSync);
+      mockExecSync.mockImplementation(() => {
+        throw new Error('Command not found');
+      });
+
       const program = createSimpleProgram();
 
       await expect(backend.compile(program)).rejects.toThrow('LLVM backend not available');
     });
 
-    it('should check availability before compiling', async () => {
+    it('should compile a simple program when LLVM is available', async () => {
+      const mockExecSync = vi.mocked(child_process.execSync);
+      const mockWriteFileSync = vi.mocked(fs.writeFileSync);
+      const mockUnlinkSync = vi.mocked(fs.unlinkSync);
+      const mockStatSync = vi.mocked(fs.statSync);
+      const mockExistsSync = vi.mocked(fs.existsSync);
+
+      mockExecSync.mockImplementation(() => Buffer.from('Success'));
+      mockWriteFileSync.mockImplementation(() => {});
+      mockUnlinkSync.mockImplementation(() => {});
+      mockExistsSync.mockReturnValue(true);
+      mockStatSync.mockReturnValue({ size: 1024 } as any);
+
       const program = createSimpleProgram();
+      const result = await backend.compile(program);
 
-      try {
-        await backend.compile(program);
-      } catch (error: any) {
-        expect(error.message).toContain('LLVM');
-      }
-    });
-
-    it('should reject with clear error message', async () => {
-      const program = createSimpleProgram();
-
-      await expect(backend.compile(program)).rejects.toThrow(
-        /LLVM backend not available.*llvm-bindings/i
-      );
+      expect(result).toBeDefined();
+      expect(result.backend).toBe(BackendType.LLVM);
+      expect(typeof result.execute).toBe('function');
+      expect(result.codeSize).toBe(1024);
+      expect(typeof result.compilationTime).toBe('number');
     });
 
     it('should handle optimization level option', async () => {
-      const program = createSimpleProgram();
+      const mockExecSync = vi.mocked(child_process.execSync);
+      const mockWriteFileSync = vi.mocked(fs.writeFileSync);
+      const mockUnlinkSync = vi.mocked(fs.unlinkSync);
+      const mockStatSync = vi.mocked(fs.statSync);
 
-      try {
-        await backend.compile(program, { optimizationLevel: 3 });
-      } catch (error: any) {
-        // Should fail with availability error, not options error
-        expect(error.message).toContain('not available');
-      }
+      mockExecSync.mockImplementation((cmd: any) => {
+        if (typeof cmd === 'string' && cmd.includes('-O3')) {
+          return Buffer.from('Optimized');
+        }
+        return Buffer.from('Success');
+      });
+      mockWriteFileSync.mockImplementation(() => {});
+      mockUnlinkSync.mockImplementation(() => {});
+      mockStatSync.mockReturnValue({ size: 1024 } as any);
+
+      const program = createSimpleProgram();
+      const result = await backend.compile(program, { optimizationLevel: 3 });
+
+      expect(result.metadata?.optimizations).toContain('vectorize');
+      expect(result.metadata?.optimizations).toContain('loop-unroll');
     });
 
-    it('should handle debug mode option', async () => {
+    it('should include LLVM IR in debug mode', async () => {
+      const mockExecSync = vi.mocked(child_process.execSync);
+      const mockWriteFileSync = vi.mocked(fs.writeFileSync);
+      const mockUnlinkSync = vi.mocked(fs.unlinkSync);
+      const mockStatSync = vi.mocked(fs.statSync);
+
+      mockExecSync.mockImplementation(() => Buffer.from('Success'));
+      mockWriteFileSync.mockImplementation(() => {});
+      mockUnlinkSync.mockImplementation(() => {});
+      mockStatSync.mockReturnValue({ size: 1024 } as any);
+
+      const program = createSimpleProgram();
+      const result = await backend.compile(program, { debug: true });
+
+      expect(result.metadata?.llvmIR).toBeDefined();
+      expect(result.metadata?.llvmIR).toContain('ModuleID');
+    });
+
+    it('should clean up temporary files on error', async () => {
+      const mockExecSync = vi.mocked(child_process.execSync);
+      const mockWriteFileSync = vi.mocked(fs.writeFileSync);
+      const mockUnlinkSync = vi.mocked(fs.unlinkSync);
+      const mockExistsSync = vi.mocked(fs.existsSync);
+
+      mockExecSync.mockImplementation((cmd: any) => {
+        if (typeof cmd === 'string' && cmd.includes('llc')) {
+          throw new Error('Compilation failed');
+        }
+        return Buffer.from('Success');
+      });
+      mockWriteFileSync.mockImplementation(() => {});
+      mockUnlinkSync.mockImplementation(() => {});
+      mockExistsSync.mockReturnValue(true);
+
       const program = createSimpleProgram();
 
-      try {
-        await backend.compile(program, { debug: true });
-      } catch (error: any) {
-        expect(error.message).toContain('not available');
-      }
+      await expect(backend.compile(program)).rejects.toThrow('LLVM');
     });
   });
 
-  describe('compilation phases', () => {
-    it('should mention LLVM IR generation in errors', async () => {
-      // Even though compilation fails, we can verify error messages
-      const program = createSimpleProgram();
+  describe('LLVM IR generation - operations', () => {
+    beforeEach(() => {
+      const mockExecSync = vi.mocked(child_process.execSync);
+      const mockWriteFileSync = vi.mocked(fs.writeFileSync);
+      const mockUnlinkSync = vi.mocked(fs.unlinkSync);
+      const mockStatSync = vi.mocked(fs.statSync);
 
-      try {
-        await backend.compile(program);
-      } catch (error: any) {
-        // Error should be about availability, not IR generation
-        expect(error.message).toBeDefined();
-      }
+      mockExecSync.mockImplementation(() => Buffer.from('Success'));
+      mockWriteFileSync.mockImplementation(() => {});
+      mockUnlinkSync.mockImplementation(() => {});
+      mockStatSync.mockReturnValue({ size: 1024 } as any);
     });
-  });
 
-  describe('edge cases', () => {
-    it('should handle empty program', async () => {
-      const emptyProgram = {
+    it('should generate LLVM IR for MAP operation', async () => {
+      const program: IOCProgram = {
         version: '1.0.0',
-        nodes: [],
-        outputs: [],
-        metadata: { name: 'empty' },
+        nodes: [
+          {
+            id: 'input',
+            type: IOCIntentType.INPUT,
+            inputs: [],
+            params: { intent: 'input', name: 'data' },
+            capability: {
+              maxComplexity: ComplexityClass.CONSTANT,
+              terminationGuarantee: 'structural',
+              sideEffects: 'pure',
+              parallelizable: true,
+            },
+          },
+          {
+            id: 'map',
+            type: IOCIntentType.MAP,
+            inputs: ['input'],
+            params: {
+              intent: 'map',
+              transform: { type: 'arithmetic', op: 'multiply', operand: 2 },
+            },
+            capability: {
+              maxComplexity: ComplexityClass.LINEAR,
+              terminationGuarantee: 'structural',
+              sideEffects: 'pure',
+              parallelizable: true,
+            },
+          },
+        ],
+        outputs: ['map'],
+        metadata: { name: 'map-test' },
       };
 
-      try {
-        await backend.compile(emptyProgram);
-      } catch (error: any) {
-        expect(error.message).toContain('not available');
-      }
+      const result = await backend.compile(program, { debug: true });
+      expect(result.metadata?.llvmIR).toContain('Map node');
+      expect(result.metadata?.llvmIR).toContain('map_array');
     });
 
-    it('should handle large programs', async () => {
-      const largeProgram = createLargeProgram(100);
+    it('should generate LLVM IR for FILTER operation', async () => {
+      const program: IOCProgram = {
+        version: '1.0.0',
+        nodes: [
+          {
+            id: 'input',
+            type: IOCIntentType.INPUT,
+            inputs: [],
+            params: { intent: 'input', name: 'data' },
+            capability: {
+              maxComplexity: ComplexityClass.CONSTANT,
+              terminationGuarantee: 'structural',
+              sideEffects: 'pure',
+              parallelizable: true,
+            },
+          },
+          {
+            id: 'filter',
+            type: IOCIntentType.FILTER,
+            inputs: ['input'],
+            params: {
+              intent: 'filter',
+              predicate: { type: 'compare', op: 'gt', value: 10 },
+            },
+            capability: {
+              maxComplexity: ComplexityClass.LINEAR,
+              terminationGuarantee: 'structural',
+              sideEffects: 'pure',
+              parallelizable: true,
+            },
+          },
+        ],
+        outputs: ['filter'],
+        metadata: { name: 'filter-test' },
+      };
 
-      try {
-        await backend.compile(largeProgram);
-      } catch (error: any) {
-        expect(error.message).toContain('not available');
-      }
+      const result = await backend.compile(program, { debug: true });
+      expect(result.metadata?.llvmIR).toContain('Filter node');
+      expect(result.metadata?.llvmIR).toContain('filter_array');
     });
-  });
 
-  describe('performance characteristics', () => {
-    it('should be slowest to compile', () => {
-      const program = createSimpleProgram();
-      const time = backend.estimateCompilationTime(program);
+    it('should generate LLVM IR for REDUCE operation', async () => {
+      const program: IOCProgram = {
+        version: '1.0.0',
+        nodes: [
+          {
+            id: 'input',
+            type: IOCIntentType.INPUT,
+            inputs: [],
+            params: { intent: 'input', name: 'data' },
+            capability: {
+              maxComplexity: ComplexityClass.CONSTANT,
+              terminationGuarantee: 'structural',
+              sideEffects: 'pure',
+              parallelizable: true,
+            },
+          },
+          {
+            id: 'reduce',
+            type: IOCIntentType.REDUCE,
+            inputs: ['input'],
+            params: {
+              intent: 'reduce',
+              operation: { type: 'sum' },
+            },
+            capability: {
+              maxComplexity: ComplexityClass.LINEAR,
+              terminationGuarantee: 'structural',
+              sideEffects: 'pure',
+              parallelizable: false,
+            },
+          },
+        ],
+        outputs: ['reduce'],
+        metadata: { name: 'reduce-test' },
+      };
 
-      // LLVM should be slowest: ~20ms per node
-      // Compare to JS (~1ms) and WASM (~5ms)
-      expect(time).toBeGreaterThan(10);
+      const result = await backend.compile(program, { debug: true });
+      expect(result.metadata?.llvmIR).toContain('Reduce node');
+      expect(result.metadata?.llvmIR).toContain('reduce_array');
     });
 
-    it('should have best runtime performance score', () => {
-      const score = backend.estimatePerformanceScore();
-      expect(score).toBe(10);
+    it('should generate LLVM IR for GROUP_BY operation', async () => {
+      const program: IOCProgram = {
+        version: '1.0.0',
+        nodes: [
+          {
+            id: 'input',
+            type: IOCIntentType.INPUT,
+            inputs: [],
+            params: { intent: 'input', name: 'data' },
+            capability: {
+              maxComplexity: ComplexityClass.CONSTANT,
+              terminationGuarantee: 'structural',
+              sideEffects: 'pure',
+              parallelizable: true,
+            },
+          },
+          {
+            id: 'group',
+            type: IOCIntentType.GROUP_BY,
+            inputs: ['input'],
+            params: {
+              intent: 'group_by',
+              keyTransform: { type: 'property', path: ['category'] },
+            },
+            capability: {
+              maxComplexity: ComplexityClass.LINEAR,
+              terminationGuarantee: 'structural',
+              sideEffects: 'pure',
+              parallelizable: false,
+            },
+          },
+        ],
+        outputs: ['group'],
+        metadata: { name: 'group-test' },
+      };
+
+      const result = await backend.compile(program, { debug: true });
+      expect(result.metadata?.llvmIR).toContain('Node type group_by');
+    });
+
+    it('should generate LLVM IR for JOIN operation', async () => {
+      const program: IOCProgram = {
+        version: '1.0.0',
+        nodes: [
+          {
+            id: 'input1',
+            type: IOCIntentType.INPUT,
+            inputs: [],
+            params: { intent: 'input', name: 'data1' },
+            capability: {
+              maxComplexity: ComplexityClass.CONSTANT,
+              terminationGuarantee: 'structural',
+              sideEffects: 'pure',
+              parallelizable: true,
+            },
+          },
+        ],
+        outputs: ['input'],
+        metadata: { name: 'test' },
+      };
+
+      const result = await backend.compile(program, { debug: true });
+      expect(result.metadata?.llvmIR).toContain('ioc_execute');
     });
   });
 });

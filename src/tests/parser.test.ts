@@ -1557,5 +1557,238 @@ output count_result
 
       expect(compiledFn([1, 3, 6, 9, 11, 12, 15])).toBe(5);
     });
+
+    it('should handle unsupported arithmetic operator in predicate', () => {
+      const converter = new ASTToGraphConverter();
+      const ast: Program = {
+        type: 'program',
+        statements: [
+          {
+            type: 'input',
+            name: 'data',
+          },
+          {
+            type: 'filter',
+            target: 'filtered',
+            source: 'data',
+            predicate: {
+              type: 'arithmetic',
+              arithmeticOp: 'unsupported_op' as any,
+              arithmeticValue: 2,
+              comparisonOp: 'eq',
+              comparisonValue: 0,
+            },
+          },
+          {
+            type: 'output',
+            source: 'filtered',
+          },
+        ],
+      };
+
+      expect(() => converter.convert(ast)).toThrow('Unsupported arithmetic operator');
+    });
+
+    it('should handle unsupported arithmetic operator in transform', () => {
+      const converter = new ASTToGraphConverter();
+      const ast: Program = {
+        type: 'program',
+        statements: [
+          {
+            type: 'input',
+            name: 'data',
+          },
+          {
+            type: 'map',
+            target: 'mapped',
+            source: 'data',
+            transform: {
+              type: 'arithmetic',
+              operator: 'unsupported_op' as any,
+              value: 2,
+            },
+          },
+          {
+            type: 'output',
+            source: 'mapped',
+          },
+        ],
+      };
+
+      expect(() => converter.convert(ast)).toThrow('Unsupported arithmetic operator');
+    });
+
+    it('should handle logical NOT with multiple predicates', () => {
+      const converter = new ASTToGraphConverter();
+      const ast: Program = {
+        type: 'program',
+        statements: [
+          {
+            type: 'input',
+            name: 'data',
+          },
+          {
+            type: 'filter',
+            target: 'filtered',
+            source: 'data',
+            predicate: {
+              type: 'logical',
+              operator: 'not',
+              predicates: [
+                { type: 'comparison', operator: 'gt', value: 0 },
+                { type: 'comparison', operator: 'lt', value: 10 },
+              ],
+            },
+          },
+          {
+            type: 'output',
+            source: 'filtered',
+          },
+        ],
+      };
+
+      expect(() => converter.convert(ast)).toThrow("Logical 'not' must have exactly one predicate");
+    });
+
+    it('should handle unknown logical operator', () => {
+      const converter = new ASTToGraphConverter();
+      const ast: Program = {
+        type: 'program',
+        statements: [
+          {
+            type: 'input',
+            name: 'data',
+          },
+          {
+            type: 'filter',
+            target: 'filtered',
+            source: 'data',
+            predicate: {
+              type: 'logical',
+              operator: 'xor' as any,
+              predicates: [{ type: 'comparison', operator: 'gt', value: 0 }],
+            },
+          },
+          {
+            type: 'output',
+            source: 'filtered',
+          },
+        ],
+      };
+
+      expect(() => converter.convert(ast)).toThrow('Unknown logical operator');
+    });
+
+    it('should handle unsupported transform type', () => {
+      const converter = new ASTToGraphConverter();
+      const ast: Program = {
+        type: 'program',
+        statements: [
+          {
+            type: 'input',
+            name: 'data',
+          },
+          {
+            type: 'map',
+            target: 'mapped',
+            source: 'data',
+            transform: {
+              type: 'unsupported_type' as any,
+            },
+          },
+          {
+            type: 'output',
+            source: 'mapped',
+          },
+        ],
+      };
+
+      expect(() => converter.convert(ast)).toThrow('Unsupported transform type');
+    });
+
+    it('should handle unsupported predicate type', () => {
+      const converter = new ASTToGraphConverter();
+      const ast: Program = {
+        type: 'program',
+        statements: [
+          {
+            type: 'input',
+            name: 'data',
+          },
+          {
+            type: 'filter',
+            target: 'filtered',
+            source: 'data',
+            predicate: {
+              type: 'unsupported_type' as any,
+            },
+          },
+          {
+            type: 'output',
+            source: 'filtered',
+          },
+        ],
+      };
+
+      expect(() => converter.convert(ast)).toThrow('Unsupported predicate type');
+    });
+
+    it('should handle let statement error', () => {
+      const converter = new ASTToGraphConverter();
+      const ast: Program = {
+        type: 'program',
+        statements: [
+          {
+            type: 'let' as any,
+            name: 'x',
+            value: 10,
+          },
+        ],
+      };
+
+      expect(() => converter.convert(ast)).toThrow("'let' statements are not yet supported");
+    });
+
+    it('should handle if statement error', () => {
+      const converter = new ASTToGraphConverter();
+      const ast: Program = {
+        type: 'program',
+        statements: [
+          {
+            type: 'if' as any,
+            condition: { type: 'comparison', operator: 'gt', value: 0 },
+            thenBranch: [],
+            elseBranch: [],
+          },
+        ],
+      };
+
+      expect(() => converter.convert(ast)).toThrow("'if' statements are not yet supported");
+    });
+
+    it('should handle unsupported reduction operation', () => {
+      const converter = new ASTToGraphConverter();
+      const ast: Program = {
+        type: 'program',
+        statements: [
+          {
+            type: 'input',
+            name: 'data',
+          },
+          {
+            type: 'reduce',
+            target: 'result',
+            source: 'data',
+            operation: 'any' as any,
+          },
+          {
+            type: 'output',
+            source: 'result',
+          },
+        ],
+      };
+
+      expect(() => converter.convert(ast)).toThrow("Reduction operation 'any' cannot be converted");
+    });
   });
 });
