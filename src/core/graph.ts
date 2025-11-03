@@ -386,7 +386,7 @@ export class Graph {
    * but that would complicate the API for this common operation.
    */
   optimize(passes?: string[]): void {
-    const { GraphOptimizer } = require('./optimizer.js');
+    const { GraphOptimizer } = require('./optimizer');
     const optimizer = new GraphOptimizer(this);
     optimizer.optimize(passes);
   }
