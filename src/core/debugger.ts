@@ -2,7 +2,6 @@
 
 import { Graph, IntentNode, IntentType } from './graph';
 import { ProvenanceTracker } from './provenance';
-import { GraphOptimizer } from './optimizer';
 
 export interface ExecutionTrace {
   nodeId: string;
@@ -196,36 +195,42 @@ export class IOCDebugger {
         let output: any;
         
         switch (node.intentType) {
-          case IntentType.INPUT:
+          case IntentType.INPUT: {
             output = data[node.params['name'] as string];
             break;
+          }
             
-          case IntentType.CONSTANT:
+          case IntentType.CONSTANT: {
             output = node.params['value'];
             break;
+          }
             
-          case IntentType.FILTER:
+          case IntentType.FILTER: {
             const filterPred = node.params['predicate'] as Function;
             output = inputs[0]?.filter?.(filterPred) || [];
             break;
+          }
             
-          case IntentType.MAP:
+          case IntentType.MAP: {
             const mapTransform = node.params['transform'] as Function;
             output = inputs[0]?.map?.(mapTransform) || [];
             break;
+          }
             
-          case IntentType.REDUCE:
+          case IntentType.REDUCE: {
             const reduceOp = node.params['operation'] as Function;
             const initial = node.params['initial'];
             output = inputs[0]?.reduce?.(reduceOp, initial);
             break;
+          }
             
-          case IntentType.SORT:
+          case IntentType.SORT: {
             const compareFn = node.params['compareFn'] as ((a: any, b: any) => number) | undefined;
             output = [...(inputs[0] || [])].sort(compareFn);
             break;
+          }
             
-          case IntentType.GROUP_BY:
+          case IntentType.GROUP_BY: {
             const keyFn = node.params['keyFn'] as Function;
             const grouped = new Map();
             for (const item of inputs[0] || []) {
@@ -237,8 +242,9 @@ export class IOCDebugger {
             }
             output = grouped;
             break;
+          }
             
-          case IntentType.JOIN:
+          case IntentType.JOIN: {
             const leftKey = node.params['leftKey'] as Function;
             const rightKey = node.params['rightKey'] as Function;
             const joined = [];
@@ -251,13 +257,15 @@ export class IOCDebugger {
             }
             output = joined;
             break;
+          }
             
-          case IntentType.FLATTEN:
+          case IntentType.FLATTEN: {
             const depth = node.params['depth'] as number || 1;
             output = inputs[0]?.flat?.(depth) || [];
             break;
+          }
             
-          case IntentType.DISTINCT:
+          case IntentType.DISTINCT: {
             const distinctKeyFn = node.params['keyFn'] as Function | undefined;
             if (distinctKeyFn) {
               const seen = new Set();
@@ -273,6 +281,7 @@ export class IOCDebugger {
               output = [...new Set(inputs[0] || [])];
             }
             break;
+          }
             
           default:
             output = null;

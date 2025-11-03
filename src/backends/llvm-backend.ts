@@ -9,7 +9,7 @@
 import type { IOCProgram } from '../dsl/ioc-format';
 import type { CompilationBackend, CompilationOptions, CompilationResult } from './types';
 import { BackendType } from './types';
-import type { SafePredicate, SafeTransform, ReductionOp, ComparisonOp } from '../dsl/safe-types';
+import type { SafePredicate, SafeTransform, ComparisonOp } from '../dsl/safe-types';
 import { getExecutionOrder } from '../dsl/ioc-format';
 import { execSync } from 'child_process';
 import * as fs from 'fs';
@@ -130,7 +130,7 @@ export class LLVMBackend implements CompilationBackend {
     return 10;
   }
 
-  private generateLLVMIR(program: IOCProgram, options: Partial<CompilationOptions>): string {
+  private generateLLVMIR(program: IOCProgram, _options: Partial<CompilationOptions>): string {
     const gen = new LLVMIRGenerator();
 
     // Module header
@@ -182,28 +182,32 @@ export class LLVMBackend implements CompilationBackend {
           gen.emit(`  ${resultReg} = bitcast i8* %input to i8*`);
           break;
           
-        case 'filter':
+        case 'filter': {
           gen.emit(`  ; Filter node: ${nodeId}`);
           const inputReg = node.inputs[0] ? nodeResults.get(node.inputs[0]) : '%input';
           gen.emit(`  ${resultReg} = call i8* @filter_array(i8* ${inputReg})`);
           break;
+        }
           
-        case 'map':
+        case 'map': {
           gen.emit(`  ; Map node: ${nodeId}`);
           const mapInput = node.inputs[0] ? nodeResults.get(node.inputs[0]) : '%input';
           gen.emit(`  ${resultReg} = call i8* @map_array(i8* ${mapInput})`);
           break;
+        }
           
-        case 'reduce':
+        case 'reduce': {
           gen.emit(`  ; Reduce node: ${nodeId}`);
           const reduceInput = node.inputs[0] ? nodeResults.get(node.inputs[0]) : '%input';
           gen.emit(`  ${resultReg} = call i8* @reduce_array(i8* ${reduceInput})`);
           break;
+        }
           
-        default:
+        default: {
           gen.emit(`  ; Node type ${node.type} not fully implemented`);
           const defaultInput = node.inputs[0] ? nodeResults.get(node.inputs[0]) : '%input';
           gen.emit(`  ${resultReg} = bitcast i8* ${defaultInput} to i8*`);
+        }
       }
     }
     
@@ -287,10 +291,11 @@ export class LLVMBackend implements CompilationBackend {
         gen.emit(`  ret double ${valueReg}`);
         break;
         
-      case 'constant':
+      case 'constant': {
         const constValue = typeof transform.value === 'number' ? transform.value : 0;
         gen.emit(`  ret double ${constValue}`);
         break;
+      }
         
       case 'arithmetic': {
         const resultReg = gen.allocRegister();
@@ -430,201 +435,4 @@ export class LLVMBackend implements CompilationBackend {
     }
   }
 
-  private createJavaScriptExecutor(program: IOCProgram): (input: any) => any {
-    const executionOrder = getExecutionOrder(program);
-    
-    return (input: any) => {
-      const nodeResults = new Map<string, any>();
-      
-      for (const nodeId of executionOrder) {
-        const node = program.nodes.find(n => n.id === nodeId);
-        if (!node) continue;
-        
-        let result: any;
-        
-        switch (node.type) {
-          case 'input':
-            result = input;
-            break;
-            
-          case 'constant':
-            result = (node.params as any).value;
-            break;
-            
-          case 'filter': {
-            const inputData = node.inputs[0] ? nodeResults.get(node.inputs[0]) : input;
-            const params = node.params as any;
-            if (Array.isArray(inputData) && params.predicate) {
-              result = inputData.filter((item: any) =>
-                this.evaluatePredicate(params.predicate, item)
-              );
-            } else {
-              result = inputData;
-            }
-            break;
-          }
-          
-          case 'map': {
-            const inputData = node.inputs[0] ? nodeResults.get(node.inputs[0]) : input;
-            const params = node.params as any;
-            if (Array.isArray(inputData) && params.transform) {
-              result = inputData.map((item: any) =>
-                this.evaluateTransform(params.transform, item)
-              );
-            } else {
-              result = inputData;
-            }
-            break;
-          }
-          
-          case 'reduce': {
-            const inputData = node.inputs[0] ? nodeResults.get(node.inputs[0]) : input;
-            const params = node.params as any;
-            if (Array.isArray(inputData) && params.operation) {
-              result = this.evaluateReduction(params.operation, inputData);
-            } else {
-              result = inputData;
-            }
-            break;
-          }
-          
-          case 'slice': {
-            const inputData = node.inputs[0] ? nodeResults.get(node.inputs[0]) : input;
-            const params = node.params as any;
-            if (Array.isArray(inputData)) {
-              result = inputData.slice(params.start, params.end);
-            } else {
-              result = inputData;
-            }
-            break;
-          }
-          
-          default:
-            result = node.inputs[0] ? nodeResults.get(node.inputs[0]) : input;
-        }
-        
-        nodeResults.set(nodeId, result);
-      }
-      
-      const outputNodeId = program.outputs[0];
-      return outputNodeId ? nodeResults.get(outputNodeId) : input;
-    };
-  }
-
-  private evaluatePredicate(predicate: SafePredicate, value: any): boolean {
-    switch (predicate.type) {
-      case 'always':
-        return predicate.value;
-        
-      case 'compare':
-        return this.compareValues(value, predicate.value, predicate.op);
-        
-      case 'compare_property': {
-        const propValue = this.getProperty(value, predicate.property);
-        return this.compareValues(propValue, predicate.value, predicate.op);
-      }
-      
-      case 'type_check':
-        return typeof value === predicate.expectedType;
-        
-      case 'and':
-        return predicate.predicates.every(p => this.evaluatePredicate(p, value));
-        
-      case 'or':
-        return predicate.predicates.some(p => this.evaluatePredicate(p, value));
-        
-      case 'not':
-        return !this.evaluatePredicate(predicate.predicate, value);
-        
-      default:
-        return true;
-    }
-  }
-
-  private evaluateTransform(transform: SafeTransform, value: any): any {
-    switch (transform.type) {
-      case 'identity':
-        return value;
-        
-      case 'constant':
-        return transform.value;
-        
-      case 'property':
-        return this.getProperty(value, Array.isArray(transform.path)
-          ? transform.path.join('.')
-          : transform.path);
-        
-      case 'arithmetic': {
-        const num = typeof value === 'number' ? value : 0;
-        const operand = typeof transform.operand === 'number' ? transform.operand : 0;
-        switch (transform.op) {
-          case 'add': return num + operand;
-          case 'subtract': return num - operand;
-          case 'multiply': return num * operand;
-          case 'divide': return operand !== 0 ? num / operand : 0;
-          case 'modulo': return operand !== 0 ? num % operand : 0;
-          case 'negate': return -num;
-          default: return num;
-        }
-      }
-      
-      default:
-        return value;
-    }
-  }
-
-  private evaluateReduction(reduction: ReductionOp, array: any[]): any {
-    switch (reduction.type) {
-      case 'sum':
-        return array.reduce((a, b) => a + b, 0);
-        
-      case 'product':
-        return array.reduce((a, b) => a * b, 1);
-        
-      case 'min':
-        return array.length > 0 ? Math.min(...array) : 0;
-        
-      case 'max':
-        return array.length > 0 ? Math.max(...array) : 0;
-        
-      case 'average':
-        return array.length > 0 ? array.reduce((a, b) => a + b, 0) / array.length : 0;
-        
-      case 'count':
-        return array.length;
-        
-      case 'first':
-        return array[0];
-        
-      case 'last':
-        return array[array.length - 1];
-        
-      default:
-        return array;
-    }
-  }
-
-  private compareValues(a: any, b: any, op: ComparisonOp): boolean {
-    switch (op) {
-      case 'eq': return a === b;
-      case 'ne': return a !== b;
-      case 'gt': return a > b;
-      case 'gte': return a >= b;
-      case 'lt': return a < b;
-      case 'lte': return a <= b;
-      default: return false;
-    }
-  }
-
-  private getProperty(obj: any, path: string): any {
-    const parts = path.split('.');
-    let current = obj;
-    
-    for (const part of parts) {
-      if (current == null) return undefined;
-      current = current[part];
-    }
-    
-    return current;
-  }
 }
