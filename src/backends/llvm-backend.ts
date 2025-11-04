@@ -292,7 +292,8 @@ export class LLVMBackend implements CompilationBackend {
           const fnName = `@reducer_${reducerCount}`;
           gen.emit(`define double ${fnName}(double %acc, double %val) {`);
           gen.emit('entry:');
-          const operationType = typeof params.operation === 'object' ? params.operation.type : params.operation;
+          const operationType =
+            typeof params.operation === 'object' ? params.operation.type : params.operation;
           this.compileReducerToLLVM(operationType, gen, '%acc', '%val');
           gen.emit('}');
           gen.emit('');
