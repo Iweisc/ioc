@@ -314,7 +314,15 @@ describe('IOCDebugger', () => {
       ])
     );
     const distinct = graph.distinct(input);
+
+    // Output all nodes to ensure they're executed and traced
     graph.output(reduced);
+    graph.output(constant);
+    graph.output(sorted);
+    graph.output(grouped);
+    graph.output(joined);
+    graph.output(flattened);
+    graph.output(distinct);
 
     const dbg = new IOCDebugger(graph);
     const traces = dbg.trace({ data: [1, 2, 3, 4, 5] }, true);
