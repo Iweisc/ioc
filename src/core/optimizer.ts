@@ -342,6 +342,9 @@ export class GraphOptimizer {
    * - Complex predicates or transforms may not be accurately detected
    * - False positives are possible if test cases don't cover edge cases
    *
+   * NOTE: This heuristic uses limited test data and may produce false positives.
+   * Consider gating optimization behind explicit metadata or requiring compile-time proofs.
+   *
    * The optimization is conservative: it only applies when test cases confirm
    * independence. If uncertain, the reordering is skipped.
    *
@@ -460,6 +463,8 @@ export class GraphOptimizer {
       const val2 = params2[key];
 
       if (typeof val1 === 'function' && typeof val2 === 'function') {
+        // NOTE: Comparing functions via toString() may misclassify closures and minified code.
+        // Consider using canonical SafeTransform identifiers or structured hash of serialized safe AST.
         // For functions, compare both reference and string representation
         // This catches both identical references and separately-defined identical functions
         if (val1 !== val2 && val1.toString() !== val2.toString()) return false;

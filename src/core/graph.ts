@@ -374,19 +374,13 @@ export class Graph {
   }
 
   /**
-   * Apply optimization passes to the graph
+   * Apply graph optimizations.
    *
-   * Note: Uses require() for lazy loading to break circular dependency between
-   * Graph and GraphOptimizer. The optimizer imports Graph for type definitions,
-   * and Graph needs to instantiate GraphOptimizer. By using require() here instead
-   * of a top-level import, we ensure both modules are fully loaded before the
-   * optimizer is instantiated.
-   *
-   * Alternative: Accept optimizer as a parameter or use dependency injection,
-   * but that would complicate the API for this common operation.
+   * This uses dynamic import to avoid circular dependency issues
+   * (optimizer imports Graph, Graph imports optimizer types).
    */
-  optimize(passes?: string[]): void {
-    const { GraphOptimizer } = require('./optimizer.js');
+  async optimize(passes?: string[]): Promise<void> {
+    const { GraphOptimizer } = await import('./optimizer.js');
     const optimizer = new GraphOptimizer(this);
     optimizer.optimize(passes);
   }

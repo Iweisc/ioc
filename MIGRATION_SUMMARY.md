@@ -6,7 +6,7 @@ Successfully removed ALL TypeScript framework/embedding capabilities from IOC. I
 
 ## What Was Removed
 
-### 1. SafeGraph Fluent API ❌
+### 1. SafeGraph Fluent API 
 **File**: `src/dsl/safe-graph.ts` (deleted)
 
 The entire SafeGraph class with fluent API methods:
@@ -31,7 +31,7 @@ const backend = new JavaScriptBackend();
 const result = await backend.compile(program);
 ```
 
-### 2. TypeScript Examples ❌
+### 2. TypeScript Examples 
 Deleted all TypeScript usage examples:
 - `src/examples/basic.ts`
 - `src/examples/comprehensive.ts`
@@ -39,7 +39,7 @@ Deleted all TypeScript usage examples:
 
 Only `.ioc` files remain in `examples/` directory.
 
-### 3. Framework Tests ❌
+### 3. Framework Tests 
 Removed tests that tested the TypeScript API:
 - `src/tests/safe-graph.test.ts`
 - `src/tests/safe-graph-public-api.test.ts`
@@ -50,7 +50,7 @@ The old `src/core/graph.ts` API is still in codebase but NO LONGER EXPORTED from
 
 ## What Was Updated
 
-### 1. Parser/AST Converter ✅
+### 1. Parser/AST Converter 
 **File**: `src/parser/ast-to-graph.ts`
 
 Changed from:
@@ -67,7 +67,7 @@ class ASTToGraphConverter {
 }
 ```
 
-### 2. JavaScript Backend ✅
+### 2. JavaScript Backend 
 **File**: `src/backends/javascript-backend.ts`
 
 Removed dependency on SafeGraph. Now directly compiles IOCProgram:
@@ -79,7 +79,7 @@ async compile(program: IOCProgram): Promise<CompilationResult> {
 }
 ```
 
-### 3. CLI ✅
+### 3. CLI 
 **File**: `src/cli/ioc.ts`
 
 Updated to use backend selector instead of SafeGraph:
@@ -93,27 +93,27 @@ const { program } = parseIOC(source);
 const result = await backendSelector.compile(program);
 ```
 
-### 4. Main Exports ✅
+### 4. Main Exports 
 **File**: `src/index.ts`
 
 Complete rewrite. Removed ALL framework API exports:
 
 **Removed Exports**:
-- ❌ `SafeGraph` class
-- ❌ `Predicate`, `Transform`, `Reduce` helper classes
-- ❌ Legacy `Graph`, `IntType`, etc.
-- ❌ `SolverKernel`, solver strategies
-- ❌ `GraphOptimizer`, provenance tracking
-- ❌ `IOCDebugger`, differential testing
+-  `SafeGraph` class
+-  `Predicate`, `Transform`, `Reduce` helper classes
+-  Legacy `Graph`, `IntType`, etc.
+-  `SolverKernel`, solver strategies
+-  `GraphOptimizer`, provenance tracking
+-  `IOCDebugger`, differential testing
 
 **Kept Exports** (compiler infrastructure only):
-- ✅ `Lexer`, `Parser`, `ASTToGraphConverter` - Parser
-- ✅ `IOCProgram`, `IOCNode`, `serializeIOC`, `loadIOCFile` - IR format
-- ✅ `JavaScriptBackend`, `WebAssemblyBackend`, `BackendSelector` - Code generation
-- ✅ `compilePredicateFunction`, `compileTransformFunction` - Compilers
-- ✅ `TerminationVerifier`, security validators - Safety
+-  `Lexer`, `Parser`, `ASTToGraphConverter` - Parser
+-  `IOCProgram`, `IOCNode`, `serializeIOC`, `loadIOCFile` - IR format
+-  `JavaScriptBackend`, `WebAssemblyBackend`, `BackendSelector` - Code generation
+-  `compilePredicateFunction`, `compileTransformFunction` - Compilers
+-  `TerminationVerifier`, security validators - Safety
 
-### 5. All Tests ✅
+### 5. All Tests 
 Updated 44 test functions in:
 - `src/tests/parser.test.ts`
 - `src/tests/parser-refactoring.test.ts`
@@ -122,7 +122,7 @@ Changed from:
 ```typescript
 it('test', () => {
   const graph = converter.convert(ast);
-  const fn = graph.compile();  // ❌ Framework API
+  const fn = graph.compile();  //  Framework API
 })
 ```
 
@@ -130,11 +130,11 @@ To:
 ```typescript
 it('test', async () => {
   const program = converter.convert(ast);
-  const fn = await compileProgram(program);  // ✅ Compiler API
+  const fn = await compileProgram(program);  //  Compiler API
 })
 ```
 
-### 6. Documentation ✅
+### 6. Documentation 
 **File**: `README.md`
 
 Complete rewrite emphasizing IOC as a compiled language:

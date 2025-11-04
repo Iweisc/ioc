@@ -469,3 +469,243 @@ describe('VectorizedStrategy', () => {
     expect(cost).toBeLessThan(1);
   });
 });
+
+describe('NaiveStrategy - Additional Coverage', () => {
+  const strategy = new NaiveStrategy();
+
+  it('should generate code for flatten with depth > 1', () => {
+    const node = {
+      id: 'test',
+      intentType: IntentType.FLATTEN,
+      inputs: ['input1'],
+      params: { depth: 3 },
+      outputType: {} as any,
+      metadata: {},
+    };
+
+    const code = strategy.generateCode(node, { variables: {}, nodeResults: {} });
+    expect(code).toContain('for');
+    expect(code).toContain('push');
+  });
+
+  it('should generate code for distinct with keyFn', () => {
+    const node = {
+      id: 'test',
+      intentType: IntentType.DISTINCT,
+      inputs: ['input1'],
+      params: { keyFn: (x: any) => x.id },
+      outputType: {} as any,
+      metadata: {},
+    };
+
+    const context = { variables: {}, nodeResults: {} };
+    const code = strategy.generateCode(node, context);
+    expect(code).toContain('_seen');
+    expect(code).toContain('_key');
+  });
+
+  // NOTE: These tests verify code generation patterns but do not validate
+  // the actual sorting logic differences. Consider strengthening assertions
+  // to verify specific implementation details.
+  it('should generate code for sort with key function', () => {
+    const node = {
+      id: 'test',
+      intentType: IntentType.SORT,
+      inputs: ['input1'],
+      params: {
+        key: (x: any) => x.value,
+        reverse: false,
+      },
+      outputType: {} as any,
+      metadata: {},
+    };
+
+    const context = { variables: {}, nodeResults: {} };
+    const code = strategy.generateCode(node, context);
+    expect(code).toContain('sort');
+  });
+
+  it('should generate code for sort with reverse', () => {
+    const node = {
+      id: 'test',
+      intentType: IntentType.SORT,
+      inputs: ['input1'],
+      params: {
+        key: (x: any) => x.value,
+        reverse: true,
+      },
+      outputType: {} as any,
+      metadata: {},
+    };
+
+    const context = { variables: {}, nodeResults: {} };
+    const code = strategy.generateCode(node, context);
+    expect(code).toContain('sort');
+  });
+
+  it('should generate code for sort with reverse but no key', () => {
+    const node = {
+      id: 'test',
+      intentType: IntentType.SORT,
+      inputs: ['input1'],
+      params: { reverse: true },
+      outputType: {} as any,
+      metadata: {},
+    };
+
+    const code = strategy.generateCode(node, { variables: {}, nodeResults: {} });
+    expect(code).toContain('reverse');
+  });
+
+  it('should throw error for unsupported intent', () => {
+    const node = {
+      id: 'test',
+      intentType: 'UNKNOWN' as any,
+      inputs: [],
+      params: {},
+      outputType: {} as any,
+      metadata: {},
+    };
+
+    expect(() => strategy.generateCode(node, { variables: {}, nodeResults: {} })).toThrow();
+  });
+
+  it('should estimate cost for reduce', () => {
+    const node = {
+      id: 'test',
+      intentType: IntentType.REDUCE,
+      inputs: [],
+      params: {},
+      outputType: {} as any,
+      metadata: {},
+    };
+
+    const cost = strategy.getCostEstimate(node, [100]);
+    expect(cost).toBeGreaterThan(100);
+  });
+});
+
+describe('OptimizedStrategy - Additional Coverage', () => {
+  const strategy = new OptimizedStrategy();
+
+  it('should generate code for distinct with keyFn', () => {
+    const node = {
+      id: 'test',
+      intentType: IntentType.DISTINCT,
+      inputs: ['input1'],
+      params: { keyFn: (x: any) => x.id },
+      outputType: {} as any,
+      metadata: {},
+    };
+
+    const context = { variables: {}, nodeResults: {} };
+    const code = strategy.generateCode(node, context);
+    expect(code).toContain('_seen');
+  });
+
+  it('should generate code for sort with key function', () => {
+    const node = {
+      id: 'test',
+      intentType: IntentType.SORT,
+      inputs: ['input1'],
+      params: {
+        key: (x: any) => x.value,
+        reverse: false,
+      },
+      outputType: {} as any,
+      metadata: {},
+    };
+
+    const context = { variables: {}, nodeResults: {} };
+    const code = strategy.generateCode(node, context);
+    expect(code).toContain('sort');
+  });
+
+  it('should generate code for sort with reverse and key', () => {
+    const node = {
+      id: 'test',
+      intentType: IntentType.SORT,
+      inputs: ['input1'],
+      params: {
+        key: (x: any) => x.value,
+        reverse: true,
+      },
+      outputType: {} as any,
+      metadata: {},
+    };
+
+    const context = { variables: {}, nodeResults: {} };
+    const code = strategy.generateCode(node, context);
+    expect(code).toContain('sort');
+  });
+
+  it('should generate code for sort with reverse but no key', () => {
+    const node = {
+      id: 'test',
+      intentType: IntentType.SORT,
+      inputs: ['input1'],
+      params: { reverse: true },
+      outputType: {} as any,
+      metadata: {},
+    };
+
+    const code = strategy.generateCode(node, { variables: {}, nodeResults: {} });
+    expect(code).toContain('reverse');
+  });
+
+  it('should throw error for unsupported intent', () => {
+    const node = {
+      id: 'test',
+      intentType: 'UNKNOWN' as any,
+      inputs: [],
+      params: {},
+      outputType: {} as any,
+      metadata: {},
+    };
+
+    expect(() => strategy.generateCode(node, { variables: {}, nodeResults: {} })).toThrow();
+  });
+
+  it('should estimate cost for reduce', () => {
+    const node = {
+      id: 'test',
+      intentType: IntentType.REDUCE,
+      inputs: [],
+      params: {},
+      outputType: {} as any,
+      metadata: {},
+    };
+
+    const cost = strategy.getCostEstimate(node, [100]);
+    expect(cost).toBeLessThan(100);
+  });
+
+  it('should return base cost for empty inputs', () => {
+    const node = {
+      id: 'test',
+      intentType: IntentType.FILTER,
+      inputs: [],
+      params: {},
+      outputType: {} as any,
+      metadata: {},
+    };
+
+    const cost = strategy.getCostEstimate(node, []);
+    expect(cost).toBeGreaterThan(0);
+  });
+
+  it('should generate code for groupBy', () => {
+    const node = {
+      id: 'test',
+      intentType: IntentType.GROUP_BY,
+      inputs: ['input1'],
+      params: { key: (x: any) => x.category },
+      outputType: {} as any,
+      metadata: {},
+    };
+
+    const context = { variables: {}, nodeResults: {} };
+    const code = strategy.generateCode(node, context);
+    expect(code).toContain('.reduce(');
+  });
+});

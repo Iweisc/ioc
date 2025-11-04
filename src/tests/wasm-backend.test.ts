@@ -6,7 +6,7 @@ import { WebAssemblyBackend } from '../backends/wasm-backend';
 import { BackendType } from '../backends/types';
 import { createSimpleProgram } from './test-helpers';
 import { IOCIntentType } from '../dsl/ioc-format';
-import { ComplexityClass } from '../dsl/safe-types';
+import { ComplexityClass, type ArithmeticOp } from '../dsl/safe-types';
 import type { IOCProgram } from '../dsl/ioc-format';
 
 describe('WebAssemblyBackend', () => {
@@ -388,8 +388,8 @@ describe('WebAssemblyBackend', () => {
             inputs: ['input1', 'input2'],
             params: {
               intent: 'join',
-              leftKey: { type: 'property', path: ['id'] },
-              rightKey: { type: 'property', path: ['id'] },
+              leftKey: { type: 'property', path: ['id'] as string[] },
+              rightKey: { type: 'property', path: ['id'] as string[] },
               joinType: 'inner',
             },
             capability: {
@@ -757,7 +757,7 @@ describe('WebAssemblyBackend', () => {
             inputs: ['input'],
             params: {
               intent: 'map',
-              transform: { type: 'property', path: ['name'] },
+              transform: { type: 'property', path: ['name'] as string[] },
             },
             capability: {
               maxComplexity: ComplexityClass.LINEAR,
@@ -810,7 +810,7 @@ describe('WebAssemblyBackend', () => {
               inputs: ['input'],
               params: {
                 intent: 'map',
-                transform: { type: 'arithmetic', op, operand: 5 },
+                transform: { type: 'arithmetic', op: op as ArithmeticOp, operand: 5 },
               },
               capability: {
                 maxComplexity: ComplexityClass.LINEAR,
@@ -1044,7 +1044,17 @@ describe('WebAssemblyBackend', () => {
               inputs: ['input'],
               params: {
                 intent: 'reduce',
-                operation: { type: op },
+                operation: {
+                  type: op as
+                    | 'sum'
+                    | 'product'
+                    | 'max'
+                    | 'min'
+                    | 'average'
+                    | 'count'
+                    | 'first'
+                    | 'last',
+                },
               },
               capability: {
                 maxComplexity: ComplexityClass.LINEAR,

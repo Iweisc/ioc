@@ -955,8 +955,8 @@ describe('TerminationVerifier', () => {
       expect(smallBudget.maxIterations).toBeDefined();
       expect(largeBudget.maxIterations).toBeDefined();
 
-      const smallIterations = smallBudget.maxIterations as number;
-      const largeIterations = largeBudget.maxIterations as number;
+      const smallIterations = smallBudget.maxIterations ?? 0;
+      const largeIterations = largeBudget.maxIterations ?? 0;
 
       expect(largeIterations).toBeGreaterThan(smallIterations);
     });

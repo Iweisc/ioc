@@ -112,6 +112,8 @@ export class TerminationVerifier {
       // Execute the function with the provided arguments
       const result = fn(...args);
 
+      // NOTE: This detects async functions after invocation. For stricter validation,
+      // reject async functions upfront before invocation or implement proper async validation path.
       // Detect if the result is a Promise (async function was called)
       if (result && typeof result === 'object' && typeof result.then === 'function') {
         return {
