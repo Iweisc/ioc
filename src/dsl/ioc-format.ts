@@ -165,6 +165,8 @@ export function deserializeIOC(json: string): IOCProgram {
 /**
  * Load and parse an IOCProgram from a file on disk.
  *
+ * NOTE: This function uses Node.js fs/promises and is not available in browser environments.
+ *
  * @param path - Filesystem path to the `.ioc` JSON file to read
  * @returns The deserialized IOCProgram represented by the file contents
  */
@@ -176,6 +178,8 @@ export async function loadIOCFile(path: string): Promise<IOCProgram> {
 
 /**
  * Writes an IOCProgram to disk as a pretty-printed .ioc JSON file.
+ *
+ * NOTE: This function uses Node.js fs/promises and is not available in browser environments.
  *
  * @param program - The IOC program to serialize and save
  * @param path - Filesystem path where the JSON will be written

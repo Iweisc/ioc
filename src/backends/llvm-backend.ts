@@ -26,6 +26,7 @@ class LLVMIRGenerator {
   private stringConstants = new Map<string, string>();
   private globalCount = 0;
 
+  // NOTE: String constant support is reserved for future LLVM IR string handling implementation.
   emit(line: string): void {
     this.code.push(line);
   }
@@ -220,11 +221,10 @@ export class LLVMBackend implements CompilationBackend {
           break;
         }
 
-        default: {
-          gen.emit(`  ; Node type ${node.type} not fully implemented`);
-          const defaultInput = node.inputs[0] ? nodeResults.get(node.inputs[0]) : '%input';
-          gen.emit(`  ${resultReg} = bitcast i8* ${defaultInput} to i8*`);
-        }
+        default:
+          throw new Error(
+            `LLVM backend does not support node type: ${node.type}. Supported operations: input, filter, map, reduce`
+          );
       }
     }
 
@@ -292,7 +292,8 @@ export class LLVMBackend implements CompilationBackend {
           const fnName = `@reducer_${reducerCount}`;
           gen.emit(`define double ${fnName}(double %acc, double %val) {`);
           gen.emit('entry:');
-          this.compileReducerToLLVM(params.operation, gen, '%acc', '%val');
+          const operationType = typeof params.operation === 'object' ? params.operation.type : params.operation;
+          this.compileReducerToLLVM(operationType, gen, '%acc', '%val');
           gen.emit('}');
           gen.emit('');
           nodeToFunction.set(node.id, fnName);
@@ -323,7 +324,8 @@ export class LLVMBackend implements CompilationBackend {
       }
 
       case 'type_check':
-        // Simplified: always return true for type checks in LLVM
+        // NOTE: Type checking is currently disabled in LLVM compilation.
+        // Runtime type validation is handled by the JavaScript backend delegation.
         gen.emit(`  ret i1 true`);
         break;
 
@@ -417,6 +419,10 @@ export class LLVMBackend implements CompilationBackend {
   }
 
   private generateRuntimeHelpers(gen: LLVMIRGenerator): void {
+    // NOTE: These runtime helpers generate proper LLVM IR for array operations.
+    // However, actual execution is delegated to JavaScriptBackend (see compileLLVMIR)
+    // to ensure correctness while full native execution infrastructure is developed.
+    //
     // Array structure in memory:
     // struct Array {
     //   i64 length;
@@ -619,13 +625,15 @@ export class LLVMBackend implements CompilationBackend {
       fs.unlinkSync(irFile);
       fs.unlinkSync(objFile);
 
+      // NOTE: LLVM compilation is currently a placeholder. Actual execution
+      // is delegated to JavaScriptBackend to ensure correctness while LLVM
+      // IR generation is being developed.
+      //
       // Native execution via LLVM JIT requires additional infrastructure:
       // - FFI bindings (e.g., node-ffi, ffi-napi)
       // - Runtime library linking
       // - Data marshaling between JS and native code
       // - Memory management across language boundaries
-      //
-      // For now, use JavaScript backend as fallback to provide correct results
       const jsBackend = new JavaScriptBackend();
       const jsResult = await jsBackend.compile(program, options);
 

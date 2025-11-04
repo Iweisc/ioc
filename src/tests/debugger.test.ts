@@ -231,10 +231,7 @@ describe('IOCDebugger', () => {
 
     const dbg = new IOCDebugger(graph);
 
-    // Mock the optimize method to avoid the module import error
-    vi.spyOn(graph, 'optimize').mockImplementation(() => {
-      // Do nothing - just prevent the actual optimize from running
-    });
+    vi.spyOn(graph, 'optimize').mockImplementation(() => Promise.resolve());
 
     const result = dbg.compareOptimizations({ data: [1, 2, 3] }, []);
 
@@ -295,34 +292,34 @@ describe('IOCDebugger', () => {
   it('should trace execution for all intent types', () => {
     const graph = new Graph();
     const input = graph.input('data');
-    const constant = graph.constant(10);
+    const _constant = graph.constant(10);
     const filtered = graph.filter(input, (x: any) => x > 2);
     const mapped = graph.map(filtered, (x: any) => x * 2);
     const reduced = graph.reduce(mapped, (a: any, b: any) => a + b, 0);
-    const sorted = graph.sort(input);
-    const grouped = graph.groupBy(input, (x: any) => x % 2);
-    const joined = graph.join(
+    const _sorted = graph.sort(input);
+    const _grouped = graph.groupBy(input, (x: any) => x % 2);
+    const _joined = graph.join(
       filtered,
       mapped,
       (l: any) => l,
       (r: any) => r
     );
-    const flattened = graph.flatten(
+    const _flattened = graph.flatten(
       graph.constant([
         [1, 2],
         [3, 4],
       ])
     );
-    const distinct = graph.distinct(input);
+    const _distinct = graph.distinct(input);
 
     // Output all nodes to ensure they're executed and traced
     graph.output(reduced);
-    graph.output(constant);
-    graph.output(sorted);
-    graph.output(grouped);
-    graph.output(joined);
-    graph.output(flattened);
-    graph.output(distinct);
+    graph.output(_constant);
+    graph.output(_sorted);
+    graph.output(_grouped);
+    graph.output(_joined);
+    graph.output(_flattened);
+    graph.output(_distinct);
 
     const dbg = new IOCDebugger(graph);
     const traces = dbg.trace({ data: [1, 2, 3, 4, 5] }, true);
@@ -464,7 +461,7 @@ describe('IOCDebugger', () => {
 
     const dbg = new IOCDebugger(graph);
 
-    vi.spyOn(graph, 'optimize').mockImplementation(() => {});
+    vi.spyOn(graph, 'optimize').mockImplementation(() => Promise.resolve());
 
     const comparison = dbg.compareOptimizations({ data: [1, 2, 3] }, []);
     const formatted = dbg.formatComparison(comparison);
@@ -480,7 +477,7 @@ describe('IOCDebugger', () => {
 
     const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-    vi.spyOn(graph, 'optimize').mockImplementation(() => {});
+    vi.spyOn(graph, 'optimize').mockImplementation(() => Promise.resolve());
 
     dbg.compare({}, false);
 

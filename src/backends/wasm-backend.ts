@@ -196,7 +196,10 @@ export class WebAssemblyBackend implements CompilationBackend {
     gen.emit('(import "js" "array_distinct" (func $array_distinct (param i32) (result i32)))', 1);
     gen.emit('(import "js" "array_sort" (func $array_sort (param i32 i32) (result i32)))', 1);
     gen.emit('(import "js" "group_by" (func $group_by (param i32 i32) (result i32)))', 1);
-    gen.emit('(import "js" "join_arrays" (func $join_arrays (param i32 i32 i32 i32 i32) (result i32)))', 1);
+    gen.emit(
+      '(import "js" "join_arrays" (func $join_arrays (param i32 i32 i32 i32 i32) (result i32)))',
+      1
+    );
     gen.emit('(import "js" "array_to_string" (func $array_to_string (param i32) (result i32)))', 1);
     gen.emit('', 0);
 
@@ -771,7 +774,7 @@ export class WebAssemblyBackend implements CompilationBackend {
         emit(`local.set $len`);
         emit(`(i32.const 0)`);
         emit(`local.set $result`);
-        
+
         if (!reduction.predicate) {
           // Without predicate, check if array has any truthy values
           emit(`(block $done`);
@@ -804,7 +807,7 @@ export class WebAssemblyBackend implements CompilationBackend {
           // With predicate - for now just return false
           emit(`;; any with predicate not fully implemented`);
         }
-        
+
         emit(`local.get $result`);
         emit(`f64.convert_i32_s`);
         emit(`call $store_value`);
@@ -821,7 +824,7 @@ export class WebAssemblyBackend implements CompilationBackend {
         emit(`local.set $len`);
         emit(`(i32.const 1)`);
         emit(`local.set $result`);
-        
+
         if (!reduction.predicate) {
           // Without predicate, check if all values are truthy
           emit(`(block $done`);
@@ -854,7 +857,7 @@ export class WebAssemblyBackend implements CompilationBackend {
           // With predicate - for now just return true
           emit(`;; all with predicate not fully implemented`);
         }
-        
+
         emit(`local.get $result`);
         emit(`f64.convert_i32_s`);
         emit(`call $store_value`);
@@ -1144,7 +1147,7 @@ export class WebAssemblyBackend implements CompilationBackend {
           const inputVar = nodeVars.get(node.inputs[0] || '') || '$input';
           const params = node.params as any;
           const helper = helperFuncs.get(nodeId);
-          
+
           if (helper && params.keyTransform) {
             gen.emit(`local.get ${inputVar}`, 2);
             gen.emit(`call ${helper.funcName}`, 2);
@@ -1169,32 +1172,32 @@ export class WebAssemblyBackend implements CompilationBackend {
             const rightVar = nodeVars.get(node.inputs[1] || '') || '$input';
             const params = node.params as any;
             const joinType = params.joinType || 'inner';
-            
+
             // Map join type to numeric code
             let joinTypeCode = 0; // inner
             if (joinType === 'left') joinTypeCode = 1;
             else if (joinType === 'right') joinTypeCode = 2;
             else if (joinType === 'outer') joinTypeCode = 3;
-            
+
             // Get helper functions for key transforms
             const leftKeyHelper = helperFuncs.get(`${nodeId}_left`);
             const rightKeyHelper = helperFuncs.get(`${nodeId}_right`);
-            
+
             gen.emit(`local.get ${leftVar}`, 2);
             gen.emit(`local.get ${rightVar}`, 2);
-            
+
             if (leftKeyHelper) {
               gen.emit(`(i32.const 1) ;; has left key func`, 2);
             } else {
               gen.emit(`(i32.const 0) ;; no left key func`, 2);
             }
-            
+
             if (rightKeyHelper) {
               gen.emit(`(i32.const 1) ;; has right key func`, 2);
             } else {
               gen.emit(`(i32.const 0) ;; no right key func`, 2);
             }
-            
+
             gen.emit(`(i32.const ${joinTypeCode})`, 2);
             gen.emit(`call $join_arrays`, 2);
             gen.emit(`local.set ${varName}`, 2);
@@ -1517,39 +1520,45 @@ export class WebAssemblyBackend implements CompilationBackend {
         group_by: (arrPtr: number, keyFuncPtr: number): number => {
           const arr = loadValue(arrPtr);
           if (!Array.isArray(arr)) return arrPtr;
-          
+
           const groups = new Map<any, any[]>();
-          
+
           for (const item of arr) {
             // If keyFuncPtr is 0, use the item itself as the key
             const key = keyFuncPtr === 0 ? item : loadValue(keyFuncPtr);
-            
+
             if (!groups.has(key)) {
               groups.set(key, []);
             }
             groups.get(key)!.push(item);
           }
-          
+
           // Convert to array of [key, values] pairs
           const result = Array.from(groups.entries()).map(([key, values]) => ({
             key,
-            values
+            values,
           }));
-          
+
           return storeValue(result);
         },
 
         // Join arrays operation
-        join_arrays: (leftPtr: number, rightPtr: number, leftKeyFuncPtr: number, rightKeyFuncPtr: number, joinType: number): number => {
+        join_arrays: (
+          leftPtr: number,
+          rightPtr: number,
+          leftKeyFuncPtr: number,
+          rightKeyFuncPtr: number,
+          joinType: number
+        ): number => {
           const left = loadValue(leftPtr);
           const right = loadValue(rightPtr);
-          
+
           if (!Array.isArray(left) || !Array.isArray(right)) {
             return storeValue([]);
           }
-          
+
           const result: any[] = [];
-          
+
           // Build index for right array
           const rightIndex = new Map<any, any[]>();
           for (const rightItem of right) {
@@ -1559,45 +1568,45 @@ export class WebAssemblyBackend implements CompilationBackend {
             }
             rightIndex.get(key)!.push(rightItem);
           }
-          
+
           // Track which right items were matched (for outer joins)
           const matchedRight = new Set<any>();
-          
+
           // Process left array
           for (const leftItem of left) {
             const leftKey = leftKeyFuncPtr === 0 ? leftItem : loadValue(leftKeyFuncPtr);
             const rightMatches = rightIndex.get(leftKey) || [];
-            
+
             if (rightMatches.length > 0) {
               // Inner join or left join with matches
               for (const rightItem of rightMatches) {
                 matchedRight.add(rightItem);
                 result.push({
                   left: leftItem,
-                  right: rightItem
+                  right: rightItem,
                 });
               }
             } else if (joinType === 1 || joinType === 3) {
               // Left join or outer join - include unmatched left
               result.push({
                 left: leftItem,
-                right: null
+                right: null,
               });
             }
           }
-          
+
           // Handle right-only items for right/outer joins
           if (joinType === 2 || joinType === 3) {
             for (const rightItem of right) {
               if (!matchedRight.has(rightItem)) {
                 result.push({
                   left: null,
-                  right: rightItem
+                  right: rightItem,
                 });
               }
             }
           }
-          
+
           return storeValue(result);
         },
 
@@ -1605,14 +1614,16 @@ export class WebAssemblyBackend implements CompilationBackend {
         array_to_string: (arrPtr: number): number => {
           const arr = loadValue(arrPtr);
           if (!Array.isArray(arr)) return arrPtr;
-          
+
           // Join array elements into a string
-          const str = arr.map(item => {
-            if (typeof item === 'string') return item;
-            if (item === null || item === undefined) return '';
-            return String(item);
-          }).join('');
-          
+          const str = arr
+            .map((item) => {
+              if (typeof item === 'string') return item;
+              if (item === null || item === undefined) return '';
+              return String(item);
+            })
+            .join('');
+
           return storeValue(str);
         },
       },

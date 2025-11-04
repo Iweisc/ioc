@@ -178,58 +178,61 @@ export class IOCDebugger {
     this.debugMode.traceExecution = true;
     this.debugMode.verbose = verbose;
     this.debugMode.clearTraces();
-    
+
     const traces: ExecutionTrace[] = [];
     const executionOrder = this.graph.getExecutionOrder();
     const nodeResults: Map<string, any> = new Map();
-    
+
     for (const nodeId of executionOrder) {
       const node = this.graph.nodes.get(nodeId);
       if (!node) continue;
-      
+
       const startTime = performance.now();
-      const startMemory = process.memoryUsage ? process.memoryUsage().heapUsed : 0;
-      
+      const startMemory =
+        typeof process !== 'undefined' && typeof process.memoryUsage === 'function'
+          ? process.memoryUsage().heapUsed
+          : 0;
+
       try {
-        const inputs = node.inputs.map(inputId => nodeResults.get(inputId));
+        const inputs = node.inputs.map((inputId) => nodeResults.get(inputId));
         let output: any;
-        
+
         switch (node.intentType) {
           case IntentType.INPUT: {
             output = data[node.params['name'] as string];
             break;
           }
-            
+
           case IntentType.CONSTANT: {
             output = node.params['value'];
             break;
           }
-            
+
           case IntentType.FILTER: {
             const filterPred = node.params['predicate'] as Function;
             output = inputs[0]?.filter?.(filterPred) || [];
             break;
           }
-            
+
           case IntentType.MAP: {
             const mapTransform = node.params['transform'] as Function;
             output = inputs[0]?.map?.(mapTransform) || [];
             break;
           }
-            
+
           case IntentType.REDUCE: {
             const reduceOp = node.params['operation'] as Function;
             const initial = node.params['initial'];
             output = inputs[0]?.reduce?.(reduceOp, initial);
             break;
           }
-            
+
           case IntentType.SORT: {
             const compareFn = node.params['compareFn'] as ((a: any, b: any) => number) | undefined;
             output = [...(inputs[0] || [])].sort(compareFn);
             break;
           }
-            
+
           case IntentType.GROUP_BY: {
             const keyFn = node.params['keyFn'] as Function;
             const grouped = new Map();
@@ -243,7 +246,7 @@ export class IOCDebugger {
             output = grouped;
             break;
           }
-            
+
           case IntentType.JOIN: {
             const leftKey = node.params['leftKey'] as Function;
             const rightKey = node.params['rightKey'] as Function;
@@ -258,13 +261,13 @@ export class IOCDebugger {
             output = joined;
             break;
           }
-            
+
           case IntentType.FLATTEN: {
-            const depth = node.params['depth'] as number || 1;
+            const depth = (node.params['depth'] as number) || 1;
             output = inputs[0]?.flat?.(depth) || [];
             break;
           }
-            
+
           case IntentType.DISTINCT: {
             const distinctKeyFn = node.params['keyFn'] as Function | undefined;
             if (distinctKeyFn) {
@@ -282,57 +285,59 @@ export class IOCDebugger {
             }
             break;
           }
-            
+
           default:
             output = null;
         }
-        
+
         nodeResults.set(nodeId, output);
-        
+
         const endTime = performance.now();
-        const endMemory = process.memoryUsage ? process.memoryUsage().heapUsed : 0;
-        
+        const endMemory =
+          typeof process !== 'undefined' && typeof process.memoryUsage === 'function'
+            ? process.memoryUsage().heapUsed
+            : 0;
+
         const trace: ExecutionTrace = {
           nodeId,
           intentType: node.intentType,
           inputs,
           output,
           executionTime: endTime - startTime,
-          memoryUsed: endMemory - startMemory
+          memoryUsed: endMemory - startMemory,
         };
-        
+
         traces.push(trace);
         this.debugMode.recordExecution(trace);
-        
+
         const validationError = this.debugMode.validateOutput(node, output);
         if (validationError) {
           if (verbose) {
             console.error(`[VALIDATION] ${validationError}`);
           }
         }
-        
       } catch (error) {
         const trace: ExecutionTrace = {
           nodeId,
           intentType: node.intentType,
-          inputs: node.inputs.map(inputId => nodeResults.get(inputId)),
+          inputs: node.inputs.map((inputId) => nodeResults.get(inputId)),
           output: null,
           executionTime: performance.now() - startTime,
-          error: error as Error
+          error: error as Error,
         };
-        
+
         traces.push(trace);
         this.debugMode.recordExecution(trace);
-        
+
         if (verbose) {
           console.error(`[ERROR] Node ${nodeId}: ${(error as Error).message}`);
         }
       }
     }
-    
+
     this.executionTraces.set('latest', traces);
     this.updateNodeExecutions(traces);
-    
+
     return traces;
   }
 
@@ -356,7 +361,7 @@ export class IOCDebugger {
           averageTime: trace.executionTime,
           inputs: [trace.inputs],
           outputs: [trace.output],
-          errors: trace.error ? [trace.error] : []
+          errors: trace.error ? [trace.error] : [],
         });
       }
     }
@@ -369,31 +374,32 @@ export class IOCDebugger {
     console.warn('[Debugger.bisect] Deprecated - use findBug() instead');
     return this.findBug(data, expectedOutput)?.buggyNodeId || null;
   }
-  
+
   /**
    * Find the node that causes incorrect output using binary search
    */
   findBug(data: Record<string, any>, expectedOutput?: any): BugFindingResult | null {
     const executionOrder = this.graph.getExecutionOrder();
     const testedNodes: string[] = [];
-    
+
     if (executionOrder.length === 0) {
       return null;
     }
-    
+
     const traces = this.trace(data, false);
     const outputNodes = this.graph.outputs;
-    
+
     if (outputNodes.length === 0) {
       return null;
     }
-    
-    const actualOutput = outputNodes.length === 1
-      ? traces.find(t => t.nodeId === outputNodes[0])?.output
-      : outputNodes.map(id => traces.find(t => t.nodeId === id)?.output);
-    
+
+    const actualOutput =
+      outputNodes.length === 1
+        ? traces.find((t) => t.nodeId === outputNodes[0])?.output
+        : outputNodes.map((id) => traces.find((t) => t.nodeId === id)?.output);
+
     if (expectedOutput === undefined) {
-      const errorTrace = traces.find(t => t.error !== undefined);
+      const errorTrace = traces.find((t) => t.error !== undefined);
       if (errorTrace) {
         return {
           buggyNodeId: errorTrace.nodeId,
@@ -401,39 +407,39 @@ export class IOCDebugger {
           expectedOutput: null,
           actualOutput: null,
           error: errorTrace.error,
-          testedNodes: [errorTrace.nodeId]
+          testedNodes: [errorTrace.nodeId],
         };
       }
       return null;
     }
-    
+
     const outputsMatch = JSON.stringify(actualOutput) === JSON.stringify(expectedOutput);
     if (outputsMatch) {
       return null;
     }
-    
+
     let left = 0;
     let right = executionOrder.length - 1;
     let buggyNodeId: string | null = null;
-    
+
     while (left <= right) {
       const mid = Math.floor((left + right) / 2);
       const nodeId = executionOrder[mid];
-      
+
       if (!nodeId) break;
       testedNodes.push(nodeId);
-      
+
       const partialGraph = this.createPartialGraph(executionOrder.slice(0, mid + 1));
       const partialDebugger = new IOCDebugger(partialGraph, this.provenance);
       const partialTraces = partialDebugger.trace(data, false);
-      
-      const nodeTrace = partialTraces.find(t => t.nodeId === nodeId);
+
+      const nodeTrace = partialTraces.find((t) => t.nodeId === nodeId);
       if (nodeTrace?.error) {
         buggyNodeId = nodeId;
         right = mid - 1;
       } else {
         const hasDeviation = this.checkForDeviation(nodeTrace, expectedOutput);
-        
+
         if (hasDeviation) {
           buggyNodeId = nodeId;
           right = mid - 1;
@@ -442,58 +448,58 @@ export class IOCDebugger {
         }
       }
     }
-    
+
     if (buggyNodeId) {
-      const buggyTrace = traces.find(t => t.nodeId === buggyNodeId);
+      const buggyTrace = traces.find((t) => t.nodeId === buggyNodeId);
       return {
         buggyNodeId,
         nodeId: buggyNodeId,
         expectedOutput,
         actualOutput: buggyTrace?.output,
         error: buggyTrace?.error,
-        testedNodes
+        testedNodes,
       };
     }
-    
+
     return null;
   }
-  
+
   private createPartialGraph(nodeIds: string[]): Graph {
     const partial = new Graph();
     const nodeIdSet = new Set(nodeIds);
-    
+
     for (const nodeId of nodeIds) {
       const node = this.graph.nodes.get(nodeId);
       if (node) {
         partial.nodes.set(nodeId, {
           ...node,
-          inputs: node.inputs.filter(id => nodeIdSet.has(id))
+          inputs: node.inputs.filter((id) => nodeIdSet.has(id)),
         });
       }
     }
-    
+
     if (nodeIds.length > 0) {
       const lastId = nodeIds[nodeIds.length - 1];
       if (lastId) {
         partial.outputs = [lastId];
       }
     }
-    
+
     return partial;
   }
-  
+
   private checkForDeviation(trace: ExecutionTrace | undefined, expectedOutput: any): boolean {
     if (!trace) return false;
-    
+
     const actual = trace.output;
-    
+
     if (typeof actual !== typeof expectedOutput) return true;
-    
+
     if (Array.isArray(actual) && Array.isArray(expectedOutput)) {
       const lengthRatio = actual.length / (expectedOutput.length || 1);
       if (lengthRatio < 0.5 || lengthRatio > 2) return true;
     }
-    
+
     return false;
   }
 
@@ -504,76 +510,79 @@ export class IOCDebugger {
     console.warn('[Debugger.compare] Deprecated - use compareOptimizations() instead');
     return this.compareOptimizations(data, optimized ? undefined : []);
   }
-  
+
   /**
    * Compare execution with and without optimizations
    */
   compareOptimizations(data: Record<string, any>, optimizationPasses?: string[]): ComparisonResult {
     const originalGraph = this.graph.clone();
     const originalDebugger = new IOCDebugger(originalGraph, this.provenance);
-    
+
     const startOriginal = performance.now();
     const originalTraces = originalDebugger.trace(data, false);
     const originalTime = performance.now() - startOriginal;
-    
-    const originalOutput = originalGraph.outputs.length === 1
-      ? originalTraces.find(t => t.nodeId === originalGraph.outputs[0])?.output
-      : originalGraph.outputs.map(id => originalTraces.find(t => t.nodeId === id)?.output);
-    
+
+    const originalOutput =
+      originalGraph.outputs.length === 1
+        ? originalTraces.find((t) => t.nodeId === originalGraph.outputs[0])?.output
+        : originalGraph.outputs.map((id) => originalTraces.find((t) => t.nodeId === id)?.output);
+
     const optimizedGraph = this.graph.clone();
     if (optimizationPasses === undefined) {
       optimizedGraph.optimize();
     } else if (optimizationPasses.length > 0) {
       optimizedGraph.optimize(optimizationPasses);
     }
-    
+
     const optimizedDebugger = new IOCDebugger(optimizedGraph, this.provenance);
-    
+
     const startOptimized = performance.now();
     const optimizedTraces = optimizedDebugger.trace(data, false);
     const optimizedTime = performance.now() - startOptimized;
-    
-    const optimizedOutput = optimizedGraph.outputs.length === 1
-      ? optimizedTraces.find(t => t.nodeId === optimizedGraph.outputs[0])?.output
-      : optimizedGraph.outputs.map(id => optimizedTraces.find(t => t.nodeId === id)?.output);
-    
+
+    const optimizedOutput =
+      optimizedGraph.outputs.length === 1
+        ? optimizedTraces.find((t) => t.nodeId === optimizedGraph.outputs[0])?.output
+        : optimizedGraph.outputs.map((id) => optimizedTraces.find((t) => t.nodeId === id)?.output);
+
     const resultsMatch = JSON.stringify(originalOutput) === JSON.stringify(optimizedOutput);
     const speedup = originalTime / optimizedTime;
-    const nodeReduction = (originalGraph.nodes.size - optimizedGraph.nodes.size) / originalGraph.nodes.size;
-    
+    const nodeReduction =
+      (originalGraph.nodes.size - optimizedGraph.nodes.size) / originalGraph.nodes.size;
+
     const differences: string[] = [];
     if (!resultsMatch) {
       differences.push('Output values differ');
     }
-    
+
     const originalNodeIds = new Set(originalGraph.nodes.keys());
     const optimizedNodeIds = new Set(optimizedGraph.nodes.keys());
-    
+
     for (const id of originalNodeIds) {
       if (!optimizedNodeIds.has(id)) {
         differences.push(`Node ${id} removed by optimization`);
       }
     }
-    
+
     return {
       original: {
         result: originalOutput,
         executionTime: originalTime,
         nodeCount: originalGraph.nodes.size,
-        traces: originalTraces
+        traces: originalTraces,
       },
       optimized: {
         result: optimizedOutput,
         executionTime: optimizedTime,
         nodeCount: optimizedGraph.nodes.size,
-        traces: optimizedTraces
+        traces: optimizedTraces,
       },
       comparison: {
         resultsMatch,
         speedup,
         nodeReduction,
-        differences
-      }
+        differences,
+      },
     };
   }
 
@@ -583,15 +592,9 @@ export class IOCDebugger {
   formatComparison(comparison: any): string {
     // Handle old test case that passes empty object
     if (!comparison || !comparison.original) {
-      return [
-        'Comparison Report:',
-        '='.repeat(60),
-        '',
-        'STUB',
-        ''
-      ].join('\n');
+      return ['Comparison Report:', '='.repeat(60), '', 'STUB', ''].join('\n');
     }
-    
+
     const lines: string[] = [
       'Comparison Report:',
       '='.repeat(60),
@@ -611,7 +614,7 @@ export class IOCDebugger {
       `  Speedup: ${comparison.comparison.speedup.toFixed(2)}x`,
       `  Node Reduction: ${(comparison.comparison.nodeReduction * 100).toFixed(1)}%`,
     ];
-    
+
     if (comparison.comparison.differences.length > 0) {
       lines.push('  Differences:');
       for (const diff of comparison.comparison.differences) {
@@ -621,14 +624,14 @@ export class IOCDebugger {
 
     return lines.join('\n');
   }
-  
+
   /**
    * Get the latest execution trace
    */
   getExecutionTrace(): ExecutionTrace[] {
     return this.executionTraces.get('latest') || [];
   }
-  
+
   /**
    * Get execution details for specific nodes
    */
@@ -638,7 +641,7 @@ export class IOCDebugger {
     }
     return Array.from(this.nodeExecutions.values());
   }
-  
+
   /**
    * Reset the debugger state
    */

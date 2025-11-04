@@ -30,17 +30,26 @@ export function createSimpleProgram(): IOCProgram {
     capability: createDefaultCapability(),
   };
 
-  const outputNode: IOCNode = {
+  const mapNode: IOCNode = {
     id: 'output',
-    type: IOCIntentType.CONSTANT,
+    type: IOCIntentType.MAP,
     inputs: ['input'],
-    params: { intent: 'constant', value: 42 },
-    capability: createDefaultCapability(),
+    params: {
+      intent: 'map',
+      transform: { type: 'arithmetic', op: 'multiply', operand: 2 },
+    },
+    capability: {
+      maxComplexity: ComplexityClass.LINEAR,
+      terminationGuarantee: 'structural',
+      sideEffects: 'pure',
+      parallelizable: true,
+      memoryBound: 'O(n)',
+    },
   };
 
   const program: IOCProgram = {
     version: '1.0.0',
-    nodes: [inputNode, outputNode],
+    nodes: [inputNode, mapNode],
     outputs: ['output'],
     metadata: { name: 'test' },
   };
@@ -58,13 +67,30 @@ export function createSimpleProgram(): IOCProgram {
 export function createLargeProgram(nodeCount: number): IOCProgram {
   const nodes: IOCNode[] = [];
 
-  for (let i = 0; i < nodeCount; i++) {
+  nodes.push({
+    id: 'node0',
+    type: IOCIntentType.INPUT,
+    inputs: [],
+    params: { intent: 'input', name: 'data' },
+    capability: createDefaultCapability(),
+  });
+
+  for (let i = 1; i < nodeCount; i++) {
     const node: IOCNode = {
       id: `node${i}`,
-      type: IOCIntentType.CONSTANT,
-      inputs: i > 0 ? [`node${i - 1}`] : [],
-      params: { intent: 'constant', value: i },
-      capability: createDefaultCapability(),
+      type: IOCIntentType.MAP,
+      inputs: [`node${i - 1}`],
+      params: {
+        intent: 'map',
+        transform: { type: 'arithmetic', op: 'add', operand: 1 },
+      },
+      capability: {
+        maxComplexity: ComplexityClass.LINEAR,
+        terminationGuarantee: 'structural',
+        sideEffects: 'pure',
+        parallelizable: true,
+        memoryBound: 'O(n)',
+      },
     };
     nodes.push(node);
   }

@@ -47,6 +47,8 @@ export function validateRegexPattern(pattern: string): void {
       throw new Error('Regex pattern too long (max 1000 characters)');
     }
 
+    // NOTE: This is a basic ReDoS check. For production use, consider using
+    // a vetted approach (RE2-based engine or safe-regex analysis) and cap execution time.
     // Block nested quantifiers that can cause exponential backtracking
     if (/(\*\+|\+\*|\*\*|\+\+|\*\{|\+\{)/.test(pattern)) {
       throw new Error('Regex pattern contains potentially dangerous nested quantifiers');
@@ -202,6 +204,9 @@ export function createSandboxContext(): Record<string, any> {
  * This is a defense-in-depth measure
  */
 export function compileInRestrictedContext(code: string, paramNames: string[]): Function {
+  // WARNING: This is not a true sandbox. new Function() still has access to the global scope.
+  // For production use, consider using Node's vm.runInNewContext with frozen context or SES.
+
   // Validate code doesn't contain dangerous patterns
   validateGeneratedCode(code);
 

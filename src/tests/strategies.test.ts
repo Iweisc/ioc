@@ -504,6 +504,9 @@ describe('NaiveStrategy - Additional Coverage', () => {
     expect(code).toContain('_key');
   });
 
+  // NOTE: These tests verify code generation patterns but do not validate
+  // the actual sorting logic differences. Consider strengthening assertions
+  // to verify specific implementation details.
   it('should generate code for sort with key function', () => {
     const node = {
       id: 'test',

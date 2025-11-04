@@ -1562,7 +1562,6 @@ output count_result
     it('should handle unsupported arithmetic operator in predicate', () => {
       const converter = new ASTToGraphConverter();
       const ast: Program = {
-        type: 'program',
         statements: [
           {
             type: 'input',
@@ -1574,7 +1573,6 @@ output count_result
             source: 'data',
             predicate: {
               type: 'arithmetic',
-              // @ts-expect-error Testing unsupported operator
               arithmeticOp: 'unsupported_op' as any,
               arithmeticValue: 2,
               comparisonOp: 'eq',
@@ -1594,7 +1592,6 @@ output count_result
     it('should handle unsupported arithmetic operator in transform', () => {
       const converter = new ASTToGraphConverter();
       const ast: Program = {
-        type: 'program',
         statements: [
           {
             type: 'input',
@@ -1606,7 +1603,6 @@ output count_result
             source: 'data',
             transform: {
               type: 'arithmetic',
-              // @ts-expect-error Testing unsupported operator
               operator: 'unsupported_op' as any,
               value: 2,
             },
@@ -1624,7 +1620,6 @@ output count_result
     it('should handle logical NOT with multiple predicates', () => {
       const converter = new ASTToGraphConverter();
       const ast: Program = {
-        type: 'program',
         statements: [
           {
             type: 'input',
@@ -1656,7 +1651,6 @@ output count_result
     it('should handle unknown logical operator', () => {
       const converter = new ASTToGraphConverter();
       const ast: Program = {
-        type: 'program',
         statements: [
           {
             type: 'input',
@@ -1668,7 +1662,6 @@ output count_result
             source: 'data',
             predicate: {
               type: 'logical',
-              // @ts-expect-error Testing unsupported operator
               operator: 'xor' as any,
               predicates: [{ type: 'comparison', operator: 'gt', value: 0 }],
             },
@@ -1686,7 +1679,6 @@ output count_result
     it('should handle unsupported transform type', () => {
       const converter = new ASTToGraphConverter();
       const ast: Program = {
-        type: 'program',
         statements: [
           {
             type: 'input',
@@ -1697,9 +1689,8 @@ output count_result
             target: 'mapped',
             source: 'data',
             transform: {
-              // @ts-expect-error Testing unsupported type
               type: 'unsupported_type' as any,
-            },
+            } as any,
           },
           {
             type: 'output',
@@ -1714,7 +1705,6 @@ output count_result
     it('should handle unsupported predicate type', () => {
       const converter = new ASTToGraphConverter();
       const ast: Program = {
-        type: 'program',
         statements: [
           {
             type: 'input',
@@ -1725,9 +1715,8 @@ output count_result
             target: 'filtered',
             source: 'data',
             predicate: {
-              // @ts-expect-error Testing unsupported type
               type: 'unsupported_type' as any,
-            },
+            } as any,
           },
           {
             type: 'output',
@@ -1742,14 +1731,12 @@ output count_result
     it('should handle let statement error', () => {
       const converter = new ASTToGraphConverter();
       const ast: Program = {
-        type: 'program',
         statements: [
           {
-            // @ts-expect-error Testing unsupported statement type
             type: 'let' as any,
             name: 'x',
             value: 10,
-          },
+          } as any,
         ],
       };
 
@@ -1759,15 +1746,13 @@ output count_result
     it('should handle if statement error', () => {
       const converter = new ASTToGraphConverter();
       const ast: Program = {
-        type: 'program',
         statements: [
           {
-            // @ts-expect-error Testing unsupported statement type
             type: 'if' as any,
             condition: { type: 'comparison', operator: 'gt', value: 0 },
             thenBranch: [],
             elseBranch: [],
-          },
+          } as any,
         ],
       };
 
@@ -1777,7 +1762,6 @@ output count_result
     it('should handle unsupported reduction operation', () => {
       const converter = new ASTToGraphConverter();
       const ast: Program = {
-        type: 'program',
         statements: [
           {
             type: 'input',
@@ -1787,7 +1771,6 @@ output count_result
             type: 'reduce',
             target: 'result',
             source: 'data',
-            // @ts-expect-error Testing unsupported operation
             operation: 'any' as any,
           },
           {
