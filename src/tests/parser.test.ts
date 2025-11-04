@@ -8,6 +8,7 @@ import { Parser } from '../parser/parser';
 import { ASTToGraphConverter } from '../parser/ast-to-graph';
 import { JavaScriptBackend } from '../backends/javascript-backend';
 import type { IOCProgram } from '../dsl/ioc-format';
+import type { Program } from '../parser/ast';
 
 // Helper to compile IOCProgram to executable function
 async function compileProgram(program: IOCProgram): Promise<Function> {
@@ -1573,6 +1574,7 @@ output count_result
             source: 'data',
             predicate: {
               type: 'arithmetic',
+              // @ts-expect-error Testing unsupported operator
               arithmeticOp: 'unsupported_op' as any,
               arithmeticValue: 2,
               comparisonOp: 'eq',
@@ -1604,6 +1606,7 @@ output count_result
             source: 'data',
             transform: {
               type: 'arithmetic',
+              // @ts-expect-error Testing unsupported operator
               operator: 'unsupported_op' as any,
               value: 2,
             },
@@ -1665,6 +1668,7 @@ output count_result
             source: 'data',
             predicate: {
               type: 'logical',
+              // @ts-expect-error Testing unsupported operator
               operator: 'xor' as any,
               predicates: [{ type: 'comparison', operator: 'gt', value: 0 }],
             },
@@ -1693,6 +1697,7 @@ output count_result
             target: 'mapped',
             source: 'data',
             transform: {
+              // @ts-expect-error Testing unsupported type
               type: 'unsupported_type' as any,
             },
           },
@@ -1720,6 +1725,7 @@ output count_result
             target: 'filtered',
             source: 'data',
             predicate: {
+              // @ts-expect-error Testing unsupported type
               type: 'unsupported_type' as any,
             },
           },
@@ -1739,6 +1745,7 @@ output count_result
         type: 'program',
         statements: [
           {
+            // @ts-expect-error Testing unsupported statement type
             type: 'let' as any,
             name: 'x',
             value: 10,
@@ -1755,6 +1762,7 @@ output count_result
         type: 'program',
         statements: [
           {
+            // @ts-expect-error Testing unsupported statement type
             type: 'if' as any,
             condition: { type: 'comparison', operator: 'gt', value: 0 },
             thenBranch: [],
@@ -1779,6 +1787,7 @@ output count_result
             type: 'reduce',
             target: 'result',
             source: 'data',
+            // @ts-expect-error Testing unsupported operation
             operation: 'any' as any,
           },
           {
