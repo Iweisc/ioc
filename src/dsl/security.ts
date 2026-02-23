@@ -22,7 +22,7 @@ export function validatePropertyPath(path: string[]): void {
     }
 
     // Block dangerous property names
-    const dangerousNames = ['__proto__', 'constructor', 'prototype', 'valueOf', 'toString'];
+    const dangerousNames = ['__proto__', 'constructor', 'prototype'];
 
     if (dangerousNames.includes(segment)) {
       throw new Error(
@@ -42,9 +42,8 @@ export function validateRegexPattern(pattern: string): void {
     new RegExp(pattern);
 
     // Block patterns that could cause ReDoS or other issues
-    // This is a basic check - production systems would want more sophisticated validation
-    if (pattern.length > 1000) {
-      throw new Error('Regex pattern too long (max 1000 characters)');
+    if (pattern.length > 5000) {
+      throw new Error('Regex pattern too long (max 5000 characters)');
     }
 
     // NOTE: This is a basic ReDoS check. For production use, consider using
