@@ -59,9 +59,9 @@ export const DEFAULT_BUDGETS: Record<ComplexityClass, ExecutionBudget> = {
     maxStackDepth: 100,
   },
   [ComplexityClass.FACTORIAL]: {
-    maxIterations: Number.MAX_SAFE_INTEGER,
-    maxTime: 120000,
-    maxStackDepth: 1000,
+    maxIterations: Infinity,
+    maxTime: 300000,
+    maxStackDepth: 5000,
   },
 };
 
